@@ -1,0 +1,19 @@
+{
+  "name": "mlm",
+  "scripts": {
+    "build": "bun build ./server/index.ts --outdir ./dist --target bun",
+    "start": "bun run ./dist/index.js",
+    "dev": "bun run --hot server/index.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun src/db/migrate"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.43.1",
+    "hono": "^4.7.9"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.13",
+    "drizzle-kit": "^0.31.1",
+    "pg": "^8.15.6"
+  }
+}
