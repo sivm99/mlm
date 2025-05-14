@@ -1,19 +1,26 @@
 {
   "name": "mlm",
   "scripts": {
-    "build": "bun build ./server/index.ts --outdir ./dist --target bun",
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
     "start": "bun run ./dist/index.js",
-    "dev": "bun run --hot server/index.ts",
+    "dev": "bun run --hot src/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "bun src/db/migrate"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.5.0",
     "drizzle-orm": "^0.43.1",
+    "drizzle-seed": "^0.3.1",
+    "drizzle-zod": "^0.7.1",
     "hono": "^4.7.9"
   },
   "devDependencies": {
+    "@eslint/js": "^9.26.0",
     "@types/bun": "^1.2.13",
     "drizzle-kit": "^0.31.1",
-    "pg": "^8.15.6"
+    "eslint": "^9.26.0",
+    "globals": "^16.1.0",
+    "pg": "^8.15.6",
+    "typescript-eslint": "^8.32.1"
   }
 }
