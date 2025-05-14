@@ -1,18 +1,20 @@
 import db from "@/db";
 import { generateRandomDigits } from "./cr";
 import { usersTable } from "@/db/schema/users";
-import { LoginUser, NewUser, User } from "@/types";
+import { LoginUser, SafeUser, User } from "@/types";
 import { password as bunPassword } from "bun";
 import { eq } from "drizzle-orm";
 import { sign } from "hono/jwt";
 import { Context } from "hono";
 import { setCookie } from "hono/cookie";
+import { RegisterUser } from "@/validation/user.validations";
 
 const jwtSecret = process.env.JWT_SECRET!;
 class UserService {
   #expireTimeInMinutes = Number(process.env.EXPIRE_TIME_IN_MINUTES) || 5;
   #isDev = process.env.NODE_ENV === "development" ? true : false;
   #host = process.env.HOST || "::1:5000";
+
   #returnUserObject = {
     username: usersTable.username,
     name: usersTable.name,
@@ -50,7 +52,7 @@ class UserService {
     return newUsername;
   }
 
-  async registerUsers(users: NewUser[]) {
+  async registerUsers(users: RegisterUser[]) {
     if (!users || users.length === 0)
       throw new Error("There must be at least one user");
 
@@ -137,14 +139,15 @@ class UserService {
     });
   }
 
-  async getUser(username: string) {
+  async getUser(username: string): Promise<SafeUser> {
     const user = await db
       .select(this.#returnUserObject)
       .from(usersTable)
       .where(eq(usersTable.username, username))
       .limit(1);
     if (!user[0]) throw new Error("USER DOES NOT EXIST");
-    return user[0];
+    const safeUser = user[0] as SafeUser;
+    return safeUser;
   }
 }
 export default UserService;

@@ -1,18 +1,26 @@
-import { Context, Next } from "hono";
+import { Next } from "hono";
 import { verify } from "hono/jwt";
+import { getCookie } from "hono/cookie";
+import { MyContext } from "@/types";
+import UserService from "@/lib/userService";
 
 const jwtSecret = process.env.JWT_SECRET!;
-
-import { getCookie } from "hono/cookie";
-
-export async function authenticate(c: Context, next: Next) {
+const us = new UserService();
+export async function authenticate(c: MyContext, next: Next) {
   const token =
     getCookie(c, "token") || c.req.header("Authorization")?.split(" ")[1];
 
   if (!token) {
-    return c.json({ error: "Authentication required" }, 401);
+    return c.json({ success: false, error: "Authentication required" }, 401);
   }
-  const tokenResult = await verify(token, jwtSecret);
-  console.log(tokenResult);
+  const tr = await verify(token, jwtSecret);
+  let safeUser;
+  if (tr && tr.username && typeof tr.username === "string") {
+    safeUser = await us.getUser(tr.username);
+    c.set("user", safeUser);
+  } else {
+    return c.json({ success: false, error: "Invalid token" }, 401);
+  }
+
   await next();
 }

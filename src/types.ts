@@ -1,5 +1,6 @@
-import { UserSelectSchema } from "@/db/schema";
+import { UserSelectSchema } from "@/db/schema/users";
 import { RegisterUser } from "@/validation/user.validations";
+import { Context } from "hono";
 
 export type User = UserSelectSchema;
 
@@ -11,7 +12,24 @@ export type LoginUser = {
   username: string;
   password: string;
 };
+export type SafeUser = Pick<
+  User,
+  | "username"
+  | "name"
+  | "mobile"
+  | "country"
+  | "dialCode"
+  | "sponsor"
+  | "role"
+  | "permissions"
+  | "isActive"
+  | "isBlocked"
+>;
 
 export type Variables = {
   registerUsers: RegisterUser[];
+  user: SafeUser;
+  loginUser: LoginUser;
 };
+
+export type MyContext = Context<{ Variables: Variables }>;
