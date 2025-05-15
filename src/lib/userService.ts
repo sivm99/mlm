@@ -7,67 +7,78 @@ import { eq } from "drizzle-orm";
 import { sign } from "hono/jwt";
 import { Context } from "hono";
 import { setCookie } from "hono/cookie";
-import { RegisterUser } from "@/validation/user.validations";
+import { RegisterUser } from "@/validation/auth.validations";
+import TreeService from "./TreeService";
 
 const jwtSecret = process.env.JWT_SECRET!;
+const treeService = new TreeService();
+
 class UserService {
   #expireTimeInMinutes = Number(process.env.EXPIRE_TIME_IN_MINUTES) || 5;
   #isDev = process.env.NODE_ENV === "development" ? true : false;
   #host = process.env.HOST || "::1:5000";
 
   #returnUserObject = {
-    username: usersTable.username,
+    id: usersTable.id,
     name: usersTable.name,
     mobile: usersTable.mobile,
     country: usersTable.country,
     dialCode: usersTable.dialCode,
     sponsor: usersTable.sponsor,
+    leftUser: usersTable.leftUser,
+    rightUser: usersTable.rightUser,
+    position: usersTable.position,
     role: usersTable.role,
     permissions: usersTable.permissions,
     isActive: usersTable.isActive,
     isBlocked: usersTable.isBlocked,
+    redeemedTimes: usersTable.redeemedTimes,
+    associatedUsersCount: usersTable.associatedUsersCount,
+    associatedActiveUsersCount: usersTable.associatedActiveUsersCount,
+    wallet: usersTable.wallet,
   };
 
-  async getNewUsername(retryCount = 0): Promise<string> {
+  async getNewId(retryCount = 0): Promise<string> {
     if (retryCount > 10) {
       throw new Error(
-        "Failed to generate a unique username after multiple attempts.",
+        "Failed to generate a unique id after multiple attempts.",
       );
     }
-    const newUsername = `AL${generateRandomDigits(8)}`;
+    const newId = `AL${generateRandomDigits(8)}`;
 
     const existingUser = await db
       .select({
-        username: usersTable.username,
+        id: usersTable.id,
       })
       .from(usersTable)
-      .where(eq(usersTable.username, newUsername))
+      .where(eq(usersTable.id, newId))
       .limit(1);
 
     if (existingUser.length > 0) {
-      console.warn(`Username ${newUsername} already exists. Retrying...`);
-      return this.getNewUsername(retryCount + 1);
+      console.warn(`id ${newId} already exists. Retrying...`);
+      return this.getNewId(retryCount + 1);
     }
 
-    return newUsername;
+    return newId;
   }
 
   async registerUsers(users: RegisterUser[]) {
     if (!users || users.length === 0)
       throw new Error("There must be at least one user");
-
+    if (!Array.isArray(users))
+      throw new Error("You can not pass me an object do you understand ?");
     const processedUsers = await Promise.all(
       users.map(async (user) => {
-        const username = await this.getNewUsername();
+        const id = await this.getNewId();
         if (!user.password)
           throw new Error("User password was not given so exiting");
         const passwordHash = await bunPassword.hash(user.password);
         const { password, ...userWithoutPassword } = user;
         if (this.#isDev) console.warn(password);
-
+        // now set up the tree as well
         return {
           ...userWithoutPassword,
-          username,
+          id,
           passwordHash,
         } as unknown as User;
       }),
@@ -78,6 +89,12 @@ class UserService {
         .values(processedUsers)
         .returning(this.#returnUserObject);
 
+      await Promise.all(
+        insertedData.map((user) =>
+          treeService.addUser(user.id, user.sponsor, user.position),
+        ),
+      );
+
       return { success: true, users: insertedData };
     } catch (error) {
       console.error("Failed to register users:", error);
@@ -87,7 +104,7 @@ class UserService {
     }
   }
 
-  async loginUser({ username, password }: LoginUser) {
+  async loginUser({ id, password }: LoginUser) {
     try {
       const loggedInUser = await db
         .select({
@@ -95,17 +112,17 @@ class UserService {
           passwordHash: usersTable.passwordHash,
         })
         .from(usersTable)
-        .where(eq(usersTable.username, username))
+        .where(eq(usersTable.id, id))
         .limit(1);
 
       if (!loggedInUser.length) throw new Error("INVALID USERNAME OR PASSWORD");
-      const u = loggedInUser[0];
-      const hash = u.passwordHash;
+      const user = loggedInUser[0];
+      const hash = user.passwordHash;
       if (!hash) throw new Error("INVALID USERNAME OR PASSWORD");
       const isMatch = await bunPassword.verify(password, hash);
-      if (!isMatch) throw new Error("INVALID USERNAME OR PASSWORD");
-      if (u.isBlocked) throw new Error("YOU HAVE BEEN BLOCKED BY THE ADMIN");
-      const { passwordHash, ...userWithoutPassword } = u;
+      if (!isMatch) throw new Error("INVALID USERNAME OR PASSWORD is match");
+      if (user.isBlocked) throw new Error("YOU HAVE BEEN BLOCKED BY THE ADMIN");
+      const { passwordHash, ...userWithoutPassword } = user;
       if (this.#isDev) console.warn(passwordHash); // just for the eslint
       return {
         success: true,
@@ -118,16 +135,16 @@ class UserService {
     }
   }
 
-  async getJwtString(username: string) {
+  async getJwtString(id: string) {
     const payload = {
-      username,
+      id,
       exp: Math.floor(Date.now() / 1000) + 60 * this.#expireTimeInMinutes,
     };
     return await sign(payload, jwtSecret);
   }
 
-  async setTokenCookie(c: Context, username: string) {
-    const jwt = await this.getJwtString(username);
+  async setTokenCookie(c: Context, id: string) {
+    const jwt = await this.getJwtString(id);
     return setCookie(c, "token", jwt, {
       path: "/",
       secure: this.#isDev ? false : true,
@@ -139,11 +156,11 @@ class UserService {
     });
   }
 
-  async getUser(username: string): Promise<SafeUser> {
+  async getUser(id: string): Promise<SafeUser> {
     const user = await db
       .select(this.#returnUserObject)
       .from(usersTable)
-      .where(eq(usersTable.username, username))
+      .where(eq(usersTable.id, id))
       .limit(1);
     if (!user[0]) throw new Error("USER DOES NOT EXIST");
     const safeUser = user[0] as SafeUser;

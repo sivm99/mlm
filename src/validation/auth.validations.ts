@@ -1,0 +1,70 @@
+import { MyContext } from "@/types";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
+import { emailField, idField, validationError } from ".";
+
+export const registerSchema = z
+  .object({
+    name: z.string().nonempty(),
+    mobile: z.string(),
+    email: emailField,
+    password: z.string().min(6),
+    country: z.string(),
+    dialCode: z.string(),
+    sponsor: z
+      .string()
+      .length(10, "sponsor must be a valid id")
+      .transform((s) => s.toUpperCase()),
+    position: z
+      .enum(["LEFT", "RIGHT"], {
+        errorMap: () => ({
+          message: "Position must be either LEFT or RIGHT",
+        }),
+      })
+      .default("LEFT"),
+  })
+  .strict();
+
+export type RegisterUser = z.infer<typeof registerSchema>;
+export const registerValidate = zValidator(
+  "json",
+  registerSchema,
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error.issues, c);
+    c.set("registerUser", {
+      ...r.data,
+    });
+  },
+);
+
+export const loginValidate = zValidator(
+  "json",
+  z.object({
+    id: idField,
+    password: z.string().min(6),
+  }),
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error.issues, c);
+    c.set("loginUser", {
+      ...r.data,
+    });
+  },
+);
+
+const forgetPasswordSchema = z.object({
+  id: idField,
+  email: emailField,
+});
+
+export type ForgetPassword = z.infer<typeof forgetPasswordSchema>;
+
+export const forgetPasswordValidate = zValidator(
+  "json",
+  forgetPasswordSchema,
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error.issues, c);
+    c.set("forgetPassword", {
+      ...r.data,
+    });
+  },
+);

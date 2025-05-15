@@ -1,13 +1,14 @@
-import UserService from "@/lib/userService";
+import UserService from "@/lib/UserService";
 import { MyContext } from "@/types";
-const us = new UserService();
+
+const userService = new UserService();
 
 export async function registerUser(c: MyContext) {
   try {
-    const validUser = c.get("registerUsers");
-    const { success, users } = await us.registerUsers(validUser);
+    const validUser = Array(c.get("registerUser"));
+    const { success, users } = await userService.registerUsers(validUser);
     const newUser = users[0];
-    await us.setTokenCookie(c, newUser.username);
+    await userService.setTokenCookie(c, newUser.id);
     return c.json({
       success,
       data: newUser,
@@ -28,8 +29,8 @@ export async function registerUser(c: MyContext) {
 export async function loginUser(c: MyContext) {
   const validated = c.get("loginUser");
   try {
-    const { success, user } = await us.loginUser(validated);
-    await us.setTokenCookie(c, user.username);
+    const { success, user } = await userService.loginUser(validated);
+    await userService.setTokenCookie(c, user.id);
     return c.json({
       success,
       message: "User was logged in",

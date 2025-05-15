@@ -21,7 +21,7 @@ export const userPosition = pgEnum("userPosition", ["LEFT", "RIGHT"]);
 export const usersTable = pgTable(
   "users",
   {
-    username: text("username").primaryKey(),
+    id: text("id").primaryKey(),
     name: text("name").notNull(),
     mobile: text("mobile").notNull(),
     email: text("email").notNull(),
@@ -30,35 +30,32 @@ export const usersTable = pgTable(
 
     sponsor: text("sponsor")
       .notNull()
-      .references((): AnyPgColumn => usersTable.username, {
+      .references((): AnyPgColumn => usersTable.id, {
         onDelete: "restrict",
         onUpdate: "cascade",
       }),
     position: userPosition("position").notNull(),
-    leftUser: text("leftUser").references(
-      (): AnyPgColumn => usersTable.username,
-      {
-        onDelete: "set null",
-        onUpdate: "cascade",
-      },
-    ),
-    rightUser: text("rightUser").references(
-      (): AnyPgColumn => usersTable.username,
-      {
-        onDelete: "set null",
-        onUpdate: "cascade",
-      },
-    ),
+    leftUser: text("leftUser").references((): AnyPgColumn => usersTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    rightUser: text("rightUser").references((): AnyPgColumn => usersTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
 
-    isActive: boolean("isActive").default(false),
-    isBlocked: boolean("isBlocked").default(false),
-    wallet: real("wallet").default(0),
-    redeemedTimes: integer("redeemedTimes").default(0),
-    associatedUsersCount: integer("associatedUsersCount").default(0),
+    isActive: boolean("isActive").notNull().default(false),
+    isBlocked: boolean("isBlocked").notNull().default(false),
+    wallet: real("wallet").notNull().default(0),
+    redeemedTimes: integer("redeemedTimes").notNull().default(0),
+    associatedUsersCount: integer("associatedUsersCount").notNull().default(0), // number of referrad users
 
+    associatedActiveUsersCount: integer("associatedActiveUsersCount")
+      .notNull()
+      .default(0), // number of users who was referrad and activated their account as well
     passwordHash: text("passwordHash"),
-    role: userRole("role").default("USER"),
-    permissions: jsonb("permissions").default({}),
+    role: userRole("role").notNull().default("USER"),
+    permissions: jsonb("permissions").notNull().default({}),
 
     createdAt: timestamp("createdAt").defaultNow(),
     updatedAt: timestamp("updatedAt").defaultNow(),
@@ -77,17 +74,17 @@ export type UserSelectSchema = typeof userSelectSchema._type;
 export const usersRelations = relations(usersTable, ({ one, many }) => ({
   sponsorUser: one(usersTable, {
     fields: [usersTable.sponsor],
-    references: [usersTable.username],
+    references: [usersTable.id],
     relationName: "userSponsor",
   }),
   leftUserRelation: one(usersTable, {
     fields: [usersTable.leftUser],
-    references: [usersTable.username],
+    references: [usersTable.id],
     relationName: "userLeft",
   }),
   rightUserRelation: one(usersTable, {
     fields: [usersTable.rightUser],
-    references: [usersTable.username],
+    references: [usersTable.id],
     relationName: "userRight",
   }),
   payments: many(paymentsTable),

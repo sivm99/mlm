@@ -22,7 +22,7 @@ export const payoutsTable = pgTable(
     id: serial("id").primaryKey(),
     userId: text("userId")
       .notNull()
-      .references(() => usersTable.username, {
+      .references(() => usersTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
@@ -45,6 +45,6 @@ export const payoutsTable = pgTable(
 export const payoutsRelations = relations(payoutsTable, ({ one }) => ({
   user: one(usersTable, {
     fields: [payoutsTable.userId],
-    references: [usersTable.username],
+    references: [usersTable.id],
   }),
 }));
