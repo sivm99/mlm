@@ -3,7 +3,9 @@ import db from "@/db";
 import { usersTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import Node from "./Node";
+import DatabaseService from "./DatabaseService";
 
+const databaseService = new DatabaseService();
 class BinaryTree {
   #tree: TreeUser[] = [];
   root: Node | null;
@@ -20,20 +22,17 @@ class BinaryTree {
    */
   async insert(userId: string, sponsorId: string, side: Side): Promise<void> {
     try {
-      // Validate inputs
       if (!userId) throw new Error("User ID is required");
       if (!sponsorId) throw new Error("Sponsor ID is required");
       if (!side) throw new Error("Side (LEFT or RIGHT) is required");
 
-      const userData = await this.fetchUserData(userId);
+      const userData = await databaseService.fetchUserData(userId);
       if (userId === sponsorId && userData.role !== "ADMIN") {
         throw new Error("Users cannot sponsor themselves (except root admin)");
       }
       const newNode = new Node(userData);
 
-      // If tree is empty, we need to build it first
       if (!this.root) {
-        // Find the admin user as root
         const rootUser = await db
           .select({ id: usersTable.id })
           .from(usersTable)
@@ -124,34 +123,6 @@ class BinaryTree {
   }
 
   /**
-   * Fetches user data from the database
-   */
-  async fetchUserData(userId: string): Promise<TreeUser> {
-    const userData = await db
-      .select({
-        id: usersTable.id,
-        name: usersTable.name,
-        leftUser: usersTable.leftUser,
-        rightUser: usersTable.rightUser,
-        sponsor: usersTable.sponsor,
-        redeemedTimes: usersTable.redeemedTimes,
-        associatedUsersCount: usersTable.associatedUsersCount,
-        associatedActiveUsersCount: usersTable.associatedActiveUsersCount,
-        isBlocked: usersTable.isBlocked,
-        isActive: usersTable.isActive,
-        wallet: usersTable.wallet,
-        position: usersTable.position,
-        role: usersTable.role,
-      })
-      .from(usersTable)
-      .where(eq(usersTable.id, userId))
-      .limit(1);
-
-    if (!userData[0]) throw new Error(`User with ID ${userId} not found`);
-    return userData[0] as TreeUser;
-  }
-
-  /**
    * Finds a node in the tree by user ID
    */
   async findNodeById(node: Node | null, userId: string): Promise<Node | null> {
@@ -179,7 +150,7 @@ class BinaryTree {
   ): Promise<void> {
     try {
       // Get sponsor's current data
-      const sponsor = await this.fetchUserData(sponsorId);
+      const sponsor = await databaseService.fetchUserData(sponsorId);
 
       // Update sponsor's counts
       const updates = {
@@ -211,7 +182,7 @@ class BinaryTree {
    */
   async buildTreeFromDatabase(rootUserId: string): Promise<void> {
     try {
-      const rootUserData = await this.fetchUserData(rootUserId);
+      const rootUserData = await databaseService.fetchUserData(rootUserId);
       this.root = new Node(rootUserData);
       await this.populateChildren(this.root);
     } catch (error) {
@@ -223,17 +194,21 @@ class BinaryTree {
   /**
    * Recursively populates children nodes
    */
-  private async populateChildren(node: Node): Promise<void> {
+  async populateChildren(node: Node): Promise<void> {
     // Check and add left child
     if (node.value.leftUser) {
-      const leftUserData = await this.fetchUserData(node.value.leftUser);
+      const leftUserData = await databaseService.fetchUserData(
+        node.value.leftUser,
+      );
       node.leftUser = new Node(leftUserData);
       await this.populateChildren(node.leftUser);
     }
 
     // Check and add right child
     if (node.value.rightUser) {
-      const rightUserData = await this.fetchUserData(node.value.rightUser);
+      const rightUserData = await databaseService.fetchUserData(
+        node.value.rightUser,
+      );
       node.rightUser = new Node(rightUserData);
       await this.populateChildren(node.rightUser);
     }
@@ -258,6 +233,94 @@ class BinaryTree {
   }
 
   /**
+   * Performs a level-order traversal of the tree
+   * @param rootNode - The starting node for traversal
+   * @returns Array of tree users in level order
+   */
+  async levelOrderTraversal(
+    rootNode: Node | null = this.root,
+  ): Promise<TreeUser[]> {
+    if (!rootNode) return [];
+
+    const result: TreeUser[] = [];
+    const queue: Node[] = [rootNode];
+
+    while (queue.length > 0) {
+      const currentNode = queue.shift();
+      if (currentNode) {
+        result.push(currentNode.value);
+
+        if (currentNode.leftUser) {
+          queue.push(currentNode.leftUser);
+        }
+
+        if (currentNode.rightUser) {
+          queue.push(currentNode.rightUser);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Helper method to collect all users in a subtree
+   */
+  async collectSubtreeUsers(node: Node, users: TreeUser[]): Promise<void> {
+    if (!node) return;
+
+    users.push(node.value);
+
+    if (node.leftUser) {
+      await this.collectSubtreeUsers(node.leftUser, users);
+    }
+
+    if (node.rightUser) {
+      await this.collectSubtreeUsers(node.rightUser, users);
+    }
+  }
+
+  /**
+   * Get all users in the left branch of a specific node
+   * @param rootNode - The starting node
+   * @returns Array of tree users in the left branch
+   */
+  async getLeftBranch(rootNode: Node | null = this.root): Promise<TreeUser[]> {
+    if (!rootNode) return [];
+
+    const result: TreeUser[] = [];
+    let currentNode = rootNode.leftUser;
+
+    while (currentNode) {
+      result.push(currentNode.value);
+      await this.collectSubtreeUsers(currentNode, result);
+      currentNode = null; // We only traverse one level deep from the root's left child
+    }
+
+    return result;
+  }
+
+  /**
+   * Get all users in the right branch of a specific node
+   * @param rootNode - The starting node
+   * @returns Array of tree users in the right branch
+   */
+  async getRightBranch(rootNode: Node | null = this.root): Promise<TreeUser[]> {
+    if (!rootNode) return [];
+
+    const result: TreeUser[] = [];
+    let currentNode = rootNode.rightUser;
+
+    while (currentNode) {
+      result.push(currentNode.value);
+      await this.collectSubtreeUsers(currentNode, result);
+      currentNode = null; // We only traverse one level deep from the root's right child
+    }
+
+    return result;
+  }
+
+  /**
    * Finds an available spot for a new user under a specified sponsor
    */
   async findAvailablePlacement(
@@ -268,7 +331,7 @@ class BinaryTree {
     side: Side;
   }> {
     try {
-      const sponsor = await this.fetchUserData(sponsorId);
+      const sponsor = await databaseService.fetchUserData(sponsorId);
 
       if (preferredSide === "LEFT" && !sponsor.leftUser) {
         return { parentId: sponsorId, side: "LEFT" };
@@ -303,58 +366,71 @@ class TreeService extends BinaryTree {
   }
 
   /**
-   * Get all users in the tree in order
+   * Get all users in the tree in order (only for admin)
+   * @param userId - Must be admin ID to get full tree
    */
-  async getAllUsers(): Promise<TreeUser[]> {
-    return this.inOrderTraversal();
+  async getAllUsers(userId?: string): Promise<TreeUser[]> {
+    if (!userId) {
+      const rootUser = await db
+        .select({ id: usersTable.id, role: usersTable.role })
+        .from(usersTable)
+        .where(eq(usersTable.role, "ADMIN"))
+        .limit(1);
+
+      if (!rootUser[0]) throw new Error("Admin user not found");
+      return this.inOrderTraversal();
+    }
+
+    // Get user data to check role
+    const userData = await databaseService.fetchUserData(userId);
+
+    // If admin, return full tree
+    if (userData.role === "ADMIN") {
+      return this.inOrderTraversal();
+    }
+
+    // For regular users, return only their subtree
+    return this.getUserDownline(userId);
   }
 
   /**
    * Get a user's downline (all users in their subtree)
    */
   async getUserDownline(userId: string): Promise<TreeUser[]> {
-    // Rebuild tree if needed
-    if (!this.root) {
-      const rootUser = await db
-        .select({ id: usersTable.id })
-        .from(usersTable)
-        .where(eq(usersTable.role, "ADMIN"))
-        .limit(1);
-
-      if (!rootUser[0]) throw new Error("Root user not found");
-      await this.buildTreeFromDatabase(rootUser[0].id);
-    }
-
-    // Find the user's node
-    const userNode = await this.findNodeById(this.root, userId);
-    if (!userNode) throw new Error(`User ${userId} not found in tree`);
+    // Build tree for this specific user as root
+    const userData = await databaseService.fetchUserData(userId);
+    const userNode = new Node(userData);
+    await this.populateChildren(userNode);
 
     // Get all users in this subtree
     const downlineUsers: TreeUser[] = [];
     await this.collectSubtreeUsers(userNode, downlineUsers);
 
-    // return downlineUsers.filter((user) => user.id !== userId);
     return downlineUsers;
   }
 
   /**
-   * Helper method to collect all users in a subtree
+   * Get users in left branch of a specific user
    */
-  private async collectSubtreeUsers(
-    node: Node,
-    users: TreeUser[],
-  ): Promise<void> {
-    if (!node) return;
+  async getLeftBranchUsers(userId: string): Promise<TreeUser[]> {
+    // Build tree for this specific user as root if needed
+    const userData = await databaseService.fetchUserData(userId);
+    const userNode = new Node(userData);
+    await this.populateChildren(userNode);
 
-    users.push(node.value);
+    return this.getLeftBranch(userNode);
+  }
 
-    if (node.leftUser) {
-      await this.collectSubtreeUsers(node.leftUser, users);
-    }
+  /**
+   * Get users in right branch of a specific user
+   */
+  async getRightBranchUsers(userId: string): Promise<TreeUser[]> {
+    // Build tree for this specific user as root if needed
+    const userData = await databaseService.fetchUserData(userId);
+    const userNode = new Node(userData);
+    await this.populateChildren(userNode);
 
-    if (node.rightUser) {
-      await this.collectSubtreeUsers(node.rightUser, users);
-    }
+    return this.getRightBranch(userNode);
   }
 
   /**
@@ -362,7 +438,7 @@ class TreeService extends BinaryTree {
    */
   async validatePlacement(parentId: string, side: Side): Promise<boolean> {
     try {
-      const parent = await this.fetchUserData(parentId);
+      const parent = await databaseService.fetchUserData(parentId);
 
       if (side === "LEFT" && parent.leftUser) {
         return false;

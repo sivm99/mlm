@@ -71,6 +71,7 @@ export const usersTable = pgTable(
 export const userSelectSchema = createSelectSchema(usersTable);
 
 export type UserSelectSchema = typeof userSelectSchema._type;
+
 export const usersRelations = relations(usersTable, ({ one, many }) => ({
   sponsorUser: one(usersTable, {
     fields: [usersTable.sponsor],

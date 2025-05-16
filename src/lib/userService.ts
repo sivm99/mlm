@@ -21,6 +21,7 @@ class UserService {
   #returnUserObject = {
     id: usersTable.id,
     name: usersTable.name,
+    email: usersTable.email,
     mobile: usersTable.mobile,
     country: usersTable.country,
     dialCode: usersTable.dialCode,

@@ -8,6 +8,7 @@ export const registerSchema = z
     name: z.string().nonempty(),
     mobile: z.string(),
     email: emailField,
+    otp: z.string().optional(),
     password: z.string().min(6),
     country: z.string(),
     dialCode: z.string(),
@@ -64,6 +65,22 @@ export const forgetPasswordValidate = zValidator(
   (r, c: MyContext) => {
     if (!r.success) return validationError(r.error.issues, c);
     c.set("forgetPassword", {
+      ...r.data,
+    });
+  },
+);
+
+const otpEmailSchema = z.object({
+  email: emailField,
+});
+
+export type OTPEmail = z.infer<typeof otpEmailSchema>;
+export const getVerifyEmailOtpValidate = zValidator(
+  "query",
+  otpEmailSchema,
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error.issues, c);
+    c.set("otpEmail", {
       ...r.data,
     });
   },

@@ -1,7 +1,12 @@
 import { UserSelectSchema } from "@/db/schema/users";
-import { ForgetPassword, RegisterUser } from "@/validation/auth.validations";
+import {
+  ForgetPassword,
+  OTPEmail,
+  RegisterUser,
+} from "@/validation/auth.validations";
 import { Context } from "hono";
 import { BulkAdd, UpdateUser } from "./validation/user.validation";
+import { OTPTYPE } from "./db/schema";
 
 export type User = UserSelectSchema;
 
@@ -18,6 +23,7 @@ export type SafeUser = Pick<
   | "id"
   | "name"
   | "mobile"
+  | "email"
   | "country"
   | "dialCode"
   | "sponsor"
@@ -52,6 +58,7 @@ export type TreeUser = Pick<
 >;
 
 export type Variables = {
+  otpEmail: OTPEmail;
   registerUser: RegisterUser;
   registerUsers: RegisterUser[];
   user: SafeUser;
@@ -59,7 +66,10 @@ export type Variables = {
   forgetPassword: ForgetPassword;
   updatedUser: UpdateUser;
   bulkAdd: BulkAdd;
+  side: Side | "FULL";
 };
 
 export type Side = User["position"];
 export type MyContext = Context<{ Variables: Variables }>;
+
+export type OTP = OTPTYPE;

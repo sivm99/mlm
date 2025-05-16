@@ -45,9 +45,15 @@ export const bulkAdd = async (c: MyContext) => {
 
 export const getUserTree = async (c: MyContext) => {
   const user = c.get("user");
+  const side = c.get("side");
+  const userId = user.id;
   try {
-    const data = await treeService.getUserDownline(user.id);
-
+    const data =
+      side === "FULL"
+        ? await treeService.getAllUsers(userId)
+        : side === "LEFT"
+          ? await treeService.getLeftBranchUsers(userId)
+          : await treeService.getRightBranchUsers(userId);
     return c.json({
       success: true,
       message: "Tree was retrieved successfully",
