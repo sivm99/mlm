@@ -1,9 +1,5 @@
 import { UserSelectSchema } from "@/db/schema/users";
-import {
-  ForgetPassword,
-  OTPEmail,
-  RegisterUser,
-} from "@/validation/auth.validations";
+import { OTPEmail, RegisterUser } from "@/validation/auth.validations";
 import { Context } from "hono";
 import { BulkAdd, UpdateUser } from "./validation/user.validation";
 import { OTPTYPE } from "./db/schema";
@@ -63,7 +59,6 @@ export type Variables = {
   registerUsers: RegisterUser[];
   user: SafeUser;
   loginUser: LoginUser;
-  forgetPassword: ForgetPassword;
   updatedUser: UpdateUser;
   bulkAdd: BulkAdd;
   side: Side | "FULL";

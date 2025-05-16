@@ -12,6 +12,7 @@ import { createSelectSchema } from "drizzle-zod";
 // Define an enum for OTP types to ensure type safety
 export const otpTypeEnum = pgEnum("otp_type", [
   "email_verify",
+  "forget_password",
   "profile_edit",
   "fund_transfer",
   "usdt_withdrawal",

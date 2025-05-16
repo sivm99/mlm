@@ -54,21 +54,9 @@ export const loginValidate = zValidator(
 
 const forgetPasswordSchema = z.object({
   id: idField,
-  email: emailField,
 });
 
-export type ForgetPassword = z.infer<typeof forgetPasswordSchema>;
-
-export const forgetPasswordValidate = zValidator(
-  "json",
-  forgetPasswordSchema,
-  (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error.issues, c);
-    c.set("forgetPassword", {
-      ...r.data,
-    });
-  },
-);
+export const forgetPasswordValidate = zValidator("query", forgetPasswordSchema);
 
 const otpEmailSchema = z.object({
   email: emailField,
