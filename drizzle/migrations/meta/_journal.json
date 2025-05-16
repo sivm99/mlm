@@ -15,6 +15,13 @@
       "when": 1747396800490,
       "tag": "0001_rapid_the_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1747423399302,
+      "tag": "0002_old_nemesis",
+      "breakpoints": true
     }
   ]
 }

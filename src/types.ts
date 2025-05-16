@@ -1,7 +1,15 @@
 import { UserSelectSchema } from "@/db/schema/users";
-import { OTPEmail, RegisterUser } from "@/validation/auth.validations";
+import {
+  OTPEmail,
+  RegisterUser,
+  ResetPassword,
+} from "@/validation/auth.validations";
 import { Context } from "hono";
-import { BulkAdd, UpdateUser } from "./validation/user.validation";
+import {
+  BulkAdd,
+  UpdateUser,
+  UpdateUserByAdmin,
+} from "./validation/user.validation";
 import { OTPTYPE } from "./db/schema";
 
 export type User = UserSelectSchema;
@@ -53,15 +61,19 @@ export type TreeUser = Pick<
   | "position"
 >;
 
+export type UpdateFromUser = UpdateUser;
+export type UpdateFromAdmin = UpdateUserByAdmin;
 export type Variables = {
   otpEmail: OTPEmail;
   registerUser: RegisterUser;
   registerUsers: RegisterUser[];
   user: SafeUser;
   loginUser: LoginUser;
-  updatedUser: UpdateUser;
+  updatedUser: UpdateFromUser | UpdateFromAdmin;
   bulkAdd: BulkAdd;
   side: Side | "FULL";
+  id: SafeUser["id"];
+  resetPassword: ResetPassword;
 };
 
 export type Side = User["position"];

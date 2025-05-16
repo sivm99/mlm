@@ -1,46 +1,78 @@
 import { Next } from "hono";
 import { verify } from "hono/jwt";
 import { getCookie } from "hono/cookie";
-import { MyContext } from "@/types";
+import { MyContext, SafeUser } from "@/types";
 import UserService from "@/lib/UserService";
 
 const jwtSecret = process.env.JWT_SECRET!;
 const userService = new UserService();
-export async function authenticate(c: MyContext, next: Next) {
+
+// Define strict return types for verifyAndGetUser
+type VerifyErrorResult = {
+  error: string;
+  statusCode: 401;
+  safeUser?: undefined;
+};
+
+type VerifySuccessResult = {
+  safeUser: SafeUser;
+  error?: undefined;
+  statusCode?: undefined;
+};
+
+type VerifyResult = VerifyErrorResult | VerifySuccessResult;
+
+async function verifyAndGetUser(c: MyContext): Promise<VerifyResult> {
   const token =
     getCookie(c, "token") || c.req.header("Authorization")?.split(" ")[1];
 
   if (!token) {
-    return c.json({ success: false, error: "Authentication required" }, 401);
-  }
-  const tokenResult = await verify(token, jwtSecret);
-  let safeUser;
-  if (tokenResult && tokenResult.id && typeof tokenResult.id === "string") {
-    safeUser = await userService.getUser(tokenResult.id);
-    c.set("user", safeUser);
-  } else {
-    return c.json({ success: false, error: "Invalid token" }, 401);
+    return { error: "Authentication required", statusCode: 401 };
   }
 
+  const tokenResult = await verify(token, jwtSecret);
+
+  if (tokenResult && tokenResult.id && typeof tokenResult.id === "string") {
+    const safeUser = await userService.getUser(tokenResult.id);
+    if (!safeUser) {
+      return { error: "Invalid user", statusCode: 401 };
+    }
+    return { safeUser };
+  } else {
+    return { error: "Invalid token", statusCode: 401 };
+  }
+}
+
+export async function authenticate(c: MyContext, next: Next) {
+  const result = await verifyAndGetUser(c);
+
+  if ("error" in result) {
+    return c.json(
+      { success: false, message: result.error },
+      result.statusCode as 401,
+    );
+  }
+
+  c.set("user", result.safeUser);
+  await userService.setTokenCookie(c, result.safeUser.id);
   await next();
 }
+
 export async function authenticateAdmin(c: MyContext, next: Next) {
-  const token =
-    getCookie(c, "token") || c.req.header("Authorization")?.split(" ")[1];
+  const result = await verifyAndGetUser(c);
 
-  if (!token) {
-    return c.json({ success: false, error: "Authentication required" }, 401);
-  }
-  const tokenResult = await verify(token, jwtSecret);
-  let safeUser;
-  if (tokenResult && tokenResult.id && typeof tokenResult.id === "string") {
-    safeUser = await userService.getUser(tokenResult.id);
-    if (safeUser.role !== "ADMIN")
-      return c.json({ success: false, error: "Authentication required" }, 401);
-    c.set("user", safeUser);
-  } else {
-    return c.json({ success: false, error: "Invalid token" }, 401);
+  if ("error" in result) {
+    return c.json(
+      { success: false, message: result.error },
+      result.statusCode as 401,
+    );
   }
 
+  if (result.safeUser.role !== "ADMIN") {
+    return c.json({ success: false, message: "Authentication required" }, 401);
+  }
+
+  c.set("user", result.safeUser);
+  await userService.setTokenCookie(c, result.safeUser.id);
   await next();
 }

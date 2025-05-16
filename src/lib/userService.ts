@@ -1,7 +1,13 @@
 import db from "@/db";
 import { generateRandomDigits } from "./cr";
 import { usersTable } from "@/db/schema/users";
-import { LoginUser, SafeUser, User } from "@/types";
+import {
+  LoginUser,
+  SafeUser,
+  UpdateFromAdmin,
+  UpdateFromUser,
+  User,
+} from "@/types";
 import { password as bunPassword } from "bun";
 import { eq } from "drizzle-orm";
 import { sign } from "hono/jwt";
@@ -39,7 +45,15 @@ class UserService {
     wallet: usersTable.wallet,
   };
 
-  async getNewId(retryCount = 0): Promise<string> {
+  async #getJwtString(id: string) {
+    const payload = {
+      id,
+      exp: Math.floor(Date.now() / 1000) + 60 * this.#expireTimeInMinutes,
+    };
+    return await sign(payload, jwtSecret);
+  }
+
+  async #getNewId(retryCount = 0): Promise<string> {
     if (retryCount > 10) {
       throw new Error(
         "Failed to generate a unique id after multiple attempts.",
@@ -57,7 +71,7 @@ class UserService {
 
     if (existingUser.length > 0) {
       console.warn(`id ${newId} already exists. Retrying...`);
-      return this.getNewId(retryCount + 1);
+      return this.#getNewId(retryCount + 1);
     }
 
     return newId;
@@ -70,7 +84,7 @@ class UserService {
       throw new Error("You can not pass me an object do you understand ?");
     const processedUsers = await Promise.all(
       users.map(async (user) => {
-        const id = await this.getNewId();
+        const id = await this.#getNewId();
         if (!user.password)
           throw new Error("User password was not given so exiting");
         const passwordHash = await bunPassword.hash(user.password);
@@ -136,16 +150,8 @@ class UserService {
     }
   }
 
-  async getJwtString(id: string) {
-    const payload = {
-      id,
-      exp: Math.floor(Date.now() / 1000) + 60 * this.#expireTimeInMinutes,
-    };
-    return await sign(payload, jwtSecret);
-  }
-
   async setTokenCookie(c: Context, id: string) {
-    const jwt = await this.getJwtString(id);
+    const jwt = await this.#getJwtString(id);
     return setCookie(c, "token", jwt, {
       path: "/",
       secure: this.#isDev ? false : true,
@@ -157,15 +163,35 @@ class UserService {
     });
   }
 
-  async getUser(id: string): Promise<SafeUser> {
+  async getUser(id: string): Promise<SafeUser | null> {
     const user = await db
       .select(this.#returnUserObject)
       .from(usersTable)
       .where(eq(usersTable.id, id))
       .limit(1);
-    if (!user[0]) throw new Error("USER DOES NOT EXIST");
+    if (!user[0]) return null;
     const safeUser = user[0] as SafeUser;
     return safeUser;
+  }
+
+  async updateUserPassword(id: string, password: string) {
+    await db
+      .update(usersTable)
+      .set({
+        passwordHash: await bunPassword.hash(password),
+        updatedAt: new Date(),
+      })
+      .where(eq(usersTable.id, id));
+  }
+
+  async updateUser(id: string, updatedUser: UpdateFromUser | UpdateFromAdmin) {
+    await db
+      .update(usersTable)
+      .set({
+        ...updatedUser,
+        updatedAt: new Date(),
+      })
+      .where(eq(usersTable.id, id));
   }
 }
 export default UserService;

@@ -5,6 +5,7 @@ import { RegisterUser } from "@/validation/auth.validations";
 
 const userService = new UserService();
 const treeService = new TreeService();
+
 export const getUser = async (c: MyContext) => {
   return c.json({
     success: true,
@@ -13,11 +14,18 @@ export const getUser = async (c: MyContext) => {
   });
 };
 
-// export const getTree = (c:MyContext) =>{
-//   const
-// }
-
-// export const updateUser = async (c: MyContext) => {};
+export const updateUser = async (c: MyContext) => {
+  const user = c.get("user");
+  const updatedUser = c.get("updatedUser");
+  try {
+    await userService.updateUser(user.id, updatedUser);
+  } catch (err) {
+    return c.json({
+      success: false,
+      message: String(err),
+    });
+  }
+};
 
 export const bulkAdd = async (c: MyContext) => {
   try {

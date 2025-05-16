@@ -5,7 +5,7 @@ import { MyContext } from "@/types";
 
 const userService = new UserService();
 const emailService = new EmailService();
-const otpService = new OtpService();
+const otpService = new OtpService(emailService);
 export async function registerUser(c: MyContext) {
   try {
     const validUser = Array(c.get("registerUser"));
@@ -82,25 +82,25 @@ export async function loginUser(c: MyContext) {
   }
 }
 
+/**
+ * Send verification OTP to email
+ */
 export async function getOtp(c: MyContext) {
   const { email } = c.get("otpEmail");
+
   try {
-    const otp = await otpService.generateOtp({
+    // The email is now sent automatically inside the generateOtp method
+    await otpService.generateOtp({
       type: "email_verify",
       email,
     });
-    await emailService.sendOtpEmail(
-      {
-        email,
-      },
-      otp.code,
-    );
+
     return c.json({
       success: true,
       message: `OTP has been sent to ${email}. Please Check your spam folder as well`,
     });
   } catch (err) {
-    console.error("there was an error during", err);
+    console.error("There was an error during OTP generation:", err);
     return c.json(
       {
         success: false,
@@ -111,35 +111,82 @@ export async function getOtp(c: MyContext) {
   }
 }
 
+/**
+ * Send password reset OTP
+ */
 export async function getForgetPasswordOtp(c: MyContext) {
-  const id = c.req.query("id");
+  const id = c.get("id");
+  try {
+    const user = await userService.getUser(id);
+    // we can also show here that email was delivered if it exists
+    if (!user) {
+      return c.json(
+        {
+          success: false,
+          message: `There exists no such user with the ID ${id}`,
+        },
+        404,
+      );
+    }
 
-  if (!id)
-    return c.json(
-      {
-        success: false,
-        message: "You must provide the id for reset password email",
-      },
-      400,
-    );
-
-  const user = await userService.getUser(id);
-  if (!user)
-    return c.json({
-      success: false,
-      message: `There exist no such user with the ID ${id}`,
-    });
-  const otp = await otpService.generateOtp({
-    type: "forget_password",
-    email: user.email,
-    userId: user.id,
-  });
-  await emailService.sendOtpEmail(
-    {
+    // Email is sent automatically inside generateOtp
+    await otpService.generateOtp({
+      type: "forget_password",
       email: user.email,
       userId: user.id,
       name: user.name,
-    },
-    otp.code,
-  );
+    });
+
+    return c.json({
+      success: true,
+      message: `Password reset OTP has been sent to ${user.email}. Please check your spam folder as well`,
+    });
+  } catch (err) {
+    console.error(
+      "There was an error during password reset OTP generation:",
+      err,
+    );
+    return c.json(
+      {
+        success: false,
+        message: String(err),
+      },
+      500,
+    );
+  }
+}
+
+export async function resetPassword(c: MyContext) {
+  const { id, newPassword, otp, email } = c.get("resetPassword");
+
+  const { success, message } = await otpService.verifyOtp({
+    type: "forget_password",
+    code: otp,
+    email,
+  });
+  if (!success)
+    return c.json(
+      {
+        success: false,
+        message,
+      },
+      403,
+    );
+  try {
+    await userService.updateUserPassword(id, newPassword);
+    // we will send one more email here to the user saying
+    // your password was successfully changed
+    return c.json({
+      success: true,
+      message: "Your password was successfully reset",
+    });
+  } catch (err) {
+    return c.json(
+      {
+        success: false,
+        message: String(err),
+      },
+      500,
+    );
+  }
 }

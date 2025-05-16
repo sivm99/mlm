@@ -1,4 +1,5 @@
 import { User } from "@/types";
+
 export type UserEmail = {
   userId?: User["id"];
   name?: User["name"];
@@ -16,6 +17,7 @@ type EmailOptions = {
 export default class EmailService {
   #host = process.env.EMAIL_HOST || "http://[::1]:7979";
 
+  #expireTimeInMinutes = Number(process.env.OTP_EXPIRE_TIME_IN_MINUTES) || 5;
   /**
    * Private method to send email by constructing the URL with query parameters
    */
@@ -57,16 +59,23 @@ export default class EmailService {
   }
 
   /**
-   * Send an OTP verification email
+   * Send an OTP verification email with custom subject
    */
-  async sendOtpEmail(userEmail: UserEmail, otp: string): Promise<Response> {
+  async sendOtpEmail(
+    userEmail: UserEmail,
+    otp: string,
+    subject = "Your verification code",
+    slug = "otp",
+  ): Promise<Response> {
     return this.#sendEmail({
       to: userEmail.email,
-      slug: "otp",
-      subject: "Your verification code",
+      slug,
+      subject,
       data: {
         Name: userEmail.name,
         OTP: otp,
+        ExpiryMinutes: this.#expireTimeInMinutes,
+        Year: "2025",
       },
     });
   }

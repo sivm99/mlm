@@ -1,24 +1,31 @@
 import db from "@/db";
 import { otpTable } from "@/db/schema";
-import { OTP } from "@/types";
-import { eq } from "drizzle-orm";
-import { and } from "drizzle-orm";
+import { OTP, User } from "@/types";
+import { eq, and } from "drizzle-orm";
 import { generateRandomDigits } from "./cr";
+import EmailService, { UserEmail } from "./EmailService";
 
 export default class OtpService {
   #expireTimeInMinutes = Number(process.env.OTP_EXPIRE_TIME_IN_MINUTES) || 5;
+  #emailService: EmailService;
+
+  constructor(emailService: EmailService) {
+    this.#emailService = emailService;
+  }
 
   /**
    * Generates an OTP for the specified type and email
    * For email_verify type, userId is optional
    * For all other types, userId is required
+   * Automatically sends the appropriate email based on OTP type
    */
   async generateOtp(params: {
     type: OTP["type"];
     email: string;
     userId?: string;
+    name?: User["name"];
   }) {
-    const { type, email, userId } = params;
+    const { type, email, userId, name } = params;
 
     // Validate that userId is provided for all types except email_verify
     if (type !== "email_verify" && !userId) {
@@ -50,7 +57,61 @@ export default class OtpService {
       .returning()
       .execute();
 
+    // Send appropriate email based on OTP type
+    const userEmail: UserEmail = {
+      email,
+      userId,
+      name,
+    };
+
+    await this.sendOtpEmail(type, userEmail, code);
+
     return newOtp[0];
+  }
+
+  /**
+   * Sends the appropriate email based on OTP type
+   */
+  private async sendOtpEmail(
+    type: OTP["type"],
+    userEmail: UserEmail,
+    otpCode: string,
+  ): Promise<void> {
+    // Configure subject and slug based on OTP type
+    let subject: string;
+    let slug = "otp"; // Default slug
+
+    switch (type) {
+      case "email_verify":
+        subject = "Verify your email address";
+        break;
+      case "forget_password":
+        subject = "Reset your password";
+        break;
+      case "profile_edit":
+        subject = "Verify profile changes";
+        break;
+      case "fund_transfer":
+        subject = "Verify fund transfer";
+        break;
+      case "usdt_withdrawal":
+        subject = "Verify USDT withdrawal";
+        break;
+      case "convert_income_wallet":
+        subject = "Verify wallet conversion";
+        break;
+      case "add_wallet_address":
+        subject = "Verify new wallet address";
+        slug = "add_wallet_address";
+        break;
+      case "ticket_raise_for_wallet":
+        subject = "Verify ticket for wallet";
+        break;
+      default:
+        subject = "Your verification code";
+    }
+
+    await this.#emailService.sendOtpEmail(userEmail, otpCode, subject, slug);
   }
 
   /**

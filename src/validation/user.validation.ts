@@ -5,12 +5,12 @@ import { MyContext } from "@/types";
 
 const updateUserSchema = z.object({
   name: z.string().optional(),
-  email: emailField,
+  email: emailField.optional(),
 });
 
 export type UpdateUser = z.infer<typeof updateUserSchema>;
 
-export const forgetPasswordValidate = zValidator(
+export const updateUserValidate = zValidator(
   "json",
   updateUserSchema,
   (r, c: MyContext) => {
@@ -20,6 +20,28 @@ export const forgetPasswordValidate = zValidator(
     });
   },
 );
+
+const updateUserByAdminSchema = z.object({
+  name: z.string().optional(),
+  email: emailField,
+  sponsor: idField.optional(),
+  position: z.enum(["LEFT", "RIGHT"]).optional(),
+  leftUser: idField.optional(),
+  rightUser: idField.optional(),
+});
+export type UpdateUserByAdmin = z.infer<typeof updateUserByAdminSchema>;
+
+export const updateUserByAdminValidate = zValidator(
+  "json",
+  updateUserByAdminSchema,
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error.issues, c);
+    c.set("updatedUser", {
+      ...r.data,
+    });
+  },
+);
+
 const bulkAdd = z.object({
   user: z.object({
     name: z.string().optional(),
@@ -42,5 +64,18 @@ export const bulkAddValidate = zValidator(
     c.set("bulkAdd", {
       ...r.data,
     });
+  },
+);
+
+const treeListSidesSchema = z.object({
+  side: z.enum(["LEFT", "RIGHT", "FULL"]).default("FULL"),
+});
+
+export const getTreeListValidate = zValidator(
+  "query",
+  treeListSidesSchema,
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error.issues, c);
+    c.set("side", r.data.side);
   },
 );

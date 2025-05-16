@@ -56,7 +56,14 @@ const forgetPasswordSchema = z.object({
   id: idField,
 });
 
-export const forgetPasswordValidate = zValidator("query", forgetPasswordSchema);
+export const forgetPasswordValidate = zValidator(
+  "json",
+  forgetPasswordSchema,
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error.issues, c);
+    c.set("id", r.data.id);
+  },
+);
 
 const otpEmailSchema = z.object({
   email: emailField,
@@ -69,6 +76,30 @@ export const getVerifyEmailOtpValidate = zValidator(
   (r, c: MyContext) => {
     if (!r.success) return validationError(r.error.issues, c);
     c.set("otpEmail", {
+      ...r.data,
+    });
+  },
+);
+const resetPasswordSchema = z
+  .object({
+    id: idField,
+    email: emailField,
+    otp: z.string().length(6).regex(/\d/),
+    newPassword: z.string().min(6),
+    newPasswordConfirm: z.string().min(6),
+  })
+  .refine((data) => data.newPassword === data.newPasswordConfirm, {
+    message: "Passwords don't match",
+    path: ["newPasswordConfirm"],
+  });
+
+export type ResetPassword = z.infer<typeof resetPasswordSchema>;
+export const resetPasswordValidate = zValidator(
+  "json",
+  resetPasswordSchema,
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error.issues, c);
+    c.set("resetPassword", {
       ...r.data,
     });
   },
