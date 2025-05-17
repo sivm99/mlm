@@ -30,7 +30,12 @@ async function verifyAndGetUser(c: MyContext): Promise<VerifyResult> {
     return { error: "Authentication required", statusCode: 401 };
   }
 
-  const tokenResult = await verify(token, jwtSecret);
+  let tokenResult;
+  try {
+    tokenResult = await verify(token, jwtSecret);
+  } catch (err) {
+    return { error: `Invalid token: ${String(err)}`, statusCode: 401 };
+  }
 
   if (tokenResult && tokenResult.id && typeof tokenResult.id === "string") {
     const safeUser = await userService.getUser(tokenResult.id);
@@ -39,7 +44,7 @@ async function verifyAndGetUser(c: MyContext): Promise<VerifyResult> {
     }
     return { safeUser };
   } else {
-    return { error: "Invalid token", statusCode: 401 };
+    return { error: "Invalid token format", statusCode: 401 };
   }
 }
 
@@ -47,10 +52,7 @@ export async function authenticate(c: MyContext, next: Next) {
   const result = await verifyAndGetUser(c);
 
   if ("error" in result) {
-    return c.json(
-      { success: false, message: result.error },
-      result.statusCode as 401,
-    );
+    return c.json({ success: false, message: result.error }, result.statusCode);
   }
 
   c.set("user", result.safeUser);
@@ -62,10 +64,7 @@ export async function authenticateAdmin(c: MyContext, next: Next) {
   const result = await verifyAndGetUser(c);
 
   if ("error" in result) {
-    return c.json(
-      { success: false, message: result.error },
-      result.statusCode as 401,
-    );
+    return c.json({ success: false, message: result.error }, result.statusCode);
   }
 
   if (result.safeUser.role !== "ADMIN") {
