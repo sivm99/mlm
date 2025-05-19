@@ -21,7 +21,7 @@ type EmailOptions = {
 };
 
 export default class EmailService {
-  #host = "http://[::1]:7979";
+  #host = process.env.EMAIL_HOST || "http://email-alias:7979";
   #expireTimeInMinutes = Number(process.env.OTP_EXPIRE_TIME_IN_MINUTES) || 5;
 
   /**
