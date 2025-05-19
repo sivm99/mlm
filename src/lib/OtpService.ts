@@ -4,6 +4,7 @@ import { OTP, User } from "@/types";
 import { eq, and } from "drizzle-orm";
 import { generateRandomDigits } from "./cr";
 import EmailService, { UserEmail } from "./EmailService";
+import { emailVerifyOtpTemplate, passwordResetTemplate } from "@/templates";
 
 export default class OtpService {
   #expireTimeInMinutes = Number(process.env.OTP_EXPIRE_TIME_IN_MINUTES) || 5;
@@ -79,14 +80,16 @@ export default class OtpService {
   ): Promise<void> {
     // Configure subject and slug based on OTP type
     let subject: string;
-    let slug = "otp"; // Default slug
+    let template = "";
 
     switch (type) {
       case "email_verify":
         subject = "Verify your email address";
+        template = emailVerifyOtpTemplate;
         break;
       case "forget_password":
         subject = "Reset your password";
+        template = passwordResetTemplate;
         break;
       case "profile_edit":
         subject = "Verify profile changes";
@@ -102,7 +105,6 @@ export default class OtpService {
         break;
       case "add_wallet_address":
         subject = "Verify new wallet address";
-        slug = "add_wallet_address";
         break;
       case "ticket_raise_for_wallet":
         subject = "Verify ticket for wallet";
@@ -111,7 +113,12 @@ export default class OtpService {
         subject = "Your verification code";
     }
 
-    await this.#emailService.sendOtpEmail(userEmail, otpCode, subject, slug);
+    await this.#emailService.sendOtpEmail(
+      userEmail,
+      otpCode,
+      subject,
+      template,
+    );
   }
 
   /**

@@ -7,7 +7,6 @@ import {
   jsonb,
   pgEnum,
   pgTable,
-  real,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -34,6 +33,7 @@ export const usersTable = pgTable(
         onDelete: "restrict",
         onUpdate: "cascade",
       }),
+
     position: userPosition("position").notNull(),
     leftUser: text("leftUser").references((): AnyPgColumn => usersTable.id, {
       onDelete: "set null",
@@ -46,7 +46,7 @@ export const usersTable = pgTable(
 
     isActive: boolean("isActive").notNull().default(false),
     isBlocked: boolean("isBlocked").notNull().default(false),
-    wallet: real("wallet").notNull().default(0),
+
     redeemedTimes: integer("redeemedTimes").notNull().default(0),
     associatedUsersCount: integer("associatedUsersCount").notNull().default(0), // number of referrad users
 

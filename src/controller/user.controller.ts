@@ -56,12 +56,19 @@ export const getUserTree = async (c: MyContext) => {
   const side = c.get("side");
   const userId = user.id;
   try {
-    const data =
-      side === "FULL"
-        ? await treeService.getAllUsers(userId)
-        : side === "LEFT"
-          ? await treeService.getLeftBranchUsers(userId)
-          : await treeService.getRightBranchUsers(userId);
+    let data;
+    switch (side) {
+      case "FULL":
+        data = await treeService.getUserDownline(userId);
+        break;
+      case "LEFT":
+        data = await treeService.getLeftBranchUsers(userId);
+        break;
+      default: // Assumes "RIGHT" if not FULL or LEFT
+        data = await treeService.getRightBranchUsers(userId);
+        break;
+    }
+
     return c.json({
       success: true,
       message: "Tree was retrieved successfully",

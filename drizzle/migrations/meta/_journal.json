@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1747307697742,
-      "tag": "0000_left_forgotten_one",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1747396800490,
-      "tag": "0001_rapid_the_phantom",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1747423399302,
-      "tag": "0002_old_nemesis",
+      "when": 1747681460841,
+      "tag": "0000_light_lady_deathstrike",
       "breakpoints": true
     }
   ]

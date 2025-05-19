@@ -42,7 +42,6 @@ class UserService {
     redeemedTimes: usersTable.redeemedTimes,
     associatedUsersCount: usersTable.associatedUsersCount,
     associatedActiveUsersCount: usersTable.associatedActiveUsersCount,
-    wallet: usersTable.wallet,
   };
 
   async #getJwtString(id: string) {

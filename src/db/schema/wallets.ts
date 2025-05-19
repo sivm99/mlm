@@ -1,0 +1,21 @@
+import { pgTable, real, serial, text } from "drizzle-orm/pg-core";
+import { usersTable } from "./users";
+
+export const walletsTable = pgTable("wallets", {
+  id: serial().primaryKey(),
+  alpoints: real().notNull().default(0),
+  bv: real().notNull().default(0),
+  incomeWallet: real().notNull().default(0),
+  userId: text()
+    .notNull()
+    .references(() => usersTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+});
+
+// with referalls we will generate the link as well as we give the option
+// to send the referal link to email and will give the user a chance to share
+// this link , now the front end can fetch detail to show
+// and in the backend i will match once again they didnt change during the
+// register process again we will manage this in the validation layer

@@ -1,5 +1,5 @@
 export * from "./users";
-export * from "./adminWallets";
+export * from "./wallets";
 export * from "./config";
 export * from "./orderItems";
 export * from "./orders";

@@ -41,7 +41,6 @@ export type SafeUser = Pick<
   | "associatedActiveUsersCount"
   | "isActive"
   | "isBlocked"
-  | "wallet"
 >;
 
 export type TreeUser = Pick<
@@ -57,9 +56,10 @@ export type TreeUser = Pick<
   | "associatedActiveUsersCount"
   | "isBlocked"
   | "isActive"
-  | "wallet"
   | "position"
 >;
+
+export type EmailData = Record<string, string | number | undefined>;
 
 export type UpdateFromUser = UpdateUser;
 export type UpdateFromAdmin = UpdateUserByAdmin;

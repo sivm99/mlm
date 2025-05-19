@@ -366,34 +366,6 @@ class TreeService extends BinaryTree {
   }
 
   /**
-   * Get all users in the tree in order (only for admin)
-   * @param userId - Must be admin ID to get full tree
-   */
-  async getAllUsers(userId?: string): Promise<TreeUser[]> {
-    if (!userId) {
-      const rootUser = await db
-        .select({ id: usersTable.id, role: usersTable.role })
-        .from(usersTable)
-        .where(eq(usersTable.role, "ADMIN"))
-        .limit(1);
-
-      if (!rootUser[0]) throw new Error("Admin user not found");
-      return this.inOrderTraversal();
-    }
-
-    // Get user data to check role
-    const userData = await databaseService.fetchUserData(userId);
-
-    // If admin, return full tree
-    if (userData.role === "ADMIN") {
-      return this.inOrderTraversal();
-    }
-
-    // For regular users, return only their subtree
-    return this.getUserDownline(userId);
-  }
-
-  /**
    * Get a user's downline (all users in their subtree)
    */
   async getUserDownline(userId: string): Promise<TreeUser[]> {

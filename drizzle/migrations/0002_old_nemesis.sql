@@ -1,1 +1,0 @@
-ALTER TYPE "public"."otp_type" ADD VALUE 'forget_password' BEFORE 'profile_edit';

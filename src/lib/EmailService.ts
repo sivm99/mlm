@@ -1,4 +1,5 @@
 import { User } from "@/types";
+import { signupTemplate } from "@/templates";
 
 export type UserEmail = {
   userId?: User["id"];
@@ -7,17 +8,20 @@ export type UserEmail = {
   password?: string;
 };
 
-type EmailData = Record<string, string | number | undefined>;
+type Placeholder = {
+  key: string;
+  value: string | number;
+};
 
 type EmailOptions = {
   to: string;
-  slug: string;
-  subject?: string;
-  data?: EmailData;
+  subject: string;
+  template: string;
+  placeholders: Placeholder[];
 };
 
 export default class EmailService {
-  #host = process.env.EMAIL_HOST || "http://[::1]:7979";
+  #host = "http://[::1]:7979";
   #expireTimeInMinutes = Number(process.env.OTP_EXPIRE_TIME_IN_MINUTES) || 5;
 
   /**
@@ -25,20 +29,32 @@ export default class EmailService {
    */
   async #sendEmail({
     to,
-    slug,
     subject,
-    data,
+    template,
+    placeholders,
   }: EmailOptions): Promise<Response> {
-    const params = new URLSearchParams({
+    const url = `${this.#host}/send`;
+
+    const requestBody = {
       to,
-      slug,
+      subject,
+      template,
+      placeholders,
+    };
+    const emailRequest = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
     });
 
-    if (subject) params.append("subject", subject);
-    if (data) params.append("data", JSON.stringify(data));
+    if (!emailRequest.ok)
+      throw new Error(
+        "Error during the mail sending please fix: " + emailRequest.statusText,
+      );
 
-    const url = `${this.#host}/send?${params.toString()}`;
-    return fetch(url);
+    return emailRequest;
   }
 
   /**
@@ -47,15 +63,15 @@ export default class EmailService {
   async sendSignupSuccessEmail(user: UserEmail): Promise<Response> {
     return this.#sendEmail({
       to: user.email,
-      slug: "signup",
-      subject: "Welcome to our platform!",
-      data: {
-        Name: user.name,
-        UserID: user.userId,
-        Password: user.password,
-        LoginURL: "https://alprimus.com/login",
-        Year: new Date().getFullYear(),
-      },
+      subject: "Welcome to The World of ALPRIMUS!",
+      template: signupTemplate,
+      placeholders: [
+        { key: "Name", value: user.name || "" },
+        { key: "UserID", value: user.userId || "" },
+        { key: "Password", value: user.password || "" },
+        { key: "LoginURL", value: "https://alprimus.com/login" },
+        { key: "Year", value: new Date().getFullYear() },
+      ],
     });
   }
 
@@ -65,19 +81,19 @@ export default class EmailService {
   async sendOtpEmail(
     user: UserEmail,
     otp: string,
-    subject = "Your verification code",
-    slug = "otp",
+    subject = "Your verification code for signup on Alprimus.com",
+    template: string,
   ): Promise<Response> {
     return this.#sendEmail({
       to: user.email,
-      slug,
       subject,
-      data: {
-        Name: user.name,
-        OTP: otp,
-        ExpiryMinutes: this.#expireTimeInMinutes,
-        Year: new Date().getFullYear(),
-      },
+      template,
+      placeholders: [
+        { key: "Name", value: user.name || "" },
+        { key: "OTP", value: otp },
+        { key: "ExpiryMinutes", value: this.#expireTimeInMinutes },
+        { key: "Year", value: "2025" },
+      ],
     });
   }
 
@@ -87,16 +103,17 @@ export default class EmailService {
   async sendPasswordResetEmail(
     user: UserEmail,
     resetToken: string,
+    template: string,
   ): Promise<Response> {
     return this.#sendEmail({
       to: user.email,
-      slug: "reset-password",
       subject: "Reset your password",
-      data: {
-        name: user.name,
-        resetToken,
-        Year: new Date().getFullYear(),
-      },
+      template,
+      placeholders: [
+        { key: "Name", value: user.name || "" },
+        { key: "resetToken", value: resetToken },
+        { key: "Year", value: new Date().getFullYear() },
+      ],
     });
   }
 }

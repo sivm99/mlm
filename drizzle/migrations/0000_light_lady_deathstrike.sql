@@ -2,12 +2,7 @@ CREATE TYPE "public"."userPosition" AS ENUM('LEFT', 'RIGHT');--> statement-break
 CREATE TYPE "public"."userRole" AS ENUM('ADMIN', 'SUB_ADMIN', 'USER');--> statement-breakpoint
 CREATE TYPE "public"."orderStatus" AS ENUM('PENDING', 'PROCESSING', 'DELIVERED', 'CANCELLED');--> statement-breakpoint
 CREATE TYPE "public"."payoutStatus" AS ENUM('PENDING', 'PROCESSED', 'FAILED');--> statement-breakpoint
-CREATE TABLE "adminWallets" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"balance" real DEFAULT 0,
-	"lastUpdated" timestamp DEFAULT now()
-);
---> statement-breakpoint
+CREATE TYPE "public"."otp_type" AS ENUM('email_verify', 'forget_password', 'profile_edit', 'fund_transfer', 'usdt_withdrawal', 'convert_income_wallet', 'add_wallet_address', 'ticket_raise_for_wallet');--> statement-breakpoint
 CREATE TABLE "config" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"key" text NOT NULL,
@@ -30,7 +25,6 @@ CREATE TABLE "users" (
 	"rightUser" text,
 	"isActive" boolean DEFAULT false NOT NULL,
 	"isBlocked" boolean DEFAULT false NOT NULL,
-	"wallet" real DEFAULT 0 NOT NULL,
 	"redeemedTimes" integer DEFAULT 0 NOT NULL,
 	"associatedUsersCount" integer DEFAULT 0 NOT NULL,
 	"associatedActiveUsersCount" integer DEFAULT 0 NOT NULL,
@@ -39,6 +33,14 @@ CREATE TABLE "users" (
 	"permissions" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"createdAt" timestamp DEFAULT now(),
 	"updatedAt" timestamp DEFAULT now()
+);
+--> statement-breakpoint
+CREATE TABLE "wallets" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"alpoints" real DEFAULT 0 NOT NULL,
+	"bv" real DEFAULT 0 NOT NULL,
+	"incomeWallet" real DEFAULT 0 NOT NULL,
+	"userId" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "orderItems" (
@@ -106,9 +108,22 @@ CREATE TABLE "referrals" (
 	"sponsor" text NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "otp" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"type" "otp_type" NOT NULL,
+	"userId" text,
+	"code" text NOT NULL,
+	"email" text NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"expiresAt" timestamp NOT NULL,
+	"isValid" boolean DEFAULT true NOT NULL,
+	"isVerified" boolean DEFAULT false
+);
+--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_sponsor_users_id_fk" FOREIGN KEY ("sponsor") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_leftUser_users_id_fk" FOREIGN KEY ("leftUser") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_rightUser_users_id_fk" FOREIGN KEY ("rightUser") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "wallets" ADD CONSTRAINT "wallets_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "orderItems" ADD CONSTRAINT "orderItems_orderId_orders_id_fk" FOREIGN KEY ("orderId") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "orderItems" ADD CONSTRAINT "orderItems_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "orders" ADD CONSTRAINT "orders_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -117,6 +132,7 @@ ALTER TABLE "payments" ADD CONSTRAINT "payments_packageId_packages_id_fk" FOREIG
 ALTER TABLE "payouts" ADD CONSTRAINT "payouts_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "referrals" ADD CONSTRAINT "referrals_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "referrals" ADD CONSTRAINT "referrals_sponsor_users_id_fk" FOREIGN KEY ("sponsor") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "otp" ADD CONSTRAINT "otp_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 CREATE INDEX "idx_config_key" ON "config" USING btree ("key");--> statement-breakpoint
 CREATE INDEX "idx_users_sponsor" ON "users" USING btree ("sponsor");--> statement-breakpoint
 CREATE INDEX "idx_users_email" ON "users" USING btree ("email");--> statement-breakpoint

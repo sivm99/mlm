@@ -6,6 +6,7 @@ import UserService from "@/lib/UserService";
 const userService = new UserService();
 const emailService = new EmailService();
 const otpService = new OtpService(emailService);
+
 export async function registerUser(c: MyContext) {
   try {
     const validUser = Array(c.get("registerUser"));
@@ -94,7 +95,6 @@ export async function getOtp(c: MyContext) {
       type: "email_verify",
       email,
     });
-
     return c.json({
       success: true,
       message: `OTP has been sent to ${email}. Please Check your spam folder as well`,
