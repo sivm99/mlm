@@ -1,7 +1,7 @@
 import EmailService from "@/lib/EmailService";
 import OtpService from "@/lib/OtpService";
-import UserService from "@/lib/UserService";
 import { MyContext } from "@/types";
+import UserService from "@/lib/userService";
 
 const userService = new UserService();
 const emailService = new EmailService();
