@@ -1,4 +1,4 @@
-FROM oven/bun:slim as builder
+FROM oven/bun:slim AS builder
 WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install --production
