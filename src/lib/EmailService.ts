@@ -7,19 +7,21 @@ export type UserEmail = {
   password?: string;
 };
 
+type EmailData = Record<string, string | number | undefined>;
+
 type EmailOptions = {
   to: string;
   slug: string;
   subject?: string;
-  data?: Record<string, unknown>;
+  data?: EmailData;
 };
 
 export default class EmailService {
   #host = process.env.EMAIL_HOST || "http://[::1]:7979";
-
   #expireTimeInMinutes = Number(process.env.OTP_EXPIRE_TIME_IN_MINUTES) || 5;
+
   /**
-   * Private method to send email by constructing the URL with query parameters
+   * Internal utility to send email through centralized email API
    */
   async #sendEmail({
     to,
@@ -27,73 +29,73 @@ export default class EmailService {
     subject,
     data,
   }: EmailOptions): Promise<Response> {
-    let url = `${this.#host}/send?to=${to}&slug=${slug}`;
+    const params = new URLSearchParams({
+      to,
+      slug,
+    });
 
-    if (subject) {
-      url += `&subject=${encodeURIComponent(subject)}`;
-    }
+    if (subject) params.append("subject", subject);
+    if (data) params.append("data", JSON.stringify(data));
 
-    if (data) {
-      url += `&data=${encodeURIComponent(JSON.stringify(data))}`;
-    }
-
+    const url = `${this.#host}/send?${params.toString()}`;
     return fetch(url);
   }
 
   /**
-   * Send a signup success email to the user
+   * Send a welcome/signup email
    */
-  async sendSignupSuccessEmail(userEmail: UserEmail): Promise<Response> {
+  async sendSignupSuccessEmail(user: UserEmail): Promise<Response> {
     return this.#sendEmail({
-      to: userEmail.email,
+      to: user.email,
       slug: "signup",
       subject: "Welcome to our platform!",
       data: {
-        Name: userEmail.name,
-        UserID: userEmail.userId,
-        Password: userEmail.password,
+        Name: user.name,
+        UserID: user.userId,
+        Password: user.password,
         LoginURL: "https://alprimus.com/login",
-        Year: "2025",
+        Year: new Date().getFullYear(),
       },
     });
   }
 
   /**
-   * Send an OTP verification email with custom subject
+   * Send OTP email for login or verification
    */
   async sendOtpEmail(
-    userEmail: UserEmail,
+    user: UserEmail,
     otp: string,
     subject = "Your verification code",
     slug = "otp",
   ): Promise<Response> {
     return this.#sendEmail({
-      to: userEmail.email,
+      to: user.email,
       slug,
       subject,
       data: {
-        Name: userEmail.name,
+        Name: user.name,
         OTP: otp,
         ExpiryMinutes: this.#expireTimeInMinutes,
-        Year: "2025",
+        Year: new Date().getFullYear(),
       },
     });
   }
 
   /**
-   * Send a password reset email
+   * Send password reset email with a token
    */
   async sendPasswordResetEmail(
-    userEmail: UserEmail,
+    user: UserEmail,
     resetToken: string,
   ): Promise<Response> {
     return this.#sendEmail({
-      to: userEmail.email,
+      to: user.email,
       slug: "reset-password",
       subject: "Reset your password",
       data: {
-        name: userEmail.name,
+        name: user.name,
         resetToken,
+        Year: new Date().getFullYear(),
       },
     });
   }

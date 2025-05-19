@@ -2,25 +2,10 @@ services:
   rule-api:
     build: .
     container_name: bun-mlm-api
-    env_file: .env
     networks:
-      - db
-      - npm-network
-    restart: unless-stopped
-
-  email-service:
-    build:
-      context: ./micro/email
-      dockerfile: micro.email.dockerfile
-    container_name: email-service
-    env_file: .env
-    networks:
-      - db
-      - npm-network
+      - coolify
     restart: unless-stopped
 
 networks:
-  db:
-    external: true
-  npm-network:
+  coolify:
     external: true
