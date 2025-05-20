@@ -15,6 +15,7 @@ import { Context } from "hono";
 import { setCookie } from "hono/cookie";
 import { RegisterUser } from "@/validation/auth.validations";
 import TreeService from "./TreeService";
+import { walletsTable } from "@/db/schema";
 
 const jwtSecret = process.env.JWT_SECRET!;
 const treeService = new TreeService();
@@ -77,32 +78,48 @@ class UserService {
   }
 
   async registerUsers(users: RegisterUser[]) {
-    if (!users || users.length === 0)
-      throw new Error("There must be at least one user");
-    if (!Array.isArray(users))
-      throw new Error("You can not pass me an object do you understand ?");
+    if (!Array.isArray(users) || users.length === 0) {
+      throw new Error("You must provide at least one user in an array.");
+    }
+
     const processedUsers = await Promise.all(
       users.map(async (user) => {
+        if (!user.password) {
+          throw new Error("User password was not given. Exiting.");
+        }
+
         const id = await this.#getNewId();
-        if (!user.password)
-          throw new Error("User password was not given so exiting");
         const passwordHash = await bunPassword.hash(user.password);
         const { password, ...userWithoutPassword } = user;
-        if (this.#isDev) console.warn(password);
-        // now set up the tree as well
+
+        if (this.#isDev)
+          console.warn(`Registering user with password: ${password}`);
+
         return {
           ...userWithoutPassword,
           id,
           passwordHash,
-        } as unknown as User;
+        } as User;
       }),
     );
+
     try {
       const insertedData = await db
         .insert(usersTable)
         .values(processedUsers)
         .returning(this.#returnUserObject);
 
+      // ✅ Create wallets for each user (only userId needed)
+      await db
+        .insert(walletsTable)
+        .values(
+          insertedData.map((user) => ({
+            userId: user.id,
+          })),
+        )
+        .execute();
+
+      // ✅ Add users to tree
       await Promise.all(
         insertedData.map((user) =>
           treeService.addUser(user.id, user.sponsor, user.position),
@@ -113,7 +130,9 @@ class UserService {
     } catch (error) {
       console.error("Failed to register users:", error);
       throw new Error(
-        `Failed to register users: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to register users: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
     }
   }
