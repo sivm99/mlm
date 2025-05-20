@@ -31,8 +31,8 @@ CREATE TABLE "users" (
 	"passwordHash" text,
 	"role" "userRole" DEFAULT 'USER' NOT NULL,
 	"permissions" jsonb DEFAULT '{}'::jsonb NOT NULL,
-	"createdAt" timestamp DEFAULT now(),
-	"updatedAt" timestamp DEFAULT now()
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "wallets" (
@@ -40,7 +40,9 @@ CREATE TABLE "wallets" (
 	"alpoints" real DEFAULT 0 NOT NULL,
 	"bv" real DEFAULT 0 NOT NULL,
 	"incomeWallet" real DEFAULT 0 NOT NULL,
-	"userId" text NOT NULL
+	"userId" text NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "orderItems" (
@@ -101,11 +103,15 @@ CREATE TABLE "products" (
 );
 --> statement-breakpoint
 CREATE TABLE "referrals" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"slug" text NOT NULL,
-	"userId" text,
+	"slug" text PRIMARY KEY NOT NULL,
+	"userId" text NOT NULL,
 	"position" "userPosition" NOT NULL,
-	"sponsor" text NOT NULL
+	"sponsor" text NOT NULL,
+	"impressions" integer DEFAULT 0 NOT NULL,
+	"registered" integer DEFAULT 0 NOT NULL,
+	"activated" integer DEFAULT 0 NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "otp" (
@@ -131,7 +137,7 @@ ALTER TABLE "payments" ADD CONSTRAINT "payments_userId_users_id_fk" FOREIGN KEY 
 ALTER TABLE "payments" ADD CONSTRAINT "payments_packageId_packages_id_fk" FOREIGN KEY ("packageId") REFERENCES "public"."packages"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "payouts" ADD CONSTRAINT "payouts_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "referrals" ADD CONSTRAINT "referrals_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "referrals" ADD CONSTRAINT "referrals_sponsor_users_id_fk" FOREIGN KEY ("sponsor") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "referrals" ADD CONSTRAINT "referrals_sponsor_users_id_fk" FOREIGN KEY ("sponsor") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "otp" ADD CONSTRAINT "otp_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 CREATE INDEX "idx_config_key" ON "config" USING btree ("key");--> statement-breakpoint
 CREATE INDEX "idx_users_sponsor" ON "users" USING btree ("sponsor");--> statement-breakpoint

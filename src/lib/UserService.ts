@@ -16,10 +16,11 @@ import { setCookie } from "hono/cookie";
 import { RegisterUser } from "@/validation/auth.validations";
 import TreeService from "./TreeService";
 import { walletsTable } from "@/db/schema";
+import DatabaseService from "./DatabaseService";
 
 const jwtSecret = process.env.JWT_SECRET!;
 const treeService = new TreeService();
-
+const databaseService = new DatabaseService();
 class UserService {
   #expireTimeInMinutes = Number(process.env.EXPIRE_TIME_IN_MINUTES) || 5;
   #isDev = process.env.NODE_ENV === "development" ? true : false;
@@ -81,20 +82,16 @@ class UserService {
     if (!Array.isArray(users) || users.length === 0) {
       throw new Error("You must provide at least one user in an array.");
     }
-
     const processedUsers = await Promise.all(
       users.map(async (user) => {
         if (!user.password) {
           throw new Error("User password was not given. Exiting.");
         }
-
         const id = await this.#getNewId();
         const passwordHash = await bunPassword.hash(user.password);
         const { password, ...userWithoutPassword } = user;
-
         if (this.#isDev)
           console.warn(`Registering user with password: ${password}`);
-
         return {
           ...userWithoutPassword,
           id,
@@ -102,13 +99,11 @@ class UserService {
         } as User;
       }),
     );
-
     try {
       const insertedData = await db
         .insert(usersTable)
         .values(processedUsers)
         .returning(this.#returnUserObject);
-
       // ✅ Create wallets for each user (only userId needed)
       await db
         .insert(walletsTable)
@@ -119,12 +114,17 @@ class UserService {
         )
         .execute();
 
-      // ✅ Add users to tree
-      await Promise.all(
-        insertedData.map((user) =>
-          treeService.addUser(user.id, user.sponsor, user.position),
-        ),
-      );
+      // ✅ Add users to tree SEQUENTIALLY to avoid race conditions
+      for (const user of insertedData) {
+        const sponserDetails = await databaseService.fetchUserData(
+          user.sponsor,
+        );
+        await treeService.addUser(
+          user.id,
+          user.sponsor,
+          sponserDetails.position,
+        );
+      }
 
       return { success: true, users: insertedData };
     } catch (error) {

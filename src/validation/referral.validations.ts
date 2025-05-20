@@ -1,0 +1,16 @@
+import { MyContext } from "@/types";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
+import { validationError } from ".";
+const createReferralSchema = z.object({
+  position: z.enum(["LEFT", "RIGHT"]),
+});
+
+export const createReferralValidate = zValidator(
+  "json",
+  createReferralSchema,
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error.issues, c);
+    c.set("side", r.data.position);
+  },
+);

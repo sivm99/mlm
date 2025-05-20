@@ -57,8 +57,8 @@ export const usersTable = pgTable(
     role: userRole("role").notNull().default("USER"),
     permissions: jsonb("permissions").notNull().default({}),
 
-    createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
   (table) => {
     return [

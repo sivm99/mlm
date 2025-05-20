@@ -1,23 +1,47 @@
-import { pgTable, serial, text } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { userPosition, usersTable } from "./users";
+import { relations } from "drizzle-orm";
 
 export const referralsTable = pgTable("referrals", {
-  id: serial().primaryKey(),
-  slug: text().notNull(),
-  userId: text().references(() => usersTable.id, {
-    onDelete: "set null",
-    onUpdate: "cascade",
-  }),
-  position: userPosition("position").notNull(),
-  sponsor: text()
+  slug: text("slug").notNull().primaryKey(),
+  userId: text("userId")
     .notNull()
     .references(() => usersTable.id, {
-      onDelete: "cascade",
+      onDelete: "set null",
       onUpdate: "cascade",
     }),
+
+  position: userPosition("position").notNull(),
+  sponsor: text("sponsor")
+    .notNull()
+    .references(() => usersTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+  impressions: integer("impressions").notNull().default(0), // number of users who clicked on the referral link
+  registered: integer("registered").notNull().default(0), // number of  registered users who registerd using this link
+  activated: integer("activated").notNull().default(0), // number of  activated users who activated using this link
+
+  isDeleted: boolean("isDeleted").notNull().default(false),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
-// with referalls we will generate the link as well as we give the option
-// to send the referal link to email and will give the user a chance to share
-// this link , now the front end can fetch detail to show
-// and in the backend i will match once again they didnt change during the
-// register process again we will manage this in the validation layer
+
+export const referralsRelations = relations(referralsTable, ({ one }) => ({
+  user: one(usersTable, {
+    fields: [referralsTable.userId],
+    references: [usersTable.id],
+    relationName: "userReferral",
+  }),
+  sponsorUser: one(usersTable, {
+    fields: [referralsTable.sponsor],
+    references: [usersTable.id],
+    relationName: "sponsorReferral",
+  }),
+}));

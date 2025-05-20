@@ -117,11 +117,6 @@ class BinaryTree {
         .update(usersTable)
         .set(updates)
         .where(eq(usersTable.id, sponsorId));
-
-      // Also update parent sponsors recursively (except for admin who sponsors themselves)
-      // if (sponsor.sponsor !== sponsorId) {
-      //   await this.updateSponsorCounts(sponsor.sponsor, isUserActive);
-      // }
     } catch (error) {
       console.error(`Error updating counts for sponsor ${sponsorId}:`, error);
       throw error;

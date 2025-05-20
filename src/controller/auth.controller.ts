@@ -20,30 +20,31 @@ export async function registerUser(c: MyContext) {
         400,
       );
 
-    const otpVerifyResult = await otpService.verifyOtp({
-      type: "email_verify",
-      code: otp,
-      email: validUser[0].email,
-    });
-
-    if (!otpVerifyResult.success)
-      return c.json(
-        {
-          success: false,
-          message: otpVerifyResult.message,
-        },
-        400,
-      );
+    // const otpVerifyResult = await otpService.verifyOtp({
+    //   type: "email_verify",
+    //   code: otp,
+    //   email: validUser[0].email,
+    // });
+    // if (!otpVerifyResult.success)
+    //   return c.json(
+    //     {
+    //       success: false,
+    //       message: otpVerifyResult.message,
+    //     },
+    //     400,
+    //   );
 
     const { success, users } = await userService.registerUsers(validUser);
     const newUser = users[0];
     await userService.setTokenCookie(c, newUser.id);
-    await emailService.sendSignupSuccessEmail({
-      userId: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      password: validUser[0].password,
-    });
+
+    // await emailService.sendSignupSuccessEmail({
+    //   userId: newUser.id,
+    //   name: newUser.name,
+    //   email: newUser.email,
+    //   password: validUser[0].password,
+    // });
+
     return c.json({
       success,
       data: newUser,
