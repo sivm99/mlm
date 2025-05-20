@@ -1,10 +1,5 @@
-import {
-  getForgetPasswordOtp,
-  getOtp,
-  loginUser,
-  registerUser,
-  resetPassword,
-} from "@/controller/auth.controller";
+import AuthController from "@/controller/AuthController";
+
 import { Hono } from "hono";
 import {
   getVerifyEmailOtpValidate,
@@ -15,9 +10,13 @@ import {
 } from "@/validation/auth.validations";
 
 const router = new Hono()
-  .post("/signup", registerValidate, registerUser)
-  .post("/login", loginValidate, loginUser)
-  .get("/get-otp", getVerifyEmailOtpValidate, getOtp)
-  .post("/forget-password", forgetPasswordValidate, getForgetPasswordOtp)
-  .post("/reset-password", resetPasswordValidate, resetPassword);
+  .post("/signup", registerValidate, AuthController.registerUser)
+  .post("/login", loginValidate, AuthController.loginUser)
+  .get("/get-otp", getVerifyEmailOtpValidate, AuthController.getOtp)
+  .post(
+    "/forget-password",
+    forgetPasswordValidate,
+    AuthController.getForgetPasswordOtp,
+  )
+  .post("/reset-password", resetPasswordValidate, AuthController.resetPassword);
 export default router;

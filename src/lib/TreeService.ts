@@ -28,7 +28,6 @@ class BinaryTree {
 
       // Fetch user data for the new user
       const userData = await databaseService.fetchUserData(userId);
-
       // Users cannot sponsor themselves (except root admin)
       if (userId === sponsorId && userData.role !== "ADMIN") {
         throw new Error("Users cannot sponsor themselves (except root admin)");

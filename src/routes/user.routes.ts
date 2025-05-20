@@ -1,9 +1,4 @@
-import {
-  bulkAdd,
-  getUser,
-  getUserTree,
-  updateUser,
-} from "@/controller/user.controller";
+import UserController from "@/controller/UserController";
 import { authenticate, authenticateAdmin } from "@/middleware/auth";
 import {
   bulkAddValidate,
@@ -15,14 +10,19 @@ import { Hono } from "hono";
 
 const router = new Hono()
   .use("*", authenticate)
-  .get("/", getUser)
-  .patch("/", updateUserValidate, updateUser)
-  .get("/tree-list", getTreeListValidate, getUserTree)
-  .post("/admin/bulk-add", authenticateAdmin, bulkAddValidate, bulkAdd)
+  .get("/", UserController.getUser)
+  .patch("/", updateUserValidate, UserController.updateUser)
+  .get("/tree-list", getTreeListValidate, UserController.getUserTree)
+  .post(
+    "/admin/bulk-add",
+    authenticateAdmin,
+    bulkAddValidate,
+    UserController.bulkAdd,
+  )
   .patch(
     "/admin/update",
     authenticateAdmin,
     updateUserByAdminValidate,
-    updateUser,
+    UserController.updateUser,
   );
 export default router;

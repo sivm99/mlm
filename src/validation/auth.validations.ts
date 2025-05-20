@@ -9,6 +9,7 @@ export const registerSchema = z
     mobile: z.string(),
     email: emailField,
     otp: z.string().optional(),
+    referralCode: z.string().length(7).optional(),
     password: z.string().min(6),
     country: z.string(),
     dialCode: z.string(),
