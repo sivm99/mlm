@@ -20,7 +20,6 @@ export default class DatabaseService {
         associatedActiveUsersCount: usersTable.associatedActiveUsersCount,
         isBlocked: usersTable.isBlocked,
         isActive: usersTable.isActive,
-        wallet: usersTable.wallet,
         position: usersTable.position,
         role: usersTable.role,
       })

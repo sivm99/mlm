@@ -26,30 +26,16 @@ class BinaryTree {
       if (!sponsorId) throw new Error("Sponsor ID is required");
       if (!side) throw new Error("Side (LEFT or RIGHT) is required");
 
+      // Fetch user data for the new user
       const userData = await databaseService.fetchUserData(userId);
+
+      // Users cannot sponsor themselves (except root admin)
       if (userId === sponsorId && userData.role !== "ADMIN") {
         throw new Error("Users cannot sponsor themselves (except root admin)");
       }
-      const newNode = new Node(userData);
 
-      if (!this.root) {
-        const rootUser = await db
-          .select({ id: usersTable.id })
-          .from(usersTable)
-          .where(eq(usersTable.role, "ADMIN"))
-          .limit(1);
-
-        if (!rootUser[0]) throw new Error("Admin user not found");
-        await this.buildTreeFromDatabase(rootUser[0].id);
-      }
-
-      const sponsorNode = await this.findNodeById(this.root, sponsorId);
-      if (!sponsorNode) {
-        throw new Error(`Sponsor with ID ${sponsorId} not found in the tree`);
-      }
-
-      // Find a place to insert the node by traversing down the specified side
-      await this.insertNodeOnSide(sponsorNode, newNode, side);
+      // We'll find the place to insert directly in the database rather than loading the whole tree
+      await this.insertUserInDatabase(userData.id, sponsorId, side);
 
       // Update sponsor's associated user counts
       await this.updateSponsorCounts(sponsorId, userData.isActive);
@@ -60,84 +46,50 @@ class BinaryTree {
   }
 
   /**
-   * Helper method to insert a node on a specific side, traversing down if needed
+   * Inserts a user directly in the database by finding the proper position
+   * @param userId - The ID of the user to insert
+   * @param sponsorId - The ID of the sponsor user
+   * @param preferredSide - The preferred side to insert (LEFT or RIGHT)
    */
-  private async insertNodeOnSide(
-    parentNode: Node,
-    newNode: Node,
-    side: Side,
+  private async insertUserInDatabase(
+    userId: string,
+    sponsorId: string,
+    preferredSide: Side,
   ): Promise<void> {
-    let currentNode = parentNode;
-    let placed = false;
+    // Start with the sponsor node
+    let currentNodeId = sponsorId;
 
-    // Try to insert directly if the spot is available
-    if (side === "LEFT" && !currentNode.leftUser) {
-      currentNode.leftUser = newNode;
-      await db
-        .update(usersTable)
-        .set({ leftUser: newNode.value.id })
-        .where(eq(usersTable.id, currentNode.value.id));
-      placed = true;
-    } else if (side === "RIGHT" && !currentNode.rightUser) {
-      currentNode.rightUser = newNode;
-      await db
-        .update(usersTable)
-        .set({ rightUser: newNode.value.id })
-        .where(eq(usersTable.id, currentNode.value.id));
-      placed = true;
-    } else {
-      // Spot not available, traverse down the specified side
-      let nextNode =
-        side === "LEFT" ? currentNode.leftUser : currentNode.rightUser;
+    while (true) {
+      // Get the current node's information
+      const currentNode = await databaseService.fetchUserData(currentNodeId);
 
-      while (nextNode && !placed) {
-        currentNode = nextNode;
-
-        if (side === "LEFT" && !currentNode.leftUser) {
-          currentNode.leftUser = newNode;
+      if (preferredSide === "LEFT") {
+        if (!currentNode.leftUser) {
+          // Found empty spot on left
           await db
             .update(usersTable)
-            .set({ leftUser: newNode.value.id })
-            .where(eq(usersTable.id, currentNode.value.id));
-          placed = true;
-        } else if (side === "RIGHT" && !currentNode.rightUser) {
-          currentNode.rightUser = newNode;
-          await db
-            .update(usersTable)
-            .set({ rightUser: newNode.value.id })
-            .where(eq(usersTable.id, currentNode.value.id));
-          placed = true;
+            .set({ leftUser: userId })
+            .where(eq(usersTable.id, currentNodeId));
+          break;
         } else {
-          // Continue traversing down the specified side
-          nextNode =
-            side === "LEFT" ? currentNode.leftUser : currentNode.rightUser;
+          // Continue down the left side
+          currentNodeId = currentNode.leftUser;
+        }
+      } else {
+        // RIGHT side
+        if (!currentNode.rightUser) {
+          // Found empty spot on right
+          await db
+            .update(usersTable)
+            .set({ rightUser: userId })
+            .where(eq(usersTable.id, currentNodeId));
+          break;
+        } else {
+          // Continue down the right side
+          currentNodeId = currentNode.rightUser;
         }
       }
     }
-
-    if (!placed) {
-      throw new Error(
-        `Could not find an available ${side} position in the tree`,
-      );
-    }
-  }
-
-  /**
-   * Finds a node in the tree by user ID
-   */
-  async findNodeById(node: Node | null, userId: string): Promise<Node | null> {
-    if (!node) return null;
-
-    if (node.value.id === userId) {
-      return node;
-    }
-
-    // Search left subtree
-    const leftResult = await this.findNodeById(node.leftUser, userId);
-    if (leftResult) return leftResult;
-
-    // Search right subtree
-    return this.findNodeById(node.rightUser, userId);
   }
 
   /**
