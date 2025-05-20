@@ -53,13 +53,22 @@ export const loginValidate = zValidator(
   },
 );
 
-const forgetPasswordSchema = z.object({
+const idFieldValidateSchema = z.object({
   id: idField,
 });
 
 export const forgetPasswordValidate = zValidator(
   "json",
-  forgetPasswordSchema,
+  idFieldValidateSchema,
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error.issues, c);
+    c.set("id", r.data.id);
+  },
+);
+
+export const getSponserDetailValidate = zValidator(
+  "query",
+  idFieldValidateSchema,
   (r, c: MyContext) => {
     if (!r.success) return validationError(r.error.issues, c);
     c.set("id", r.data.id);

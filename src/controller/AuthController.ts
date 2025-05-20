@@ -4,12 +4,12 @@ import { MyContext } from "@/types";
 import UserService from "@/lib/UserService";
 import ReferralService from "@/lib/ReferralService";
 
-export default class AuthController {
-  private static userService = new UserService();
-  private static emailService = new EmailService();
-  private static otpService = new OtpService(this.emailService);
-  private static referralService = new ReferralService();
+const userService = new UserService();
+const emailService = new EmailService();
+const otpService = new OtpService(emailService);
+const referralService = new ReferralService();
 
+export default class AuthController {
   static async registerUser(c: MyContext) {
     try {
       const validUser = Array(c.get("registerUser"));
@@ -23,7 +23,7 @@ export default class AuthController {
           400,
         );
 
-      const otpVerifyResult = await this.otpService.verifyOtp({
+      const otpVerifyResult = await otpService.verifyOtp({
         type: "email_verify",
         code: otp,
         email: validUser[0].email,
@@ -37,19 +37,18 @@ export default class AuthController {
           400,
         );
 
-      const { success, users } =
-        await this.userService.registerUsers(validUser);
+      const { success, users } = await userService.registerUsers(validUser);
       const newUser = users[0];
-      await this.userService.setTokenCookie(c, newUser.id);
+      await userService.setTokenCookie(c, newUser.id);
 
-      this.emailService.sendSignupSuccessEmail({
+      emailService.sendSignupSuccessEmail({
         userId: newUser.id,
         name: newUser.name,
         email: newUser.email,
         password: validUser[0].password,
       });
       if (validUser[0].referralCode)
-        this.referralService.recordRegistration(validUser[0].referralCode);
+        referralService.recordRegistration(validUser[0].referralCode);
       return c.json({
         success,
         data: newUser,
@@ -70,8 +69,8 @@ export default class AuthController {
   static async loginUser(c: MyContext) {
     const validated = c.get("loginUser");
     try {
-      const { success, user } = await this.userService.loginUser(validated);
-      await this.userService.setTokenCookie(c, user.id);
+      const { success, user } = await userService.loginUser(validated);
+      await userService.setTokenCookie(c, user.id);
       return c.json({
         success,
         message: "User was logged in",
@@ -97,7 +96,7 @@ export default class AuthController {
 
     try {
       // The email is now sent automatically inside the generateOtp method
-      await this.otpService.generateOtp({
+      await otpService.generateOtp({
         type: "email_verify",
         email,
       });
@@ -123,7 +122,7 @@ export default class AuthController {
   static async getForgetPasswordOtp(c: MyContext) {
     const id = c.get("id");
     try {
-      const user = await this.userService.getUser(id);
+      const user = await userService.getUser(id);
       // we can also show here that email was delivered if it exists
       if (!user) {
         return c.json(
@@ -136,7 +135,7 @@ export default class AuthController {
       }
 
       // Email is sent automatically inside generateOtp
-      await this.otpService.generateOtp({
+      await otpService.generateOtp({
         type: "forget_password",
         email: user.email,
         userId: user.id,
@@ -165,7 +164,7 @@ export default class AuthController {
   static async resetPassword(c: MyContext) {
     const { id, newPassword, otp, email } = c.get("resetPassword");
 
-    const { success, message } = await this.otpService.verifyOtp({
+    const { success, message } = await otpService.verifyOtp({
       type: "forget_password",
       code: otp,
       email,
@@ -179,7 +178,7 @@ export default class AuthController {
         403,
       );
     try {
-      await this.userService.updateUserPassword(id, newPassword);
+      await userService.updateUserPassword(id, newPassword);
       // we will send one more email here to the user saying
       // your password was successfully changed
       return c.json({
@@ -195,5 +194,23 @@ export default class AuthController {
         500,
       );
     }
+  }
+
+  static async getSponserDetails(c: MyContext) {
+    const id = c.get("id");
+    const data = await userService.getUser(id);
+    if (!data)
+      return c.json(
+        {
+          success: false,
+          message: "Sponsor dont exist",
+        },
+        404,
+      );
+    return c.json({
+      success: true,
+      message: "User reterieved Successfully",
+      data: data.name,
+    });
   }
 }

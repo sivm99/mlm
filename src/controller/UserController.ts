@@ -3,10 +3,9 @@ import UserService from "@/lib/UserService";
 import { MyContext } from "@/types";
 import { RegisterUser } from "@/validation/auth.validations";
 
+const userService = new UserService();
+const treeService = new TreeService();
 export default class UserController {
-  private static userService = new UserService();
-  private static treeService = new TreeService();
-
   static async getUser(c: MyContext) {
     return c.json({
       success: true,
@@ -19,7 +18,7 @@ export default class UserController {
     const user = c.get("user");
     const updatedUser = c.get("updatedUser");
     try {
-      await this.userService.updateUser(user.id, updatedUser);
+      await userService.updateUser(user.id, updatedUser);
     } catch (err) {
       return c.json({
         success: false,
@@ -34,7 +33,7 @@ export default class UserController {
       const usersToInserArray: RegisterUser[] = [];
       for (let i = 0; i < count; i++)
         usersToInserArray.push(user as RegisterUser);
-      const { users } = await this.userService.registerUsers(usersToInserArray);
+      const { users } = await userService.registerUsers(usersToInserArray);
       return c.json({
         success: true,
         message: "users were added successfully",
@@ -60,13 +59,13 @@ export default class UserController {
       let data;
       switch (side) {
         case "FULL":
-          data = await this.treeService.getUserDownline(userId);
+          data = await treeService.getUserDownline(userId);
           break;
         case "LEFT":
-          data = await this.treeService.getLeftBranchUsers(userId);
+          data = await treeService.getLeftBranchUsers(userId);
           break;
         default: // Assumes "RIGHT" if not FULL or LEFT
-          data = await this.treeService.getRightBranchUsers(userId);
+          data = await treeService.getRightBranchUsers(userId);
           break;
       }
 
