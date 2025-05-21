@@ -153,7 +153,7 @@ class UserService {
       const hash = user.passwordHash;
       if (!hash) throw new Error("INVALID USERNAME OR PASSWORD");
       const isMatch = await bunPassword.verify(password, hash);
-      if (!isMatch) throw new Error("INVALID USERNAME OR PASSWORD is match");
+      if (!isMatch) throw new Error("INVALID USERNAME OR PASSWORD");
       if (user.isBlocked) throw new Error("YOU HAVE BEEN BLOCKED BY THE ADMIN");
       const { passwordHash, ...userWithoutPassword } = user;
       if (this.#isDev) console.warn(passwordHash); // just for the eslint

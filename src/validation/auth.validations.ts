@@ -11,8 +11,8 @@ export const registerSchema = z
     otp: z.string().optional(),
     referralCode: z.string().length(7).optional(),
     password: z.string().min(6),
-    country: z.string(),
-    dialCode: z.string(),
+    country: z.string().default("global"),
+    dialCode: z.string().max(4).default("1"),
     sponsor: z
       .string()
       .length(10, "sponsor must be a valid id")
