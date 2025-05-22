@@ -1,4 +1,4 @@
-import { otpEmailStyles } from ".";
+import { logo, otpEmailStyles } from ".";
 
 export const passwordResetTemplate = `
   <!DOCTYPE html>
@@ -14,7 +14,7 @@ export const passwordResetTemplate = `
   <body>
       <div class="container">
           <div class="header">
-              <img src="https://yourcompany.com/logo.png" alt="Alprimus Logo" class="logo">
+              <img src="${logo}" alt="Alprimus Logo" class="logo">
           </div>
           <div class="content">
               <h2>Password Reset</h2>

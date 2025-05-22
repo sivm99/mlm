@@ -1,3 +1,5 @@
+import { logo } from "./otpTemplate";
+
 export const signupTemplate = `
   <!DOCTYPE html>
   <html lang="en">
@@ -50,8 +52,13 @@ export const signupTemplate = `
   </head>
   <body>
       <div class="container">
+
           <div class="header">
               <h1>Welcome to The World of ALPRIMUS!</h1>
+          </div>
+
+          <div class="header">
+            <img src="${logo}" alt="Alprimus Logo" class="logo">
           </div>
 
           <p>Dear {{.Name}},</p>

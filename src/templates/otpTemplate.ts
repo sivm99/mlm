@@ -59,7 +59,7 @@ body {
     font-weight: bold;
 }
 `;
-
+export const logo = "https://cool.s3.n3y.in/logo.webp";
 export const emailVerifyOtpTemplate = `
   <!DOCTYPE html>
   <html lang="en">
@@ -74,7 +74,7 @@ export const emailVerifyOtpTemplate = `
   <body>
       <div class="container">
           <div class="header">
-              <img src="https://yourcompany.com/logo.png" alt="Alprimus Logo" class="logo">
+              <img src="${logo}" alt="Alprimus Logo" class="logo">
           </div>
           <div class="content">
               <h2>Verification Code</h2>

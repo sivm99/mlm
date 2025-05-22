@@ -9,15 +9,12 @@ export const registerSchema = z
     mobile: z.string(),
     email: emailField,
     otp: z.string().optional(),
-    referralCode: z.string().length(7).optional(),
+    referralCode: z.string().optional(),
     password: z.string().min(6),
     passwordConfirm: z.string().min(6).optional(),
     country: z.string().default("global"),
-    dialCode: z.string().max(4).default("91"),
-    sponsor: z
-      .string()
-      .length(10, "sponsor must be a valid id")
-      .transform((s) => s.toUpperCase()),
+    dialCode: z.string().max(4).default("+91"),
+    sponsor: idField,
     position: z
       .enum(["LEFT", "RIGHT"], {
         errorMap: () => ({
@@ -37,7 +34,7 @@ export const registerValidate = zValidator(
   "json",
   registerSchema,
   (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error.issues, c);
+    if (!r.success) return validationError(r.error, c);
     c.set("registerUser", {
       ...r.data,
     });
@@ -51,7 +48,7 @@ export const loginValidate = zValidator(
     password: z.string().min(6),
   }),
   (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error.issues, c);
+    if (!r.success) return validationError(r.error, c);
     c.set("loginUser", {
       ...r.data,
     });
@@ -62,11 +59,11 @@ const idFieldValidateSchema = z.object({
   id: idField,
 });
 
-export const forgetPasswordValidate = zValidator(
+export const forgotPasswordValidate = zValidator(
   "json",
   idFieldValidateSchema,
   (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error.issues, c);
+    if (!r.success) return validationError(r.error, c);
     c.set("id", r.data.id);
   },
 );
@@ -75,7 +72,7 @@ export const getSponserDetailValidate = zValidator(
   "query",
   idFieldValidateSchema,
   (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error.issues, c);
+    if (!r.success) return validationError(r.error, c);
     c.set("id", r.data.id);
   },
 );
@@ -89,7 +86,7 @@ export const getVerifyEmailOtpValidate = zValidator(
   "query",
   otpEmailSchema,
   (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error.issues, c);
+    if (!r.success) return validationError(r.error, c);
     c.set("otpEmail", {
       ...r.data,
     });
@@ -98,7 +95,6 @@ export const getVerifyEmailOtpValidate = zValidator(
 const resetPasswordSchema = z
   .object({
     id: idField,
-    email: emailField,
     otp: z.string().length(6).regex(/\d/),
     newPassword: z.string().min(6),
     newPasswordConfirm: z.string().min(6),
@@ -113,7 +109,7 @@ export const resetPasswordValidate = zValidator(
   "json",
   resetPasswordSchema,
   (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error.issues, c);
+    if (!r.success) return validationError(r.error, c);
     c.set("resetPassword", {
       ...r.data,
     });

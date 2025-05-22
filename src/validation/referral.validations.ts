@@ -10,7 +10,7 @@ export const createReferralValidate = zValidator(
   "json",
   createReferralSchema,
   (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error.issues, c);
+    if (!r.success) return validationError(r.error, c);
     c.set("side", r.data.position);
   },
 );

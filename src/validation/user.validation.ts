@@ -23,7 +23,7 @@ export const updateUserValidate = zValidator(
   "json",
   updateUserSchema,
   (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error.issues, c);
+    if (!r.success) return validationError(r.error, c);
     c.set("updatedUser", {
       ...r.data,
     });
@@ -44,7 +44,7 @@ export const updateUserByAdminValidate = zValidator(
   "json",
   updateUserByAdminSchema,
   (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error.issues, c);
+    if (!r.success) return validationError(r.error, c);
     c.set("updatedUser", {
       ...r.data,
     });
@@ -69,7 +69,7 @@ export const bulkAddValidate = zValidator(
   "json",
   bulkAdd,
   (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error.issues, c);
+    if (!r.success) return validationError(r.error, c);
     c.set("bulkAdd", {
       ...r.data,
     });
@@ -84,7 +84,7 @@ export const getTreeListValidate = zValidator(
   "query",
   treeListSidesSchema,
   (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error.issues, c);
+    if (!r.success) return validationError(r.error, c);
     c.set("side", r.data.side);
   },
 );

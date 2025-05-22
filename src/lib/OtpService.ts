@@ -64,9 +64,7 @@ export default class OtpService {
       userId,
       name,
     };
-
     await this.sendOtpEmail(type, userEmail, code);
-
     return newOtp[0];
   }
 

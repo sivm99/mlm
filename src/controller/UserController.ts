@@ -10,7 +10,7 @@ export default class UserController {
     return c.json({
       success: true,
       message: "User was reterieved successfully",
-      user: c.get("user"),
+      data: c.get("user"),
     });
   }
 
@@ -72,7 +72,7 @@ export default class UserController {
       return c.json({
         success: true,
         message: "Tree was retrieved successfully",
-        data: data,
+        data,
       });
     } catch (err) {
       console.error(err);

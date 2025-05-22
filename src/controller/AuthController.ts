@@ -119,7 +119,7 @@ export default class AuthController {
   /**
    * Send password reset OTP
    */
-  static async getForgetPasswordOtp(c: MyContext) {
+  static async getForgotPasswordOtp(c: MyContext) {
     const id = c.get("id");
     try {
       const user = await userService.getUser(id);
@@ -135,7 +135,7 @@ export default class AuthController {
       }
 
       // Email is sent automatically inside generateOtp
-      await otpService.generateOtp({
+      const a = await otpService.generateOtp({
         type: "forget_password",
         email: user.email,
         userId: user.id,
@@ -144,7 +144,7 @@ export default class AuthController {
 
       return c.json({
         success: true,
-        message: `Password reset OTP has been sent to ${user.email}. Please check your spam folder as well`,
+        message: `${a.code} Password reset OTP has been sent to your registered email. Please check your spam folder as well`,
       });
     } catch (err) {
       console.error(
@@ -162,13 +162,24 @@ export default class AuthController {
   }
 
   static async resetPassword(c: MyContext) {
-    const { id, newPassword, otp, email } = c.get("resetPassword");
+    const { id, newPassword, otp } = c.get("resetPassword");
+    const user = await userService.getUser(id);
+    if (!user) {
+      return c.json(
+        {
+          success: false,
+          message: `There exists no such user with the ID ${id}`,
+        },
+        404,
+      );
+    }
 
     const { success, message } = await otpService.verifyOtp({
       type: "forget_password",
       code: otp,
-      email,
+      email: user.email,
     });
+
     if (!success)
       return c.json(
         {

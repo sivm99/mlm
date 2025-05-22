@@ -5,9 +5,9 @@ import {
   getVerifyEmailOtpValidate,
   loginValidate,
   registerValidate,
-  forgetPasswordValidate,
   resetPasswordValidate,
   getSponserDetailValidate,
+  forgotPasswordValidate,
 } from "@/validation/auth.validations";
 
 const router = new Hono()
@@ -16,9 +16,9 @@ const router = new Hono()
   .get("/get-otp", getVerifyEmailOtpValidate, AuthController.getOtp)
   .get("/sponsor", getSponserDetailValidate, AuthController.getSponserDetails)
   .post(
-    "/forget-password",
-    forgetPasswordValidate,
-    AuthController.getForgetPasswordOtp,
+    "/forgot-password",
+    forgotPasswordValidate,
+    AuthController.getForgotPasswordOtp,
   )
   .post("/reset-password", resetPasswordValidate, AuthController.resetPassword);
 export default router;
