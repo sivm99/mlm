@@ -1,15 +1,6 @@
 import { MyContext } from "@/types";
 import z from "zod";
 
-export const idField = z
-  .string()
-  .length(10)
-  .transform((i) => i.toUpperCase());
-export const emailField = z
-  .string()
-  .email()
-  .transform((e) => e.toLowerCase());
-
 export const validationError = (issues: z.ZodIssue[], c: MyContext) =>
   c.json(
     {
@@ -19,3 +10,7 @@ export const validationError = (issues: z.ZodIssue[], c: MyContext) =>
     },
     400,
   );
+
+export * from "./auth.validations";
+export * from "./referral.validations";
+export * from "./user.validation";

@@ -10,7 +10,6 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
-import { createSelectSchema } from "drizzle-zod";
 import { paymentsTable } from "./payments";
 import { payoutsTable } from "./payouts";
 
@@ -26,6 +25,7 @@ export const usersTable = pgTable(
     email: text("email").notNull(),
     country: text("country").notNull(),
     dialCode: text("dialCode").notNull(),
+    image: text("image"),
 
     sponsor: text("sponsor")
       .notNull()
@@ -68,9 +68,8 @@ export const usersTable = pgTable(
   },
 );
 
-export const userSelectSchema = createSelectSchema(usersTable);
-
-export type UserSelectSchema = typeof userSelectSchema._type;
+export type InsertUser = typeof usersTable.$inferInsert;
+export type SelectUser = typeof usersTable.$inferSelect;
 
 export const usersRelations = relations(usersTable, ({ one, many }) => ({
   sponsorUser: one(usersTable, {

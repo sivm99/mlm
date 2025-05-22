@@ -1,1 +1,0 @@
-ALTER TABLE "referrals" ADD COLUMN "isDeleted" boolean DEFAULT false NOT NULL;

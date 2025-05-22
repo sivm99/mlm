@@ -11,8 +11,9 @@ export const registerSchema = z
     otp: z.string().optional(),
     referralCode: z.string().length(7).optional(),
     password: z.string().min(6),
+    passwordConfirm: z.string().min(6).optional(),
     country: z.string().default("global"),
-    dialCode: z.string().max(4).default("1"),
+    dialCode: z.string().max(4).default("91"),
     sponsor: z
       .string()
       .length(10, "sponsor must be a valid id")
@@ -25,7 +26,11 @@ export const registerSchema = z
       })
       .default("LEFT"),
   })
-  .strict();
+  .strict()
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "Passwords don't match",
+    path: ["passwordConfirm"],
+  });
 
 export type RegisterUser = z.infer<typeof registerSchema>;
 export const registerValidate = zValidator(

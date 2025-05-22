@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1747724343972,
-      "tag": "0000_sloppy_oracle",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1747727840731,
-      "tag": "0001_yellow_bloodaxe",
+      "when": 1747923103324,
+      "tag": "0000_silent_starbolt",
       "breakpoints": true
     }
   ]

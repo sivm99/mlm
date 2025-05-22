@@ -1,18 +1,7 @@
-import { UserSelectSchema } from "@/db/schema/users";
-import {
-  OTPEmail,
-  RegisterUser,
-  ResetPassword,
-} from "@/validation/auth.validations";
-import { Context } from "hono";
-import {
-  BulkAdd,
-  UpdateUser,
-  UpdateUserByAdmin,
-} from "./validation/user.validation";
-import { OTPTYPE } from "./db/schema";
+import { SelectUser } from "@/db/schema";
+import { UpdateUser, UpdateUserByAdmin } from "@/validation";
 
-export type User = UserSelectSchema;
+export type User = SelectUser;
 
 // Create a new type that excludes auto-generated fields
 export type NewUser = Omit<User, "id" | "sponsor" | "passwordHash"> & {
@@ -58,25 +47,9 @@ export type TreeUser = Pick<
   | "isActive"
   | "position"
 >;
-
 export type EmailData = Record<string, string | number | undefined>;
 
 export type UpdateFromUser = UpdateUser;
 export type UpdateFromAdmin = UpdateUserByAdmin;
-export type Variables = {
-  otpEmail: OTPEmail;
-  registerUser: RegisterUser;
-  registerUsers: RegisterUser[];
-  user: SafeUser;
-  loginUser: LoginUser;
-  updatedUser: UpdateFromUser | UpdateFromAdmin;
-  bulkAdd: BulkAdd;
-  side: Side | "FULL";
-  id: SafeUser["id"];
-  resetPassword: ResetPassword;
-};
 
 export type Side = User["position"];
-export type MyContext = Context<{ Variables: Variables }>;
-
-export type OTP = OTPTYPE;

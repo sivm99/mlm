@@ -16,13 +16,13 @@ async function seed() {
       role: User["role"];
       passwordHash: User["passwordHash"];
     } = {
-      id: "AL00000001",
+      id: "AL0000001",
       name: "Master",
       mobile: "9999999999",
       email: "master@1as.in",
       country: "Global",
       dialCode: "+1",
-      sponsor: "AL00000001",
+      sponsor: "AL0000001",
       position: "LEFT",
       role: "ADMIN",
       password: "",

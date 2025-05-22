@@ -19,6 +19,7 @@ CREATE TABLE "users" (
 	"email" text NOT NULL,
 	"country" text NOT NULL,
 	"dialCode" text NOT NULL,
+	"image" text,
 	"sponsor" text NOT NULL,
 	"position" "userPosition" NOT NULL,
 	"leftUser" text,
@@ -110,6 +111,7 @@ CREATE TABLE "referrals" (
 	"impressions" integer DEFAULT 0 NOT NULL,
 	"registered" integer DEFAULT 0 NOT NULL,
 	"activated" integer DEFAULT 0 NOT NULL,
+	"isDeleted" boolean DEFAULT false NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL
 );

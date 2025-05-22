@@ -69,7 +69,7 @@ export default class EmailService {
         { key: "Name", value: user.name || "" },
         { key: "UserID", value: user.userId || "" },
         { key: "Password", value: user.password || "" },
-        { key: "LoginURL", value: "https://alprimus.com/login" },
+        { key: "LoginURL", value: "https://asilocloud.ink/login" },
         { key: "Year", value: new Date().getFullYear() },
       ],
     });
@@ -81,7 +81,7 @@ export default class EmailService {
   async sendOtpEmail(
     user: UserEmail,
     otp: string,
-    subject = "Your verification code for signup on Alprimus.com",
+    subject = "Your verification code for signup on asilocloud.inkm",
     template: string,
   ): Promise<Response> {
     return this.#sendEmail({

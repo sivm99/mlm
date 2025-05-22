@@ -1,5 +1,5 @@
 {
-  "id": "f3481dca-5d51-4d9d-a87f-647d9b6397af",
+  "id": "414de2e7-7af4-4412-baf7-2a44235a80e9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -111,6 +111,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "sponsor": {
           "name": "sponsor",
@@ -956,6 +962,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "isDeleted": {
+          "name": "isDeleted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "createdAt": {
           "name": "createdAt",

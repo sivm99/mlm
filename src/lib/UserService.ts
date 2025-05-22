@@ -1,13 +1,7 @@
 import db from "@/db";
 import { generateRandomDigits } from "./cr";
 import { usersTable } from "@/db/schema/users";
-import {
-  LoginUser,
-  SafeUser,
-  UpdateFromAdmin,
-  UpdateFromUser,
-  User,
-} from "@/types";
+import { LoginUser, SafeUser, UpdateFromAdmin, UpdateFromUser } from "@/types";
 import { password as bunPassword } from "bun";
 import { eq } from "drizzle-orm";
 import { sign } from "hono/jwt";
@@ -60,7 +54,7 @@ class UserService {
         "Failed to generate a unique id after multiple attempts.",
       );
     }
-    const newId = `AL${generateRandomDigits(8)}`;
+    const newId = `AL${generateRandomDigits(7)}`;
 
     const existingUser = await db
       .select({
@@ -96,7 +90,7 @@ class UserService {
           ...userWithoutPassword,
           id,
           passwordHash,
-        } as User;
+        };
       }),
     );
     try {
