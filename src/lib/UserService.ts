@@ -156,6 +156,7 @@ class UserService {
         user: userWithoutPassword,
       };
     } catch (error) {
+      console.error(error);
       throw new Error(
         `Login failed: ${error instanceof Error ? error.message : String(error)}`,
       );
