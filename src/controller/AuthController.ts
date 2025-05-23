@@ -77,6 +77,7 @@ export default class AuthController {
         data: user,
       });
     } catch (err: unknown) {
+      console.error(String(err));
       const errorMessage = err instanceof Error ? err.message : "Login failed";
       return c.json(
         {

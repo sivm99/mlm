@@ -5,16 +5,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { cors } from "hono/cors";
 import routeIndex from "./routes";
 const app = new Hono()
-  .use(
-    cors(),
-
-    //   {
-    //   origin: ["http://localhost:3000", process.env.FRONTEND_HOST || "*"],
-    //   allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    //   allowHeaders: ["Content-Type", "Authorization"],
-    //   credentials: true,
-    // }
-  )
+  .use(cors())
   .use(
     poweredBy({
       serverName: "hono-by-sivam",
