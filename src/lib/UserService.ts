@@ -142,12 +142,12 @@ class UserService {
         .where(eq(usersTable.id, id))
         .limit(1);
 
-      if (!loggedInUser.length) throw new Error("INVALID USERNAME OR PASSWORD");
+      if (!loggedInUser.length) throw new Error("INVALID ID OR PASSWORD");
       const user = loggedInUser[0];
       const hash = user.passwordHash;
-      if (!hash) throw new Error("INVALID USERNAME OR PASSWORD");
+      if (!hash) throw new Error("INVALID ID OR PASSWORD");
       const isMatch = await bunPassword.verify(password, hash);
-      if (!isMatch) throw new Error("INVALID USERNAME OR PASSWORD");
+      if (!isMatch) throw new Error("INVALID ID OR PASSWORD");
       if (user.isBlocked) throw new Error("YOU HAVE BEEN BLOCKED BY THE ADMIN");
       const { passwordHash, ...userWithoutPassword } = user;
       if (this.#isDev) console.warn(passwordHash); // just for the eslint
