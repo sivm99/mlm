@@ -77,7 +77,6 @@ export default class AuthController {
         data: user,
       });
     } catch (err: unknown) {
-      console.error(String(err));
       const errorMessage = err instanceof Error ? err.message : "Login failed";
       return c.json(
         {
@@ -136,7 +135,7 @@ export default class AuthController {
       }
 
       // Email is sent automatically inside generateOtp
-      const a = await otpService.generateOtp({
+      await otpService.generateOtp({
         type: "forget_password",
         email: user.email,
         userId: user.id,
@@ -145,7 +144,7 @@ export default class AuthController {
 
       return c.json({
         success: true,
-        message: `${a.code} Password reset OTP has been sent to your registered email. Please check your spam folder as well`,
+        message: `Password reset OTP has been sent to your registered email. Please check your spam folder as well`,
       });
     } catch (err) {
       console.error(

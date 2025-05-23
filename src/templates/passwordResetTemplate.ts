@@ -13,12 +13,14 @@ export const passwordResetTemplate = `
   </head>
   <body>
       <div class="container">
-          <div class="header">
+          <div class="logo-container">
               <img src="${logo}" alt="Alprimus Logo" class="logo">
           </div>
+
+          <h1 class="title">Password Reset</h1>
+
           <div class="content">
-              <h2>Password Reset</h2>
-              <p>Hello {{.Name}},</p>
+              <p>Dear {{.Name}},</p>
               <p>We received a request to reset your Alprimus account password. Please use the following code to complete the process:</p>
 
               <div class="otp-container">
@@ -29,10 +31,15 @@ export const passwordResetTemplate = `
 
               <p>If you didn't request a password reset, please ignore this email or contact our support team if you have concerns about your account security.</p>
 
-              <a href="{{.SupportURL}}" class="button">Contact Support</a>
+              <div class="button-container">
+                  <a href="{{.SupportURL}}" class="button">Contact Support</a>
+              </div>
 
               <p>Thank you for choosing Alprimus!</p>
           </div>
+
+          <div class="divider"></div>
+
           <div class="footer">
               <p>&copy; {{.Year}} Alprimus. All rights reserved.</p>
               <p>This is an automated message, please do not reply to this email.</p>
@@ -40,6 +47,12 @@ export const passwordResetTemplate = `
                   <a href="{{.PrivacyURL}}">Privacy Policy</a> |
                   <a href="{{.TermsURL}}">Terms of Service</a>
               </p>
+
+              <div class="social-links">
+                  <span class="social-icon">•</span>
+                  <span class="social-icon">•</span>
+                  <span class="social-icon">•</span>
+              </div>
           </div>
       </div>
   </body>

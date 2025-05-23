@@ -1,65 +1,125 @@
+export const logo = "https://cool.s3.n3y.in/logo.webp";
+
 export const otpEmailStyles = `
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    margin: 0;
-    padding: 0;
-    background-color: #f9f9f9;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --primary-color: #3a6cf4;
+    --accent-color: #2d4eaa;
+    --text-color: #333;
+    --text-light: #666;
+    --bg-color: #ffffff;
+    --bg-light: #f8faff;
+    --border-radius: 12px;
+    --box-shadow: 0 6px 18px rgba(0,0,0,0.05);
 }
-.container {
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: #f5f7ff;
     max-width: 600px;
     margin: 0 auto;
-    padding: 20px;
-    background-color: #ffffff;
+    padding: 30px 15px;
 }
-.header {
+
+.container {
+    background-color: var(--bg-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 40px 30px;
+}
+
+.logo-container {
     text-align: center;
-    padding: 20px 0;
-    border-bottom: 1px solid #eee;
+    margin-bottom: 25px;
 }
+
 .logo {
-    max-height: 60px;
+    max-width: 160px;
+    height: auto;
 }
+
+.title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 30px;
+}
+
 .content {
-    padding: 30px 20px;
+    font-size: 16px;
+    color: var(--text-light);
     text-align: center;
 }
+
 .otp-container {
+    background-color: var(--bg-light);
+    padding: 24px;
+    border-radius: var(--border-radius);
     margin: 30px 0;
-    padding: 15px;
-    background-color: #f5f7fa;
-    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
 }
+
 .otp-code {
-    font-size: 32px;
-    font-weight: bold;
-    letter-spacing: 5px;
-    color: #2c3e50;
-}
-.footer {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: 8px;
+    color: var(--primary-color);
     text-align: center;
-    padding: 20px;
-    font-size: 12px;
-    color: #999;
-    border-top: 1px solid #eee;
 }
+
+.button-container {
+    text-align: center;
+    margin: 35px 0;
+}
+
 .button {
     display: inline-block;
-    padding: 10px 20px;
-    margin: 20px 0;
-    background-color: #3498db;
+    background-color: var(--primary-color);
     color: white;
     text-decoration: none;
-    border-radius: 4px;
-    font-weight: bold;
+    padding: 14px 32px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: background-color 0.2s ease;
 }
+
+.button:hover {
+    background-color: var(--accent-color);
+}
+
 .expires {
     color: #e74c3c;
-    font-weight: bold;
+    font-weight: 600;
+}
+
+.divider {
+    height: 1px;
+    background-color: rgba(0,0,0,0.08);
+    margin: 30px 0;
+}
+
+.footer {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-light);
+}
+
+.social-links {
+    text-align: center;
+    margin-top: 25px;
+}
+
+.social-icon {
+    display: inline-block;
+    margin: 0 8px;
 }
 `;
-export const logo = "https://cool.s3.n3y.in/logo.webp";
+
 export const emailVerifyOtpTemplate = `
   <!DOCTYPE html>
   <html lang="en">
@@ -73,12 +133,14 @@ export const emailVerifyOtpTemplate = `
   </head>
   <body>
       <div class="container">
-          <div class="header">
+          <div class="logo-container">
               <img src="${logo}" alt="Alprimus Logo" class="logo">
           </div>
+
+          <h1 class="title">Verification Code</h1>
+
           <div class="content">
-              <h2>Verification Code</h2>
-              <p>Hello {{.Name}},</p>
+              <p>Dear {{.Name}},</p>
               <p>Your one-time password (OTP) for Alprimus account verification is:</p>
 
               <div class="otp-container">
@@ -89,10 +151,15 @@ export const emailVerifyOtpTemplate = `
 
               <p>If you didn't request this code, please ignore this email or contact our support team if you have concerns.</p>
 
-              <a href="{{.SupportURL}}" class="button">Contact Support</a>
+              <div class="button-container">
+                  <a href="{{.SupportURL}}" class="button">Contact Support</a>
+              </div>
 
               <p>Thank you for choosing Alprimus!</p>
           </div>
+
+          <div class="divider"></div>
+
           <div class="footer">
               <p>&copy; {{.Year}} Alprimus. All rights reserved.</p>
               <p>This is an automated message, please do not reply to this email.</p>
@@ -100,6 +167,12 @@ export const emailVerifyOtpTemplate = `
                   <a href="{{.PrivacyURL}}">Privacy Policy</a> |
                   <a href="{{.TermsURL}}">Terms of Service</a>
               </p>
+
+              <div class="social-links">
+                  <span class="social-icon">•</span>
+                  <span class="social-icon">•</span>
+                  <span class="social-icon">•</span>
+              </div>
           </div>
       </div>
   </body>
@@ -119,12 +192,14 @@ export const walletWithdrawalOtpTemplate = `
   </head>
   <body>
       <div class="container">
-          <div class="header">
-              <img src="https://yourcompany.com/logo.png" alt="Alprimus Logo" class="logo">
+          <div class="logo-container">
+              <img src="${logo}" alt="Alprimus Logo" class="logo">
           </div>
+
+          <h1 class="title">Wallet Withdrawal Verification</h1>
+
           <div class="content">
-              <h2>Wallet Withdrawal Verification</h2>
-              <p>Hello {{.Name}},</p>
+              <p>Dear {{.Name}},</p>
               <p>You've requested to withdraw {{.Amount}} from your Alprimus wallet.</p>
               <p>Please use the following OTP to authorize this transaction:</p>
 
@@ -136,10 +211,15 @@ export const walletWithdrawalOtpTemplate = `
 
               <p>If you didn't initiate this withdrawal, please contact our support team immediately for security assistance.</p>
 
-              <a href="{{.SupportURL}}" class="button">Contact Support</a>
+              <div class="button-container">
+                  <a href="{{.SupportURL}}" class="button">Contact Support</a>
+              </div>
 
               <p>Thank you for choosing Alprimus!</p>
           </div>
+
+          <div class="divider"></div>
+
           <div class="footer">
               <p>&copy; {{.Year}} Alprimus. All rights reserved.</p>
               <p>This is an automated message, please do not reply to this email.</p>
@@ -147,6 +227,12 @@ export const walletWithdrawalOtpTemplate = `
                   <a href="{{.PrivacyURL}}">Privacy Policy</a> |
                   <a href="{{.TermsURL}}">Terms of Service</a>
               </p>
+
+              <div class="social-links">
+                  <span class="social-icon">•</span>
+                  <span class="social-icon">•</span>
+                  <span class="social-icon">•</span>
+              </div>
           </div>
       </div>
   </body>
