@@ -10,35 +10,17 @@ import { setCookie } from "hono/cookie";
 import { RegisterUser } from "@/validation/auth.validations";
 import TreeService from "./TreeService";
 import { walletsTable } from "@/db/schema";
-import DatabaseService from "./DatabaseService";
+import DatabaseService, { safeUserReturn } from "./DatabaseService";
 
 const jwtSecret = process.env.JWT_SECRET!;
 const treeService = new TreeService();
 const databaseService = new DatabaseService();
+
 class UserService {
   #expireTimeInMinutes = Number(process.env.EXPIRE_TIME_IN_MINUTES) || 5;
   #isDev = process.env.NODE_ENV === "development" ? true : false;
   #host = process.env.HOST || "::1:5000";
-
-  #returnUserObject = {
-    id: usersTable.id,
-    name: usersTable.name,
-    email: usersTable.email,
-    mobile: usersTable.mobile,
-    country: usersTable.country,
-    dialCode: usersTable.dialCode,
-    sponsor: usersTable.sponsor,
-    leftUser: usersTable.leftUser,
-    rightUser: usersTable.rightUser,
-    position: usersTable.position,
-    role: usersTable.role,
-    permissions: usersTable.permissions,
-    isActive: usersTable.isActive,
-    isBlocked: usersTable.isBlocked,
-    redeemedTimes: usersTable.redeemedTimes,
-    associatedUsersCount: usersTable.associatedUsersCount,
-    associatedActiveUsersCount: usersTable.associatedActiveUsersCount,
-  };
+  #returnUserObject = safeUserReturn;
 
   async #getJwtString(id: string) {
     const payload = {
@@ -113,6 +95,7 @@ class UserService {
         const sponserDetails = await databaseService.fetchUserData(
           user.sponsor,
         );
+        if (!sponserDetails) throw new Error("Sponsor not found");
         await treeService.addUser(
           user.id,
           user.sponsor,
@@ -177,14 +160,7 @@ class UserService {
   }
 
   async getUser(id: string): Promise<SafeUser | null> {
-    const user = await db
-      .select(this.#returnUserObject)
-      .from(usersTable)
-      .where(eq(usersTable.id, id))
-      .limit(1);
-    if (!user[0]) return null;
-    const safeUser = user[0] as SafeUser;
-    return safeUser;
+    return await databaseService.fetchUserData(id);
   }
 
   async updateUserPassword(id: string, password: string) {

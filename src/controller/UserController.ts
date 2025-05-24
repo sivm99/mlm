@@ -85,4 +85,13 @@ export default class UserController {
       );
     }
   }
+
+  static async getActiveUsers(c: MyContext) {
+    const data = await userService.getAllActiveUser();
+    return c.json({
+      success: true,
+      message: "The users are ",
+      data,
+    });
+  }
 }

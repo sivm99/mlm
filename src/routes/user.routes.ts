@@ -24,5 +24,7 @@ const router = new Hono()
     authenticateAdmin,
     updateUserByAdminValidate,
     UserController.updateUser,
-  );
+  )
+  .get("/admin/active", authenticateAdmin, UserController.getActiveUsers);
+
 export default router;

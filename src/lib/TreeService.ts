@@ -29,6 +29,7 @@ class BinaryTree {
       // Fetch user data for the new user
       const userData = await databaseService.fetchUserData(userId);
       // Users cannot sponsor themselves (except root admin)
+      if (!userData) throw new Error("User was not found");
       if (userId === sponsorId && userData.role !== "ADMIN") {
         throw new Error("Users cannot sponsor themselves (except root admin)");
       }
@@ -61,7 +62,7 @@ class BinaryTree {
     while (true) {
       // Get the current node's information
       const currentNode = await databaseService.fetchUserData(currentNodeId);
-
+      if (!currentNode) throw new Error("User was not found");
       if (preferredSide === "LEFT") {
         if (!currentNode.leftUser) {
           // Found empty spot on left
@@ -102,7 +103,7 @@ class BinaryTree {
     try {
       // Get sponsor's current data
       const sponsor = await databaseService.fetchUserData(sponsorId);
-
+      if (!sponsor) throw new Error("Sponsor could not be found");
       // Update sponsor's counts
       const updates = {
         associatedUsersCount: sponsor.associatedUsersCount + 1,
@@ -129,6 +130,7 @@ class BinaryTree {
   async buildTreeFromDatabase(rootUserId: string): Promise<void> {
     try {
       const rootUserData = await databaseService.fetchUserData(rootUserId);
+      if (!rootUserData) throw new Error("User not found");
       this.root = new Node(rootUserData);
       await this.populateChildren(this.root);
     } catch (error) {
@@ -146,6 +148,7 @@ class BinaryTree {
       const leftUserData = await databaseService.fetchUserData(
         node.value.leftUser,
       );
+      if (!leftUserData) throw new Error("User not found");
       node.leftUser = new Node(leftUserData);
       await this.populateChildren(node.leftUser);
     }
@@ -155,6 +158,7 @@ class BinaryTree {
       const rightUserData = await databaseService.fetchUserData(
         node.value.rightUser,
       );
+      if (!rightUserData) throw new Error("User not found");
       node.rightUser = new Node(rightUserData);
       await this.populateChildren(node.rightUser);
     }
@@ -278,7 +282,7 @@ class BinaryTree {
   }> {
     try {
       const sponsor = await databaseService.fetchUserData(sponsorId);
-
+      if (!sponsor) throw new Error("Sponsor not found");
       if (preferredSide === "LEFT" && !sponsor.leftUser) {
         return { parentId: sponsorId, side: "LEFT" };
       }
@@ -317,6 +321,7 @@ class TreeService extends BinaryTree {
   async getUserDownline(userId: string): Promise<TreeUser[]> {
     // Build tree for this specific user as root
     const userData = await databaseService.fetchUserData(userId);
+    if (!userData) throw new Error("User not found");
     const userNode = new Node(userData);
     await this.populateChildren(userNode);
 
@@ -333,8 +338,9 @@ class TreeService extends BinaryTree {
   async getLeftBranchUsers(userId: string): Promise<TreeUser[]> {
     // Build tree for this specific user as root if needed
     const userData = await databaseService.fetchUserData(userId);
+    if (!userData) throw new Error("User not found");
     const userNode = new Node(userData);
-    await this.populateChildren(userNode);
+    // await this.populateChildren(userNode);
 
     return this.getLeftBranch(userNode);
   }
@@ -345,8 +351,9 @@ class TreeService extends BinaryTree {
   async getRightBranchUsers(userId: string): Promise<TreeUser[]> {
     // Build tree for this specific user as root if needed
     const userData = await databaseService.fetchUserData(userId);
+    if (!userData) throw new Error("User not found");
     const userNode = new Node(userData);
-    await this.populateChildren(userNode);
+    // await this.populateChildren(userNode);
 
     return this.getRightBranch(userNode);
   }
@@ -357,7 +364,7 @@ class TreeService extends BinaryTree {
   async validatePlacement(parentId: string, side: Side): Promise<boolean> {
     try {
       const parent = await databaseService.fetchUserData(parentId);
-
+      if (!parent) throw new Error("Parent not found");
       if (side === "LEFT" && parent.leftUser) {
         return false;
       }
