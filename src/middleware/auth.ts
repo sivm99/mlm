@@ -2,7 +2,7 @@ import { Next } from "hono";
 import { verify } from "hono/jwt";
 import { getCookie } from "hono/cookie";
 import { MyContext, SafeUser } from "@/types";
-import UserService from "@/lib/UserService";
+import UserService from "@/lib/services/UserService";
 
 const jwtSecret = process.env.JWT_SECRET!;
 const userService = new UserService();

@@ -3,12 +3,14 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { emailField, idField, validationError } from ".";
 
+// only allow numbers here in the otp
+export const otpField = z.string().length(6);
 export const registerSchema = z
   .object({
     name: z.string().nonempty(),
     mobile: z.string(),
     email: emailField,
-    otp: z.string().optional(),
+    otp: otpField,
     referralCode: z.string().optional(),
     password: z.string().min(6),
     passwordConfirm: z.string().min(6).optional(),

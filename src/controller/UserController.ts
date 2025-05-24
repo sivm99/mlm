@@ -1,5 +1,5 @@
-import TreeService from "@/lib/TreeService";
-import UserService from "@/lib/UserService";
+import TreeService from "@/lib/services/TreeService";
+import UserService from "@/lib/services/UserService";
 import { MyContext } from "@/types";
 import { RegisterUser } from "@/validation/auth.validations";
 

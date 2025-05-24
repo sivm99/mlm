@@ -1,8 +1,8 @@
-import EmailService from "@/lib/EmailService";
-import OtpService from "@/lib/OtpService";
+import EmailService from "@/lib/services/EmailService";
+import OtpService from "@/lib/services/OtpService";
+import ReferralService from "@/lib/services/ReferralService";
+import UserService from "@/lib/services/UserService";
 import { MyContext } from "@/types";
-import UserService from "@/lib/UserService";
-import ReferralService from "@/lib/ReferralService";
 
 const userService = new UserService();
 const emailService = new EmailService();

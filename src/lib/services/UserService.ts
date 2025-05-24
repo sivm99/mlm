@@ -1,5 +1,5 @@
 import db from "@/db";
-import { generateRandomDigits } from "./cr";
+import { generateRandomDigits } from "@/lib/cr";
 import { usersTable } from "@/db/schema/users";
 import { LoginUser, SafeUser, UpdateFromAdmin, UpdateFromUser } from "@/types";
 import { password as bunPassword } from "bun";
@@ -189,6 +189,24 @@ class UserService {
       .from(usersTable)
       .where(eq(usersTable.sponsor, id));
     return users;
+  }
+
+  async activateId(id: string, spenderName?: string): Promise<void> {
+    // spender the user who spent the money to activate this id
+    // we will active the id
+    // we will increase the counts
+    // we will send the mail to the activated user
+    const user = await databaseService.fetchUserData(id);
+    if (!user) throw new Error("User not found for id activation");
+    await db
+      .update(usersTable)
+      .set({
+        isActive: true,
+      })
+      .where(eq(usersTable.id, id));
+    await db.update(usersTable).set({ setActiveUsersCount });
+
+    return;
   }
 }
 export default UserService;

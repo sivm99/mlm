@@ -1,13 +1,11 @@
-import { pgTable, real, timestamp, serial, text } from "drizzle-orm/pg-core";
+import { pgTable, serial, real, text, timestamp } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 export const walletsTable = pgTable("wallets", {
   id: serial("id").primaryKey(),
-  alpoints: real("alpoints").notNull().default(0), // when they will add funds ,or admin can add at any time
-  // or through trasfer from other users;
-  bv: real("bv").notNull().default(0), // after the id activation this will become -> 0 + 50;
+  alpoints: real("alpoints").notNull().default(0),
+  bv: real("bv").notNull().default(0),
   incomeWallet: real("incomeWallet").notNull().default(0),
-  // -> when we they will start earing from the cron jobs it will be added in this wallet
   userId: text("userId")
     .notNull()
     .references(() => usersTable.id, {
@@ -17,3 +15,19 @@ export const walletsTable = pgTable("wallets", {
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
+
+export type InsertWallet = typeof walletsTable.$inferInsert;
+export type SelectWallet = typeof walletsTable.$inferSelect;
+
+export const walletTypeToWalletKeyMap = {
+  alpoints: "alpoints",
+  bv: "bv",
+  income_wallet: "incomeWallet",
+} as const;
+
+type WalletTypeKeyMap = typeof walletTypeToWalletKeyMap;
+export type WalletType = keyof WalletTypeKeyMap; // "alpoints" | "bv" | "income_wallet"
+export type WalletKey = SelectWallet[Extract<
+  keyof SelectWallet,
+  "alpoints" | "bv" | "incomeWallet"
+>]; // number

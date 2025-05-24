@@ -1,4 +1,4 @@
-import ReferralService from "@/lib/ReferralService";
+import ReferralService from "@/lib/services/ReferralService";
 import { MyContext, Side } from "@/types";
 
 export default class ReferralController {

@@ -2,7 +2,7 @@ import db from "@/db";
 import { otpTable } from "@/db/schema";
 import { OTP, User } from "@/types";
 import { eq, and } from "drizzle-orm";
-import { generateRandomDigits } from "./cr";
+import { generateRandomDigits } from "@/lib/cr";
 import EmailService, { UserEmail } from "./EmailService";
 import { emailVerifyOtpTemplate, passwordResetTemplate } from "@/templates";
 

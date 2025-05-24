@@ -9,3 +9,5 @@ export * from "./payouts";
 export * from "./products";
 export * from "./referrals";
 export * from "./otp";
+export * from "./logs";
+export * from "./transactions";

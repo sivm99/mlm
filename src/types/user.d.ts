@@ -1,5 +1,5 @@
 import { SelectUser } from "@/db/schema";
-import { SafeUserReturn } from "@/lib/DatabaseService";
+import { SafeUserReturn } from "@/lib/services";
 import { UpdateUser, UpdateUserByAdmin } from "@/validation";
 
 export type User = SelectUser;

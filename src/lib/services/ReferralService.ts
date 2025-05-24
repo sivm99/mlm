@@ -1,6 +1,6 @@
 import db from "@/db";
 import { Side } from "@/types";
-import { generateRandomAlphanumeric } from "./cr";
+import { generateRandomAlphanumeric } from "@/lib/cr";
 import { referralsTable } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import DatabaseService from "./DatabaseService";
