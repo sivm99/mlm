@@ -86,12 +86,25 @@ export default class UserController {
     }
   }
 
-  static async getActiveUsers(c: MyContext) {
-    const data = await userService.getAllActiveUser();
-    return c.json({
-      success: true,
-      message: "The users are ",
-      data,
-    });
+  static async getDirectParterners(c: MyContext) {
+    const { id } = c.get("user");
+    try {
+      const data = await userService.getDirectParterners(id);
+      return c.json({
+        success: true,
+        message: "Data was reterieved successfully",
+        data,
+      });
+    } catch (error) {
+      console.error(error);
+      return c.json(
+        {
+          success: false,
+          message: "Failed to retrieve direct partners",
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+        400,
+      );
+    }
   }
 }

@@ -13,6 +13,7 @@ const router = new Hono()
   .get("/", UserController.getUser)
   .patch("/", updateUserValidate, UserController.updateUser)
   .get("/tree-list", getTreeListValidate, UserController.getUserTree)
+  .get("/direct-parterners", UserController.getDirectParterners)
   .post(
     "/admin/bulk-add",
     authenticateAdmin,
@@ -24,7 +25,6 @@ const router = new Hono()
     authenticateAdmin,
     updateUserByAdminValidate,
     UserController.updateUser,
-  )
-  .get("/admin/active", authenticateAdmin, UserController.getActiveUsers);
+  );
 
 export default router;

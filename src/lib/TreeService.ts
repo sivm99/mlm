@@ -236,17 +236,10 @@ class BinaryTree {
    * @returns Array of tree users in the left branch
    */
   async getLeftBranch(rootNode: Node | null = this.root): Promise<TreeUser[]> {
-    if (!rootNode) return [];
+    if (!rootNode || !rootNode.leftUser) return [];
 
     const result: TreeUser[] = [];
-    let currentNode = rootNode.leftUser;
-
-    while (currentNode) {
-      result.push(currentNode.value);
-      await this.collectSubtreeUsers(currentNode, result);
-      currentNode = null; // We only traverse one level deep from the root's left child
-    }
-
+    await this.collectSubtreeUsers(rootNode.leftUser, result);
     return result;
   }
 
@@ -256,17 +249,10 @@ class BinaryTree {
    * @returns Array of tree users in the right branch
    */
   async getRightBranch(rootNode: Node | null = this.root): Promise<TreeUser[]> {
-    if (!rootNode) return [];
+    if (!rootNode || !rootNode.rightUser) return [];
 
     const result: TreeUser[] = [];
-    let currentNode = rootNode.rightUser;
-
-    while (currentNode) {
-      result.push(currentNode.value);
-      await this.collectSubtreeUsers(currentNode, result);
-      currentNode = null; // We only traverse one level deep from the root's right child
-    }
-
+    await this.collectSubtreeUsers(rootNode.rightUser, result);
     return result;
   }
 
@@ -340,8 +326,7 @@ class TreeService extends BinaryTree {
     const userData = await databaseService.fetchUserData(userId);
     if (!userData) throw new Error("User not found");
     const userNode = new Node(userData);
-    // await this.populateChildren(userNode);
-
+    await this.populateChildren(userNode);
     return this.getLeftBranch(userNode);
   }
 
@@ -353,8 +338,7 @@ class TreeService extends BinaryTree {
     const userData = await databaseService.fetchUserData(userId);
     if (!userData) throw new Error("User not found");
     const userNode = new Node(userData);
-    // await this.populateChildren(userNode);
-
+    await this.populateChildren(userNode);
     return this.getRightBranch(userNode);
   }
 

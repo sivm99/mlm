@@ -7,8 +7,6 @@ import {
   ilike,
   gte,
   lte,
-  lt,
-  gt,
   desc,
   asc,
   isNull,
@@ -21,7 +19,7 @@ export async function getDirectTeam(
   id: string,
   params: {
     // Pagination
-    cursor?: string;
+    page?: number;
     limit?: number;
 
     // Sorting
@@ -57,17 +55,19 @@ export async function getDirectTeam(
   } = {},
 ): Promise<{
   users: SafeUser[];
-  nextCursor: string | null;
-  totalCount?: number;
-  hasNextPage: boolean;
+  page: number;
+  totalPages: number;
+  totalCount: number;
 } | null> {
   const limit = Math.min(params.limit || 10, 100); // Cap at 100 to prevent abuse
+  const page = Math.max(params.page || 1, 1); // Ensure page is at least 1
+  const offset = (page - 1) * limit;
   const orderBy = params.orderBy || "createdAt";
   const orderDirection = params.orderDirection || "desc";
   const { search, filters = {} } = params;
 
   // Prepare the conditions
-  const conditions: SQL<unknown>[] | undefined = [eq(usersTable.sponsor, id)];
+  const conditions: SQL<unknown>[] = [eq(usersTable.sponsor, id)];
 
   // Apply search filter
   if (search && search.trim()) {
@@ -88,7 +88,7 @@ export async function getDirectTeam(
   }
 
   if (filters.position) {
-    conditions.push(eq(usersTable.position as any, filters.position));
+    conditions.push(eq(usersTable.position, filters.position));
   }
 
   if (filters.isActive !== undefined) {
@@ -100,7 +100,7 @@ export async function getDirectTeam(
   }
 
   if (filters.role) {
-    conditions.push(eq(usersTable.role as any, filters.role));
+    conditions.push(eq(usersTable.role, filters.role));
   }
 
   if (filters.hasLeftUser !== undefined) {
@@ -147,84 +147,31 @@ export async function getDirectTeam(
     conditions.push(lte(usersTable.createdAt, filters.createdBefore));
   }
 
-  // Apply cursor-based pagination if cursor is provided
-  if (params.cursor) {
-    try {
-      const decodedCursor = JSON.parse(decodeURIComponent(params.cursor));
-
-      if (orderBy === "createdAt") {
-        const cursorDate = new Date(decodedCursor.createdAt);
-        conditions.push(
-          orderDirection === "desc"
-            ? lt(usersTable.createdAt, cursorDate)
-            : gt(usersTable.createdAt, cursorDate),
-        );
-      } else if (orderBy === "updatedAt") {
-        const cursorDate = new Date(decodedCursor.updatedAt);
-        conditions.push(
-          orderDirection === "desc"
-            ? lt(usersTable.updatedAt, cursorDate)
-            : gt(usersTable.updatedAt, cursorDate),
-        );
-      } else if (orderBy === "name") {
-        conditions.push(
-          orderDirection === "desc"
-            ? lt(usersTable.name, decodedCursor.name)
-            : gt(usersTable.name, decodedCursor.name),
-        );
-      } else if (orderBy === "email") {
-        conditions.push(
-          orderDirection === "desc"
-            ? lt(usersTable.email, decodedCursor.email)
-            : gt(usersTable.email, decodedCursor.email),
-        );
-      } else if (orderBy === "associatedUsersCount") {
-        conditions.push(
-          orderDirection === "desc"
-            ? lt(
-                usersTable.associatedUsersCount,
-                decodedCursor.associatedUsersCount,
-              )
-            : gt(
-                usersTable.associatedUsersCount,
-                decodedCursor.associatedUsersCount,
-              ),
-        );
-      } else if (orderBy === "associatedActiveUsersCount") {
-        conditions.push(
-          orderDirection === "desc"
-            ? lt(
-                usersTable.associatedActiveUsersCount,
-                decodedCursor.associatedActiveUsersCount,
-              )
-            : gt(
-                usersTable.associatedActiveUsersCount,
-                decodedCursor.associatedActiveUsersCount,
-              ),
-        );
-      } else if (orderBy === "redeemedTimes") {
-        conditions.push(
-          orderDirection === "desc"
-            ? lt(usersTable.redeemedTimes, decodedCursor.redeemedTimes)
-            : gt(usersTable.redeemedTimes, decodedCursor.redeemedTimes),
-        );
-      }
-    } catch (_) {
-      // Invalid cursor, ignore and proceed without cursor pagination
-      console.warn("Invalid cursor provided:", params.cursor);
-    }
-  }
-
   // Combine all conditions with AND
   const combinedCondition = and(...conditions);
+
+  // Get total count for pagination
+  const countResult = await db
+    .select({ count: db.fn.count() })
+    .from(usersTable)
+    .where(combinedCondition);
+
+  const totalCount = Number(countResult[0].count) || 0;
+  const totalPages = Math.ceil(totalCount / limit);
 
   // Build the query with all conditions at once
   const orderColumn = usersTable[orderBy as keyof typeof usersTable];
   const query = db
     .select(safeUserReturn)
     .from(usersTable)
-    .where(combinedCondition)
-    .orderBy(orderDirection === "desc" ? desc(orderColumn) : asc(orderColumn));
+    .where(combinedCondition);
+
+  // Add sorting
+  if (orderDirection === "desc") {
+    query.orderBy(desc(orderColumn));
+  } else {
+    query.orderBy(asc(orderColumn));
+  }
 
   // Add secondary sort by id for consistent pagination
   if (orderBy !== "createdAt") {
@@ -235,48 +182,24 @@ export async function getDirectTeam(
     );
   }
 
-  // Get one extra record to check if there's a next page
-  const users = await query.limit(limit + 1);
+  // Apply limit and offset
+  const users = await query.limit(limit).offset(offset);
 
-  if (!users.length) {
+  if (!users.length && totalCount > 0 && page > 1) {
+    // If no results but there should be results, likely the page is out of range
+    // We could potentially redirect to the last valid page
     return {
       users: [],
-      nextCursor: null,
-      hasNextPage: false,
-      totalCount: 0,
+      page,
+      totalPages,
+      totalCount,
     };
   }
 
-  // Check if we have more results than requested limit
-  const hasNextPage = users.length > limit;
-
-  // Remove the extra item we used to determine if there's a next page
-  const paginatedUsers = hasNextPage ? users.slice(0, limit) : users;
-
-  // Generate next cursor
-  let nextCursor: string | null = null;
-  if (hasNextPage && paginatedUsers.length > 0) {
-    const lastUser = paginatedUsers[paginatedUsers.length - 1];
-    const cursorData: Record<string, unknown> = {};
-
-    // Include the sort field in cursor
-    if (orderBy === "createdAt" || orderBy === "updatedAt") {
-      cursorData[orderBy] = lastUser[orderBy].toISOString();
-    } else {
-      cursorData[orderBy] = lastUser[orderBy];
-    }
-
-    // Always include createdAt as secondary sort
-    if (orderBy !== "createdAt") {
-      cursorData.createdAt = lastUser.createdAt.toISOString();
-    }
-
-    nextCursor = encodeURIComponent(JSON.stringify(cursorData));
-  }
-
   return {
-    users: paginatedUsers,
-    nextCursor,
-    hasNextPage,
+    users,
+    page,
+    totalPages,
+    totalCount,
   };
 }

@@ -1,6 +1,6 @@
 import db from "@/db";
 import { usersTable } from "@/db/schema";
-import { SafeUser } from "@/types";
+import { User } from "@/types";
 import { eq } from "drizzle-orm";
 
 export const safeUserReturn = {
@@ -31,11 +31,14 @@ export const safeUserReturn = {
   updatedAt: usersTable.updatedAt,
 };
 
+export type SafeUserReturn = {
+  [K in keyof typeof safeUserReturn]: User[K];
+};
 export default class DatabaseService {
   /**
    * Fetches user data from the database
    */
-  async fetchUserData(userId: string): Promise<SafeUser | null> {
+  async fetchUserData(userId: string): Promise<SafeUserReturn | null> {
     const userData = await db
       .select(safeUserReturn)
       .from(usersTable)
