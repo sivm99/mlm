@@ -183,7 +183,7 @@ class UserService {
       .where(eq(usersTable.id, id));
   }
 
-  async getDirectParterners(id: string): Promise<SafeUser[]> {
+  async getDirectPartners(id: string): Promise<SafeUser[]> {
     const users = await db
       .select(this.#returnUserObject)
       .from(usersTable)

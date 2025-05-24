@@ -86,10 +86,10 @@ export default class UserController {
     }
   }
 
-  static async getDirectParterners(c: MyContext) {
+  static async getDirectPartners(c: MyContext) {
     const { id } = c.get("user");
     try {
-      const data = await userService.getDirectParterners(id);
+      const data = await userService.getDirectPartners(id);
       return c.json({
         success: true,
         message: "Data was reterieved successfully",
