@@ -9,7 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
-export const transactionTypeEnum = pgEnum("transaction_type", [
+export const trasactionType = [
   "income_payout",
   "income_to_alpoints",
   "alpoints_transfer",
@@ -18,20 +18,22 @@ export const transactionTypeEnum = pgEnum("transaction_type", [
   "matching_income_earned",
   "fund_addition",
   "admin_adjustment",
-]);
+] as const;
+export const transactionTypeEnum = pgEnum("transaction_type", trasactionType);
 
-export const walletTypeEnum = pgEnum("wallet_type", [
-  "alpoints",
-  "income_wallet",
-  "bv",
-]);
+export const walletType = ["alpoints", "income_wallet", "bv"] as const;
+export const walletTypeEnum = pgEnum("wallet_type", walletType);
 
-export const transactionStatusEnum = pgEnum("transaction_status", [
+export const transactionStatus = [
   "pending",
   "completed",
   "failed",
   "cancelled",
-]);
+] as const;
+export const transactionStatusEnum = pgEnum(
+  "transaction_status",
+  transactionStatus,
+);
 
 export const transactionsTable = pgTable("transactions", {
   id: serial("id").primaryKey(),

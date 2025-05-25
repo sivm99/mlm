@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import authRouter from "./auth.routes";
 import userRouter from "./user.routes";
 import referralRoutes from "./referral.routes";
+import walletRoutes from "./wallet.routes";
 const routeIndex = new Hono().get("/", (c) =>
   c.text("Hellow what are you doing"),
 );
@@ -9,5 +10,6 @@ const routeIndex = new Hono().get("/", (c) =>
 routeIndex.basePath("/auth").route("/", authRouter);
 routeIndex.basePath("/user").route("/", userRouter);
 routeIndex.basePath("/ref").route("/", referralRoutes);
+routeIndex.basePath("/wallet").route("/", walletRoutes);
 
 export default routeIndex;

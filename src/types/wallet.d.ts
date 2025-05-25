@@ -32,5 +32,3 @@ export type WalletTransaction = {
   metadata: Record<string, unknown> | undefined;
   requiresOtp: boolean | undefined;
 };
-
-export type WalletOperation = "transfer" | "convert" | "payout";

@@ -1,10 +1,8 @@
 import { MyContext } from "@/types";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { emailField, idField, validationError } from ".";
+import { otpField, validationError, idField, emailField } from "./_common";
 
-// only allow numbers here in the otp
-export const otpField = z.string().length(6);
 export const registerSchema = z
   .object({
     name: z.string().nonempty(),

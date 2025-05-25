@@ -1,11 +1,36 @@
 import { z } from "zod";
-import { idField } from "./user.validation";
-import { otpField, validationError } from ".";
 import { zValidator } from "@hono/zod-validator";
 import { MyContext } from "@/types";
+import {
+  transactionStatus,
+  trasactionType,
+  walletOperation,
+} from "@/db/schema";
+import {
+  amountField,
+  idField,
+  limitField,
+  offsetField,
+  otpField,
+  validationError,
+} from "./_common";
 
-export const amountField = z.number().gt(0);
-const transferAlPointsSchema = z.object({
+const generateOtpSchema = z.object({
+  walletoperations: z.enum(walletOperation),
+});
+
+export const generateWalletOtpValidate = zValidator(
+  "query",
+  generateOtpSchema,
+  (r, c: MyContext) => {
+    if (!r.success) {
+      return validationError(r.error, c);
+    }
+    c.set("walletOperation", r.data.walletoperations);
+  },
+);
+
+const transferAlpSchema = z.object({
   fromUserId: idField,
   toUserId: idField,
   amount: amountField,
@@ -13,11 +38,11 @@ const transferAlPointsSchema = z.object({
   description: z.string().min(10),
 });
 
-export type TrasferALPoints = z.infer<typeof transferAlPointsSchema>;
+export type TrasferALPoints = z.infer<typeof transferAlpSchema>;
 
 export const transferAlPointsValidate = zValidator(
   "json",
-  transferAlPointsSchema,
+  transferAlpSchema,
   (r, c: MyContext) => {
     if (!r.success) {
       return validationError(r.error, c);
@@ -40,9 +65,9 @@ export const transferAlPointsValidate = zValidator(
   },
 );
 
-const convertIncomeToAlpSchema = z.object({
-  amount: amountField,
-  otp: otpField,
+const convertIncomeToAlpSchema = transferAlpSchema.pick({
+  amount: true,
+  otp: true,
 });
 
 export const convertIncomeToAlpValidate = zValidator(
@@ -51,5 +76,53 @@ export const convertIncomeToAlpValidate = zValidator(
   (r, c: MyContext) => {
     if (!r.success) return validationError(r.error, c);
     c.set("convertIncomeToAlp", { ...r.data });
+  },
+);
+
+const adminAddAlpSchema = transferAlpSchema.pick({
+  toUserId: true,
+  amount: true,
+  description: true,
+});
+
+export type AdminAddALP = z.infer<typeof adminAddAlpSchema>;
+
+export const adminAddAlpValidate = zValidator(
+  "json",
+  adminAddAlpSchema,
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error, c);
+    c.set("adminAddAlpoints", { ...r.data });
+  },
+);
+
+const ListingSchema = z.object({
+  limit: limitField(100).optional(),
+  offset: offsetField.optional(),
+  type: z.enum(trasactionType).default("alpoints_transfer"),
+  status: z.enum(transactionStatus).default("completed"),
+  cursor: z.number(), // cursor for the id
+});
+
+export type TransactionListing = z.infer<typeof ListingSchema>;
+
+export const transactionListingValidate = zValidator(
+  "query",
+  ListingSchema,
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error, c);
+    c.set("transactionListing", { ...r.data });
+  },
+);
+
+export const multiIdsVaildate = zValidator(
+  "json",
+  z.object({
+    ids: z.array(idField),
+  }),
+
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error, c);
+    c.set("ids", r.data.ids);
   },
 );

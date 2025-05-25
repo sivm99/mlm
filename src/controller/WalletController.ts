@@ -1,13 +1,14 @@
 import { eventEmitter } from "@/events";
 import EmailService from "@/lib/services/EmailService";
 import OtpService from "@/lib/services/OtpService";
+import TransactionService from "@/lib/services/TransactionService";
 import WalletService from "@/lib/services/WalletService";
 import { MyContext } from "@/types";
 
 const emailService = new EmailService();
 const otpService = new OtpService(emailService);
 const walletService = new WalletService(otpService, eventEmitter);
-
+const transactionService = new TransactionService();
 export class WalletController {
   /**
    * Get user wallet details
@@ -145,22 +146,28 @@ export class WalletController {
 
   /**
    * Activate ID using AL Points
+   * They can active bulk ids by just passing them ["", ""] like that first we can have validations
+   * on the front end how many they can activate and only allow that much
    */
   static async activateId(c: MyContext) {
     try {
-      const userId = c.get("userId");
-      const { activationAmount = 50 } = await c.req.json();
+      const userIds = c.get("ids"); // any one can do update the id of anyone by transferring
+      const activationAmount = 50; // 50 alpoints will be deducted for 1 id
+      const data = [];
 
-      const transaction = await walletService.activateId(
-        userId,
-        activationAmount,
-      );
-      if (transaction.status === "completed")
-        return c.json({
-          success: true,
-          message: "ID activated successfully",
-          data: transaction,
-        });
+      for (const userId of userIds) {
+        const transaction = await walletService.activateId(
+          userId,
+          activationAmount,
+        );
+        if (transaction.status === "completed") data.push(transaction);
+      }
+
+      return c.json({
+        success: true,
+        message: "ID activated successfully",
+        data,
+      });
     } catch (error) {
       return c.json(
         {
@@ -177,7 +184,7 @@ export class WalletController {
    */
   static async getTransactionHistory(c: MyContext) {
     try {
-      const userId = c.get("userId");
+      const { id: userId } = c.get("user");
       const limit = Number(c.req.query("limit")) || 50;
       const offset = Number(c.req.query("offset")) || 0;
 
@@ -215,26 +222,19 @@ export class AdminWalletController {
   static async addFunds(c: MyContext) {
     try {
       const { id: adminuserid } = c.get("user");
-      const { userid, amount, description } = await c.req.json();
+      const { toUserId, amount, description } = c.get("adminAddAlpoints");
 
-      if (!userid || !amount) {
-        return c.json(
-          {
-            success: false,
-            message: "missing required fields: userid, amount",
-          },
-          400,
-        );
-      }
-
-      // you can implement admin verification here
-
-      const transaction = await walletService.executetransaction({
+      const transaction = await walletService.adminExecute({
         type: "fund_addition",
-        touserid: userid,
-        towallettype: "alpoints",
+        fromUserId: undefined,
+        toUserId,
+        fromWalletType: undefined, // since its just admin
+        toWalletType: "alpoints",
         amount,
+        deductionPercentage: undefined,
         description: description || `admin fund addition by ${adminuserid}`,
+        reference: undefined,
+        requiresOtp: false,
         metadata: { addedby: adminuserid },
       });
 
@@ -259,72 +259,10 @@ export class AdminWalletController {
    */
   static async getAllTransactions(c: MyContext) {
     try {
-      const limit = Number(c.req.query("limit")) || 100;
-      const offset = Number(c.req.query("offset")) || 0;
-      const status = c.req.query("status");
-      const type = c.req.query("type");
-
-      // Build query conditions
-      const conditions = [];
-      if (status) conditions.push(eq(transactionsTable.status, status));
-      if (type) conditions.push(eq(transactionsTable.type, type));
-
-      const transactions = await db.query.transactionsTable.findMany({
-        where: conditions.length > 0 ? and(...conditions) : undefined,
-        limit,
-        offset,
-        orderBy: (transactions, { desc }) => [desc(transactions.createdAt)],
-      });
-
+      const data = await transactionService.getTransactions();
       return c.json({
         success: true,
-        data: transactions,
-        pagination: {
-          limit,
-          offset,
-          count: transactions.length,
-        },
-      });
-    } catch (error) {
-      return c.json(
-        {
-          success: false,
-          message: String(error),
-        },
-        500,
-      );
-    }
-  }
-
-  /**
-   * Get system logs (admin only)
-   */
-  static async getLogs(c: MyContext) {
-    try {
-      const limit = Number(c.req.query("limit")) || 100;
-      const offset = Number(c.req.query("offset")) || 0;
-      const level = c.req.query("level");
-      const userId = c.req.query("userId");
-
-      const conditions = [];
-      if (level) conditions.push(eq(logsTable.level, level));
-      if (userId) conditions.push(eq(logsTable.userId, userId));
-
-      const logs = await db.query.logsTable.findMany({
-        where: conditions.length > 0 ? and(...conditions) : undefined,
-        limit,
-        offset,
-        orderBy: (logs, { desc }) => [desc(logs.createdAt)],
-      });
-
-      return c.json({
-        success: true,
-        data: logs,
-        pagination: {
-          limit,
-          offset,
-          count: logs.length,
-        },
+        data,
       });
     } catch (error) {
       return c.json(

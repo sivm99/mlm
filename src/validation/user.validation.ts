@@ -1,16 +1,7 @@
 import z from "zod";
-import { validationError } from ".";
 import { zValidator } from "@hono/zod-validator";
 import { MyContext } from "@/types";
-
-export const idField = z
-  .string()
-  .length(9)
-  .transform((i) => i.toUpperCase());
-export const emailField = z
-  .string()
-  .email()
-  .transform((e) => e.toLowerCase());
+import { emailField, idField, validationError } from "./_common";
 
 const updateUserSchema = z.object({
   name: z.string().optional(),

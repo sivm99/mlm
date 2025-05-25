@@ -5,6 +5,7 @@ import { EventEmitter } from "events";
 import {
   SelectTransaction,
   transactionsTable,
+  WalletOperations,
   walletsTable,
 } from "@/db/schema";
 import {
@@ -297,6 +298,11 @@ export default class WalletService {
     });
   }
 
+  // just an alias for the admin
+  async adminExecute(params: WalletTransaction) {
+    return await this.executeTransaction(params);
+  }
+
   /**
    * Get user transaction history
    */
@@ -319,7 +325,7 @@ export default class WalletService {
   /**
    * Generate OTP for wallet operations
    */
-  async generateWalletOtp(userId: string, type: string) {
+  async generateWalletOtp(userId: string, type: WalletOperations[number]) {
     const user = await databaseService.fetchUserData(userId);
     if (!user) throw new Error("User not found ");
     const otpType = this.mapWalletOperationToOtpType(type);
@@ -332,7 +338,9 @@ export default class WalletService {
     });
   }
 
-  private mapWalletOperationToOtpType(operation: string): OTP["type"] {
+  private mapWalletOperationToOtpType(
+    operation: WalletOperations[number],
+  ): OTP["type"] {
     const mapping: Record<string, OTP["type"]> = {
       transfer: "fund_transfer",
       convert: "convert_income_wallet",

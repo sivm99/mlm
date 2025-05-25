@@ -31,3 +31,7 @@ export type WalletKey = SelectWallet[Extract<
   keyof SelectWallet,
   "alpoints" | "bv" | "incomeWallet"
 >]; // number
+
+export const walletOperation = ["transfer", "convert", "payout"] as const;
+
+export type WalletOperations = typeof walletOperation;

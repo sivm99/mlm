@@ -7,9 +7,12 @@ import {
   UpdateFromUser,
 } from "./user";
 import { Context } from "hono";
-import { OTPTYPE } from "@/db/schema";
-import { WalletOperation } from "./wallet";
-import { TrasferALPoints } from "@/validation/wallet.validations";
+import { OTPTYPE, WalletOperations } from "@/db/schema";
+import {
+  AdminAddALP,
+  TransactionListing,
+  TrasferALPoints,
+} from "@/validation/wallet.validations";
 
 export type Variables = {
   otpEmail: OTPEmail;
@@ -21,10 +24,13 @@ export type Variables = {
   bulkAdd: BulkAdd;
   side: Side | "FULL";
   id: SafeUser["id"];
+  ids: SafeUser["id"][];
   resetPassword: ResetPassword;
-  walletOperation: WalletOperation;
+  walletOperation: WalletOperations[number];
   transferAlPoints: TrasferALPoints;
   convertIncomeToAlp: Pick<TrasferALPoints, "amount" | "otp">;
+  adminAddAlpoints: AdminAddALP;
+  transactionListing: TransactionListing;
 };
 export type MyContext = Context<{ Variables: Variables }>;
 export type OTP = OTPTYPE;
