@@ -10,7 +10,7 @@ import { relations } from "drizzle-orm";
 
 export const referralsTable = pgTable("referrals", {
   slug: text("slug").notNull().primaryKey(),
-  userId: text("userId")
+  userId: integer("userId")
     .notNull()
     .references(() => usersTable.id, {
       onDelete: "set null",

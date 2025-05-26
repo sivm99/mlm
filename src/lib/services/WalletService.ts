@@ -12,6 +12,7 @@ import {
   ConvertIncomeParams,
   OTP,
   TransferParams,
+  User,
   WalletTransaction,
 } from "@/types";
 import DatabaseService from "./DatabaseService";
@@ -30,7 +31,7 @@ export default class WalletService {
   /**
    * Get user's wallet details
    */
-  async getUserWallet(userId: string) {
+  async getUserWallet(userId: number) {
     const wallet = await db.query.walletsTable.findFirst({
       where: eq(walletsTable.userId, userId),
     });
@@ -150,7 +151,7 @@ export default class WalletService {
    * Add income to user's income wallet (from cron jobs)
    */
   async addIncome(
-    userId: string,
+    userId: User["id"],
     amount: number,
     type: "weekly_payout_earned" | "matching_income_earned",
     description?: string,
@@ -173,7 +174,7 @@ export default class WalletService {
   /**
    * Activate ID using AL Points (no charges)
    */
-  async activateId(userId: string, activationAmount: number = 50) {
+  async activateId(userId: User["id"], activationAmount: number = 50) {
     return await this.executeTransaction({
       type: "id_activation",
       fromUserId: userId,
@@ -307,7 +308,7 @@ export default class WalletService {
    * Get user transaction history
    */
   async getUserTransactions(
-    userId: string,
+    userId: User["id"],
     limit: number = 50,
     offset: number = 0,
   ) {
@@ -325,7 +326,7 @@ export default class WalletService {
   /**
    * Generate OTP for wallet operations
    */
-  async generateWalletOtp(userId: string, type: WalletOperations[number]) {
+  async generateWalletOtp(userId: User["id"], type: WalletOperations[number]) {
     const user = await databaseService.fetchUserData(userId);
     if (!user) throw new Error("User not found ");
     const otpType = this.mapWalletOperationToOtpType(type);

@@ -5,6 +5,7 @@ import {
   timestamp,
   boolean,
   pgEnum,
+  integer,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { createSelectSchema } from "drizzle-zod";
@@ -22,14 +23,14 @@ export const otpTypeEnum = pgEnum("otp_type", [
 ]);
 
 export const otpTable = pgTable("otp", {
-  id: serial().primaryKey(),
+  id: serial("id").primaryKey(),
   type: otpTypeEnum("type").notNull(),
-  userId: text().references(() => usersTable.id, {
+  userId: integer("userId").references(() => usersTable.id, {
     onDelete: "cascade",
     onUpdate: "cascade",
   }),
-  code: text().notNull(),
-  email: text().notNull(),
+  code: text("code").notNull(),
+  email: text("email").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(), // When the OTP was generated
   expiresAt: timestamp("expiresAt").notNull(), // When the OTP will expire and become invalid
   isValid: boolean("isValid").default(true).notNull(), // Whether OTP can still be used (false if expired, used, or invalidated)

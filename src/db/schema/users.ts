@@ -19,7 +19,7 @@ export const userPosition = pgEnum("userPosition", ["LEFT", "RIGHT"]);
 export const usersTable = pgTable(
   "users",
   {
-    id: text("id").primaryKey(),
+    id: integer("id").primaryKey(),
     name: text("name").notNull(),
     mobile: text("mobile").notNull(),
     email: text("email").notNull(),
@@ -27,7 +27,7 @@ export const usersTable = pgTable(
     dialCode: text("dialCode").notNull(),
     image: text("image"),
 
-    sponsor: text("sponsor")
+    sponsor: integer("sponsor")
       .notNull()
       .references((): AnyPgColumn => usersTable.id, {
         onDelete: "restrict",
@@ -35,14 +35,17 @@ export const usersTable = pgTable(
       }),
 
     position: userPosition("position").notNull(),
-    leftUser: text("leftUser").references((): AnyPgColumn => usersTable.id, {
+    leftUser: integer("leftUser").references((): AnyPgColumn => usersTable.id, {
       onDelete: "set null",
       onUpdate: "cascade",
     }),
-    rightUser: text("rightUser").references((): AnyPgColumn => usersTable.id, {
-      onDelete: "set null",
-      onUpdate: "cascade",
-    }),
+    rightUser: integer("rightUser").references(
+      (): AnyPgColumn => usersTable.id,
+      {
+        onDelete: "set null",
+        onUpdate: "cascade",
+      },
+    ),
 
     isActive: boolean("isActive").notNull().default(false),
     isBlocked: boolean("isBlocked").notNull().default(false),

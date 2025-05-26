@@ -11,21 +11,23 @@ async function seed() {
   try {
     console.log("Seeding database...");
 
-    const adminUser: RegisterUser & {
+    const adminUser: Omit<RegisterUser, "otp"> & {
       id: User["id"];
       role: User["role"];
       passwordHash: User["passwordHash"];
+      isActive: true;
     } = {
-      id: "AL0000001",
+      id: 1_000_001,
       name: "Master",
       mobile: "9999999999",
       email: "master@1as.in",
       country: "Global",
       dialCode: "+1",
-      sponsor: "AL0000001",
+      sponsor: 1_000_001,
       position: "LEFT",
       role: "ADMIN",
       password: "",
+      isActive: true,
       passwordHash: await password.hash(process.env.ADMIN_PASSWORD!),
     };
 

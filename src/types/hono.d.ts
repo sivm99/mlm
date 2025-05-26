@@ -1,11 +1,5 @@
 import { BulkAdd, OTPEmail, RegisterUser, ResetPassword } from "@/validation";
-import {
-  LoginUser,
-  SafeUser,
-  Side,
-  UpdateFromAdmin,
-  UpdateFromUser,
-} from "./user";
+import { LoginUser, SafeUser, Side, UpdateFromAdmin } from "./user";
 import { Context } from "hono";
 import { OTPTYPE, WalletOperations } from "@/db/schema";
 import {
@@ -20,7 +14,7 @@ export type Variables = {
   registerUsers: RegisterUser[];
   user: SafeUser;
   loginUser: LoginUser;
-  updatedUser: UpdateFromUser | UpdateFromAdmin;
+  updatedUser: UpdateFromAdmin;
   bulkAdd: BulkAdd;
   side: Side | "FULL";
   id: SafeUser["id"];

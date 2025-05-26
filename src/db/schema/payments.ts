@@ -16,7 +16,7 @@ export const paymentsTable = pgTable(
   "payments",
   {
     id: serial("id").primaryKey(),
-    userId: text("userId")
+    userId: integer("userId")
       .notNull()
       .references(() => usersTable.id, {
         onDelete: "cascade",

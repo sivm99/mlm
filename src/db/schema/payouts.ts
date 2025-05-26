@@ -1,9 +1,9 @@
 import {
+  integer,
   pgEnum,
   pgTable,
   real,
   serial,
-  text,
   timestamp,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
@@ -20,7 +20,7 @@ export const payoutsTable = pgTable(
   "payouts",
   {
     id: serial("id").primaryKey(),
-    userId: text("userId")
+    userId: integer("userId")
       .notNull()
       .references(() => usersTable.id, {
         onDelete: "cascade",

@@ -8,8 +8,7 @@ export type User = SelectUser;
 export type NewUser = Omit<User, "id" | "sponsor" | "passwordHash"> & {
   password: string;
 };
-export type LoginUser = {
-  id: string;
+export type LoginUser = Pick<User, "id"> & {
   password: string;
 };
 export type SafeUser = SafeUserReturn;

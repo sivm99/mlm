@@ -22,8 +22,8 @@ export default class OtpService {
    */
   async generateOtp(params: {
     type: OTP["type"];
-    email: string;
-    userId?: string;
+    email: User["email"];
+    userId?: User["id"];
     name?: User["name"];
   }) {
     const { type, email, userId, name } = params;
@@ -171,8 +171,8 @@ export default class OtpService {
    */
   async invalidateExistingOtps(params: {
     type: OTP["type"];
-    email: string;
-    userId?: string;
+    email: User["email"];
+    userId?: User["id"];
   }) {
     const { type, email, userId } = params;
 

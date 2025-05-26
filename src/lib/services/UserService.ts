@@ -1,7 +1,13 @@
 import db from "@/db";
 import { generateRandomDigits } from "@/lib/cr";
 import { usersTable } from "@/db/schema/users";
-import { LoginUser, SafeUser, UpdateFromAdmin, UpdateFromUser } from "@/types";
+import {
+  LoginUser,
+  SafeUser,
+  UpdateFromAdmin,
+  UpdateFromUser,
+  User,
+} from "@/types";
 import { password as bunPassword } from "bun";
 import { eq } from "drizzle-orm";
 import { sign } from "hono/jwt";
@@ -11,10 +17,14 @@ import { RegisterUser } from "@/validation/auth.validations";
 import TreeService from "./TreeService";
 import { walletsTable } from "@/db/schema";
 import DatabaseService, { safeUserReturn } from "./DatabaseService";
+import { sql } from "drizzle-orm";
+import EmailService from "./EmailService";
+import { activationTemplate } from "@/templates";
 
 const jwtSecret = process.env.JWT_SECRET!;
 const treeService = new TreeService();
 const databaseService = new DatabaseService();
+const emailService = new EmailService();
 
 class UserService {
   #expireTimeInMinutes = Number(process.env.EXPIRE_TIME_IN_MINUTES) || 5;
@@ -22,7 +32,7 @@ class UserService {
   #host = process.env.HOST || "::1:5000";
   #returnUserObject = safeUserReturn;
 
-  async #getJwtString(id: string) {
+  async #getJwtString(id: User["id"]) {
     const payload = {
       id,
       exp: Math.floor(Date.now() / 1000) + 60 * this.#expireTimeInMinutes,
@@ -30,13 +40,13 @@ class UserService {
     return await sign(payload, jwtSecret);
   }
 
-  async #getNewId(retryCount = 0): Promise<string> {
+  async #getNewId(retryCount = 0): Promise<number> {
     if (retryCount > 10) {
       throw new Error(
         "Failed to generate a unique id after multiple attempts.",
       );
     }
-    const newId = `AL${generateRandomDigits(7)}`;
+    const newId = generateRandomDigits(7, "number");
 
     const existingUser = await db
       .select({
@@ -96,11 +106,7 @@ class UserService {
           user.sponsor,
         );
         if (!sponserDetails) throw new Error("Sponsor not found");
-        await treeService.addUser(
-          user.id,
-          user.sponsor,
-          sponserDetails.position,
-        );
+        await treeService.addUser(user.id, user.sponsor, user.position);
       }
 
       return { success: true, users: insertedData };
@@ -146,7 +152,7 @@ class UserService {
     }
   }
 
-  async setTokenCookie(c: Context, id: string) {
+  async setTokenCookie(c: Context, id: User["id"]) {
     const jwt = await this.#getJwtString(id);
     return setCookie(c, "token", jwt, {
       path: "/",
@@ -159,11 +165,11 @@ class UserService {
     });
   }
 
-  async getUser(id: string): Promise<SafeUser | null> {
+  async getUser(id: User["id"]): Promise<SafeUser | null> {
     return await databaseService.fetchUserData(id);
   }
 
-  async updateUserPassword(id: string, password: string) {
+  async updateUserPassword(id: User["id"], password: string) {
     await db
       .update(usersTable)
       .set({
@@ -173,7 +179,10 @@ class UserService {
       .where(eq(usersTable.id, id));
   }
 
-  async updateUser(id: string, updatedUser: UpdateFromUser | UpdateFromAdmin) {
+  async updateUser(
+    id: User["id"],
+    updatedUser: UpdateFromUser | UpdateFromAdmin,
+  ) {
     await db
       .update(usersTable)
       .set({
@@ -183,7 +192,7 @@ class UserService {
       .where(eq(usersTable.id, id));
   }
 
-  async getDirectPartners(id: string): Promise<SafeUser[]> {
+  async getDirectPartners(id: User["id"]): Promise<SafeUser[]> {
     const users = await db
       .select(this.#returnUserObject)
       .from(usersTable)
@@ -191,21 +200,33 @@ class UserService {
     return users;
   }
 
-  async activateId(id: string, spenderName?: string): Promise<void> {
-    // spender the user who spent the money to activate this id
-    // we will active the id
-    // we will increase the counts
-    // we will send the mail to the activated user
+  async activateId(id: User["id"], spenderName?: string): Promise<void> {
+    // spenderName is the one who paid for this ID activation
+    console.log("Spender Name:", spenderName);
     const user = await databaseService.fetchUserData(id);
     if (!user) throw new Error("User not found for id activation");
+
+    // Activate the user
+    await db
+      .update(usersTable)
+      .set({ isActive: true })
+      .where(eq(usersTable.id, id));
+
     await db
       .update(usersTable)
       .set({
-        isActive: true,
+        associatedActiveUsersCount: sql`${usersTable.associatedActiveUsersCount} + 1`,
       })
-      .where(eq(usersTable.id, id));
-    await db.update(usersTable).set({ setActiveUsersCount });
+      .where(eq(usersTable.id, user.sponsor));
 
+    await emailService.sendIdActivationEmail(
+      {
+        email: user.email,
+        name: user.name,
+        userId: user.id,
+      },
+      activationTemplate,
+    );
     return;
   }
 }

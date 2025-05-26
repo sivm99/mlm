@@ -7,7 +7,7 @@ export const logsTable = pgTable("logs", {
   id: serial("id").primaryKey(),
   level: text("level").notNull().default("info"), // info, warn, error
   action: text("action").notNull(),
-  userId: text("userId").references(() => usersTable.id),
+  userId: integer("userId").references(() => usersTable.id),
   transactionId: integer("transactionId").references(
     () => transactionsTable.id,
   ),

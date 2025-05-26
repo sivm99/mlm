@@ -6,6 +6,7 @@ import {
   boolean,
   timestamp,
   pgEnum,
+  integer,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
@@ -41,8 +42,8 @@ export const transactionsTable = pgTable("transactions", {
   status: transactionStatusEnum("status").notNull().default("pending"),
 
   // User info
-  fromUserId: text("fromUserId").references(() => usersTable.id),
-  toUserId: text("toUserId").references(() => usersTable.id),
+  fromUserId: integer("fromUserId").references(() => usersTable.id),
+  toUserId: integer("toUserId").references(() => usersTable.id),
 
   // Wallet info
   fromWalletType: walletTypeEnum("fromWalletType"),

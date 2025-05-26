@@ -18,8 +18,18 @@ export function generateRandomDigits<T extends "string" | "number">(
   n: number,
   r: T = "string" as T,
 ): T extends "string" ? string : number {
-  let result: string | number = r === "string" ? "" : 0;
-  for (let i = 0; i < n; i++) {
+  // Generate first digit (1-9)
+  const firstDigit = Math.floor(Math.random() * 9) + 1;
+
+  let result: string | number;
+  if (r === "string") {
+    result = String(firstDigit);
+  } else {
+    result = firstDigit;
+  }
+
+  // Generate remaining digits (0-9)
+  for (let i = 1; i < n; i++) {
     const digit = Math.floor(Math.random() * 10);
     if (r === "string") {
       result = String(result) + digit;

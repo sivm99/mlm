@@ -38,7 +38,7 @@ export default class DatabaseService {
   /**
    * Fetches user data from the database
    */
-  async fetchUserData(userId: string): Promise<SafeUserReturn | null> {
+  async fetchUserData(userId: number): Promise<SafeUserReturn | null> {
     const userData = await db
       .select(safeUserReturn)
       .from(usersTable)

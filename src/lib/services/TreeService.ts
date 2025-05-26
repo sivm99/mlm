@@ -20,7 +20,11 @@ class BinaryTree {
    * @param sponsorId - The ID of the sponsor user
    * @param side - Which side to insert the user (LEFT or RIGHT)
    */
-  async insert(userId: string, sponsorId: string, side: Side): Promise<void> {
+  async insert(
+    userId: TreeUser["id"],
+    sponsorId: TreeUser["id"],
+    side: Side,
+  ): Promise<void> {
     try {
       if (!userId) throw new Error("User ID is required");
       if (!sponsorId) throw new Error("Sponsor ID is required");
@@ -52,8 +56,8 @@ class BinaryTree {
    * @param preferredSide - The preferred side to insert (LEFT or RIGHT)
    */
   private async insertUserInDatabase(
-    userId: string,
-    sponsorId: string,
+    userId: TreeUser["id"],
+    sponsorId: TreeUser["id"],
     preferredSide: Side,
   ): Promise<void> {
     // Start with the sponsor node
@@ -97,7 +101,7 @@ class BinaryTree {
    * Note: Sponsors relationships won't change, only the tree structure changes
    */
   private async updateSponsorCounts(
-    sponsorId: string,
+    sponsorId: TreeUser["id"],
     isUserActive: boolean,
   ): Promise<void> {
     try {
@@ -127,7 +131,7 @@ class BinaryTree {
    * Builds the tree from database
    * @param rootUserId - The ID of the root user
    */
-  async buildTreeFromDatabase(rootUserId: string): Promise<void> {
+  async buildTreeFromDatabase(rootUserId: TreeUser["id"]): Promise<void> {
     try {
       const rootUserData = await databaseService.fetchUserData(rootUserId);
       if (!rootUserData) throw new Error("User not found");
@@ -260,10 +264,10 @@ class BinaryTree {
    * Finds an available spot for a new user under a specified sponsor
    */
   async findAvailablePlacement(
-    sponsorId: string,
+    sponsorId: TreeUser["id"],
     preferredSide: Side,
   ): Promise<{
-    parentId: string;
+    parentId: TreeUser["id"];
     side: Side;
   }> {
     try {
@@ -289,7 +293,7 @@ class TreeService extends BinaryTree {
   /**
    * Initialize the tree service with a root user
    */
-  async initializeTree(rootUserId: string): Promise<void> {
+  async initializeTree(rootUserId: TreeUser["id"]): Promise<void> {
     await this.buildTreeFromDatabase(rootUserId);
   }
 
@@ -297,14 +301,18 @@ class TreeService extends BinaryTree {
    * Add a user to the tree under their sponsor
    * Note: The sponsor relationship is permanent, only the tree structure changes
    */
-  async addUser(userId: string, sponsorId: string, side: Side): Promise<void> {
+  async addUser(
+    userId: TreeUser["id"],
+    sponsorId: TreeUser["id"],
+    side: Side,
+  ): Promise<void> {
     await this.insert(userId, sponsorId, side);
   }
 
   /**
    * Get a user's downline (all users in their subtree)
    */
-  async getUserDownline(userId: string): Promise<TreeUser[]> {
+  async getUserDownline(userId: number): Promise<TreeUser[]> {
     // Build tree for this specific user as root
     const userData = await databaseService.fetchUserData(userId);
     if (!userData) throw new Error("User not found");
@@ -321,7 +329,7 @@ class TreeService extends BinaryTree {
   /**
    * Get users in left branch of a specific user
    */
-  async getLeftBranchUsers(userId: string): Promise<TreeUser[]> {
+  async getLeftBranchUsers(userId: number): Promise<TreeUser[]> {
     // Build tree for this specific user as root if needed
     const userData = await databaseService.fetchUserData(userId);
     if (!userData) throw new Error("User not found");
@@ -333,7 +341,7 @@ class TreeService extends BinaryTree {
   /**
    * Get users in right branch of a specific user
    */
-  async getRightBranchUsers(userId: string): Promise<TreeUser[]> {
+  async getRightBranchUsers(userId: number): Promise<TreeUser[]> {
     // Build tree for this specific user as root if needed
     const userData = await databaseService.fetchUserData(userId);
     if (!userData) throw new Error("User not found");
@@ -345,7 +353,10 @@ class TreeService extends BinaryTree {
   /**
    * Check if a user can be placed at the specified position
    */
-  async validatePlacement(parentId: string, side: Side): Promise<boolean> {
+  async validatePlacement(
+    parentId: TreeUser["id"],
+    side: Side,
+  ): Promise<boolean> {
     try {
       const parent = await databaseService.fetchUserData(parentId);
       if (!parent) throw new Error("Parent not found");

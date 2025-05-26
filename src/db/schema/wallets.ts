@@ -1,4 +1,4 @@
-import { pgTable, serial, real, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, real, timestamp, integer } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 export const walletsTable = pgTable("wallets", {
@@ -6,7 +6,7 @@ export const walletsTable = pgTable("wallets", {
   alpoints: real("alpoints").notNull().default(0),
   bv: real("bv").notNull().default(0),
   incomeWallet: real("incomeWallet").notNull().default(0),
-  userId: text("userId")
+  userId: integer("userId")
     .notNull()
     .references(() => usersTable.id, {
       onDelete: "cascade",

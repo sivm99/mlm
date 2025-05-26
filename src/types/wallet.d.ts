@@ -2,8 +2,8 @@ import { SelectTransaction, SelectWallet } from "@/db/schema";
 import { User } from "./user";
 
 export type TransferParams = {
-  fromUserId: string;
-  toUserId: string;
+  fromUserId: User["id"];
+  toUserId: User["id"];
   amount: number;
   type: "alpoints_transfer";
   description: string | undefined;
@@ -13,7 +13,7 @@ export type TransferParams = {
 export type Wallet = SelectWallet;
 
 export type ConvertIncomeParams = {
-  userId: string;
+  userId: User["id"];
   amount: number;
   type: "income_to_alpoints" | "income_payout";
   otp: string;

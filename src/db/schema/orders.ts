@@ -6,6 +6,7 @@ import {
   real,
   timestamp,
   pgEnum,
+  integer,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { orderItemsTable } from "./orderItems";
@@ -18,7 +19,7 @@ export const orderStatusEnum = pgEnum("orderStatus", [
 ]);
 export const ordersTable = pgTable("orders", {
   id: serial("id").primaryKey(),
-  userId: text("userId")
+  userId: integer("userId")
     .references(() => usersTable.id)
     .notNull(),
   status: orderStatusEnum("status").default("PENDING"),

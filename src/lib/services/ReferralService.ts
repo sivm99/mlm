@@ -166,7 +166,7 @@ export default class ReferralService {
    * @param userId - The user ID to get referrals for
    * @returns Array of referrals
    */
-  async getReferralsByUserId(userId: string) {
+  async getReferralsByUserId(userId: number) {
     return db
       .select()
       .from(referralsTable)

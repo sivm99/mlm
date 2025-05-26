@@ -4,10 +4,7 @@ import { ZodError } from "zod";
 
 export const otpField = z.string().length(6).regex(/\d/);
 
-export const idField = z
-  .string()
-  .length(9)
-  .transform((i) => i.toUpperCase());
+export const idField = z.number().int().gte(1_000_000).lt(10_000_000);
 export const emailField = z
   .string()
   .email()

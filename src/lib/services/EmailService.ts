@@ -116,4 +116,21 @@ export default class EmailService {
       ],
     });
   }
+
+  /**
+   * Send User activation Email
+   */
+
+  async sendIdActivationEmail(user: UserEmail, template: string) {
+    return this.#sendEmail({
+      to: user.email,
+      subject: "Your ID was activated successfully",
+      template,
+      placeholders: [
+        { key: "Name", value: user.name || "" },
+        { key: "UserId", value: user.userId || "" },
+        { key: "Year", value: 2025 },
+      ],
+    });
+  }
 }
