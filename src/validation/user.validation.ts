@@ -68,7 +68,7 @@ const bulkAdd = z.object({
     email: emailField,
     password: z.string().min(6).default(""),
   }),
-  count: z.number().gt(1),
+  count: z.number().gte(1),
 });
 export type BulkAdd = z.infer<typeof bulkAdd>;
 export const bulkAddValidate = zValidator(
