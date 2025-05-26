@@ -209,7 +209,6 @@ export default class AuthController {
 
   static async getSponserDetails(c: MyContext) {
     const id = c.get("id");
-    console.log(id);
     const data = await userService.getUser(id);
     if (!data)
       return c.json(

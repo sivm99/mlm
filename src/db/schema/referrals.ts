@@ -18,7 +18,7 @@ export const referralsTable = pgTable("referrals", {
     }),
 
   position: userPosition("position").notNull(),
-  sponsor: text("sponsor")
+  sponsor: integer("sponsor")
     .notNull()
     .references(() => usersTable.id, {
       onDelete: "set null",

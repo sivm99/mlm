@@ -1,5 +1,5 @@
 {
-  "id": "8390c1a7-8b62-496f-a356-75b7a62066cb",
+  "id": "560d2e6d-b8ef-4bf2-be72-0f0768e124fe",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -78,7 +78,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "integer",
           "primaryKey": true,
           "notNull": true
         },
@@ -120,7 +120,7 @@
         },
         "sponsor": {
           "name": "sponsor",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -133,13 +133,13 @@
         },
         "leftUser": {
           "name": "leftUser",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
         "rightUser": {
           "name": "rightUser",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -326,7 +326,7 @@
         },
         "userId": {
           "name": "userId",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -480,7 +480,7 @@
         },
         "userId": {
           "name": "userId",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -604,7 +604,7 @@
         },
         "userId": {
           "name": "userId",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -733,7 +733,7 @@
         },
         "userId": {
           "name": "userId",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -925,7 +925,7 @@
         },
         "userId": {
           "name": "userId",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -938,7 +938,7 @@
         },
         "sponsor": {
           "name": "sponsor",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -1039,7 +1039,7 @@
         },
         "userId": {
           "name": "userId",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -1130,7 +1130,7 @@
         },
         "userId": {
           "name": "userId",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -1234,13 +1234,13 @@
         },
         "fromUserId": {
           "name": "fromUserId",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
         "toUserId": {
           "name": "toUserId",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },

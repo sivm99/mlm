@@ -17,10 +17,10 @@ export default class UserController {
   static async updateUser(c: MyContext) {
     const user = c.get("user");
     const updatedUser = c.get("updatedUser");
-    const id = user.role === "ADMIN" ? updatedUser.id : user.id;
-
+    let id = user.role === "ADMIN" ? updatedUser.id : user.id;
+    if (!id) id = user.id;
     try {
-      await userService.updateUser(id ? id : user.id, updatedUser);
+      await userService.updateUser(id, updatedUser);
     } catch (err) {
       return c.json({
         success: false,

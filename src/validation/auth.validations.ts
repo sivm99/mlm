@@ -72,6 +72,7 @@ export const getSponserDetailValidate = zValidator(
   "query",
   idFieldValidateSchema,
   (r, c: MyContext) => {
+    console.log(JSON.stringify(r));
     if (!r.success) return validationError(r.error, c);
     c.set("id", r.data.id);
   },

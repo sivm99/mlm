@@ -37,7 +37,7 @@ async function verifyAndGetUser(c: MyContext): Promise<VerifyResult> {
     return { error: `Invalid token: ${String(err)}`, statusCode: 401 };
   }
 
-  if (tokenResult && tokenResult.id && typeof tokenResult.id === "string") {
+  if (tokenResult && tokenResult.id && typeof tokenResult.id === "number") {
     const safeUser = await userService.getUser(tokenResult.id);
     if (!safeUser) {
       return { error: "Invalid user", statusCode: 401 };

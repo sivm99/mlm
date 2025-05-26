@@ -16,17 +16,17 @@ CREATE TABLE "config" (
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" integer PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"mobile" text NOT NULL,
 	"email" text NOT NULL,
 	"country" text NOT NULL,
 	"dialCode" text NOT NULL,
 	"image" text,
-	"sponsor" text NOT NULL,
+	"sponsor" integer NOT NULL,
 	"position" "userPosition" NOT NULL,
-	"leftUser" text,
-	"rightUser" text,
+	"leftUser" integer,
+	"rightUser" integer,
 	"isActive" boolean DEFAULT false NOT NULL,
 	"isBlocked" boolean DEFAULT false NOT NULL,
 	"redeemedTimes" integer DEFAULT 0 NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE "wallets" (
 	"alpoints" real DEFAULT 0 NOT NULL,
 	"bv" real DEFAULT 0 NOT NULL,
 	"incomeWallet" real DEFAULT 0 NOT NULL,
-	"userId" text NOT NULL,
+	"userId" integer NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
@@ -59,7 +59,7 @@ CREATE TABLE "orderItems" (
 --> statement-breakpoint
 CREATE TABLE "orders" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"userId" text NOT NULL,
+	"userId" integer NOT NULL,
 	"status" "orderStatus" DEFAULT 'PENDING',
 	"deliveryAddress" text,
 	"totalAmount" real NOT NULL,
@@ -78,7 +78,7 @@ CREATE TABLE "packages" (
 --> statement-breakpoint
 CREATE TABLE "payments" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"userId" text NOT NULL,
+	"userId" integer NOT NULL,
 	"amount" real NOT NULL,
 	"packageId" integer,
 	"status" text NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE "payments" (
 --> statement-breakpoint
 CREATE TABLE "payouts" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"userId" text NOT NULL,
+	"userId" integer NOT NULL,
 	"amount" real NOT NULL,
 	"status" "payoutStatus" DEFAULT 'PENDING',
 	"payoutDate" timestamp NOT NULL,
@@ -108,9 +108,9 @@ CREATE TABLE "products" (
 --> statement-breakpoint
 CREATE TABLE "referrals" (
 	"slug" text PRIMARY KEY NOT NULL,
-	"userId" text NOT NULL,
+	"userId" integer NOT NULL,
 	"position" "userPosition" NOT NULL,
-	"sponsor" text NOT NULL,
+	"sponsor" integer NOT NULL,
 	"impressions" integer DEFAULT 0 NOT NULL,
 	"registered" integer DEFAULT 0 NOT NULL,
 	"activated" integer DEFAULT 0 NOT NULL,
@@ -122,7 +122,7 @@ CREATE TABLE "referrals" (
 CREATE TABLE "otp" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"type" "otp_type" NOT NULL,
-	"userId" text,
+	"userId" integer,
 	"code" text NOT NULL,
 	"email" text NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
@@ -135,7 +135,7 @@ CREATE TABLE "logs" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"level" text DEFAULT 'info' NOT NULL,
 	"action" text NOT NULL,
-	"userId" text,
+	"userId" integer,
 	"transactionId" integer,
 	"message" text NOT NULL,
 	"metadata" text,
@@ -148,8 +148,8 @@ CREATE TABLE "transactions" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"type" "transaction_type" NOT NULL,
 	"status" "transaction_status" DEFAULT 'pending' NOT NULL,
-	"fromUserId" text,
-	"toUserId" text,
+	"fromUserId" integer,
+	"toUserId" integer,
 	"fromWalletType" "wallet_type",
 	"toWalletType" "wallet_type",
 	"amount" real NOT NULL,
