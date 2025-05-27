@@ -1,40 +1,49 @@
 import { drizzle } from "drizzle-orm/bun-sql";
-import { password, SQL } from "bun";
-import { usersTable } from "./schema";
-import { RegisterUser } from "@/validation/auth.validations";
-import { User } from "@/types";
+import { env, password, SQL } from "bun";
+import {
+  InsertTree,
+  InsertUser,
+  InsertWallet,
+  treeTable,
+  usersTable,
+  walletsTable,
+} from "./schema";
+import { adminId } from ".";
 
-const client = new SQL(process.env.DATABASE_URL!, { max: 1 });
+const client = new SQL(env.DATABASE_URL!, { max: 1 });
 const db = drizzle({ client });
 
+const adminEmail = env.ADMIN_EMAIL || "admin@example.com";
 async function seed() {
   try {
-    console.log("Seeding database...");
-
-    const adminUser: Omit<RegisterUser, "otp"> & {
-      id: User["id"];
-      role: User["role"];
-      passwordHash: User["passwordHash"];
-      isActive: true;
-      parentUser: User["id"];
-    } = {
-      id: 1_000_001,
+    const adminUser: InsertUser = {
+      id: adminId,
       name: "Master",
       mobile: "9999999999",
-      email: "master@1as.in",
+      email: adminEmail,
       country: "Global",
       dialCode: "+1",
-      sponsor: 1_000_001,
-      position: "LEFT",
-      parentUser: 1_000_001,
       role: "ADMIN",
-      password: "",
       isActive: true,
       passwordHash: await password.hash(process.env.ADMIN_PASSWORD!),
     };
+    const adminWallet: InsertWallet = {
+      id: adminId,
+    };
 
+    const treeUser: InsertTree = {
+      id: adminId,
+      sponsor: adminId,
+      position: "LEFT",
+      parentUser: adminId,
+    };
     // Insert admin user
+    console.log("Adding the admin");
     await db.insert(usersTable).values(adminUser).onConflictDoNothing();
+    console.log("Adding the admin wallet");
+    await db.insert(walletsTable).values(adminWallet).onConflictDoNothing();
+    console.log("Adding the admin into the tree");
+    await db.insert(treeTable).values(treeUser).onConflictDoNothing();
     console.log("Admin user seeded successfully!");
   } catch (error) {
     console.error("Error seeding database:", error);

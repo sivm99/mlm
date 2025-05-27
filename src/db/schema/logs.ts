@@ -7,13 +7,13 @@ export const logsTable = pgTable("logs", {
   id: serial("id").primaryKey(),
   level: text("level").notNull().default("info"), // info, warn, error
   action: text("action").notNull(),
-  userId: integer("userId").references(() => usersTable.id),
-  transactionId: integer("transactionId").references(
+  userId: integer("user_id").references(() => usersTable.id),
+  transactionId: integer("transaction_id").references(
     () => transactionsTable.id,
   ),
   message: text("message").notNull(),
   metadata: text("metadata"), // JSON string
-  ipAddress: text("ipAddress"),
-  userAgent: text("userAgent"),
-  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });

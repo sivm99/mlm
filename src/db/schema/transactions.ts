@@ -42,18 +42,18 @@ export const transactionsTable = pgTable("transactions", {
   status: transactionStatusEnum("status").notNull().default("pending"),
 
   // User info
-  fromUserId: integer("fromUserId").references(() => usersTable.id),
-  toUserId: integer("toUserId").references(() => usersTable.id),
+  fromUserId: integer("from_user_id").references(() => usersTable.id),
+  toUserId: integer("to_user_id").references(() => usersTable.id),
 
   // Wallet info
-  fromWalletType: walletTypeEnum("fromWalletType"),
-  toWalletType: walletTypeEnum("toWalletType"),
+  fromWalletType: walletTypeEnum("from_wallet_type"),
+  toWalletType: walletTypeEnum("to_wallet_type"),
 
   // Amount details
   amount: real("amount").notNull(),
-  deductionAmount: real("deductionAmount").default(0),
-  netAmount: real("netAmount").notNull(),
-  deductionPercentage: real("deductionPercentage").default(0),
+  deductionAmount: real("deduction_amount").default(0),
+  netAmount: real("net_amount").notNull(),
+  deductionPercentage: real("deduction_percentage").default(0),
 
   // Additional info
   description: text("description"),
@@ -61,11 +61,11 @@ export const transactionsTable = pgTable("transactions", {
   metadata: text("metadata"), // JSON string for additional data
 
   // OTP verification (if required)
-  otpVerified: boolean("otpVerified").default(false),
-  requiresOtp: boolean("requiresOtp").default(false),
+  otpVerified: boolean("otp_verified").default(false),
+  requiresOtp: boolean("requires_otp").default(false),
 
-  createdAt: timestamp("createdAt").notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export type InsertTransaction = typeof transactionsTable.$inferInsert;

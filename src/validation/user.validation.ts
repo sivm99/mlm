@@ -61,7 +61,7 @@ const bulkAdd = z.object({
   user: z.object({
     name: z.string().optional(),
     sponsor: idField,
-    position: z.enum(["LEFT", "RIGHT"]),
+    side: z.enum(["LEFT", "RIGHT"]),
     country: z.string().optional().default(""),
     dialCode: z.string().optional().default(""),
     mobile: z.string().optional().default(""),
@@ -84,6 +84,10 @@ export const bulkAddValidate = zValidator(
 
 const treeListSidesSchema = z.object({
   side: z.enum(["LEFT", "RIGHT", "FULL"]).default("FULL"),
+  id: z
+    .string()
+    .regex(/^[1-9]\d{6}$/)
+    .optional(),
 });
 
 export const getTreeListValidate = zValidator(
@@ -91,6 +95,8 @@ export const getTreeListValidate = zValidator(
   treeListSidesSchema,
   (r, c: MyContext) => {
     if (!r.success) return validationError(r.error, c);
+    if (r.data.id) c.set("id", Number(r.data.id));
+    else c.set("id", c.get("user").id);
     c.set("side", r.data.side);
   },
 );

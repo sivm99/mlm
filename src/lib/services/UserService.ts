@@ -5,6 +5,7 @@ import {
   LoginUser,
   SafeUser,
   Side,
+  TreeUser,
   UpdateFromAdmin,
   UpdateFromUser,
   User,
@@ -17,7 +18,8 @@ import { setCookie } from "hono/cookie";
 import { RegisterUser } from "@/validation/auth.validations";
 import { walletsTable } from "@/db/schema";
 import { databaseService, safeUserReturn } from "./DatabaseService";
-import { treeQueueService } from "./QueueService";
+import { treeService } from "./TreeService";
+import { treeQueueService } from "./TreeQueueService";
 // import { sql } from "drizzle-orm";
 // import { activationTemplate } from "@/templates";
 
@@ -66,7 +68,8 @@ class UserService {
       throw new Error("You must provide at least one user in an array.");
     }
 
-    const positionMap: Record<string, Side> = {}; // id -> position
+    const positionMap: Record<number, Side> = {}; // id -> position
+    const sponsorMap: Record<number, TreeUser["id"]> = {}; // id -> sponsor
 
     const processedUsers = await Promise.all(
       users.map(async (user) => {
@@ -76,18 +79,18 @@ class UserService {
 
         const id = await this.#getNewId();
         const passwordHash = await bunPassword.hash(user.password);
-        const { password, position, ...userWithoutPassword } = user;
+        const { password, side, sponsor, ...userWithoutPassword } = user;
 
         if (this.#isDev)
           console.warn(
             `Registering user with password, position, referralCode: ${password}`,
           );
 
-        // Save the position separately using id as key
-        positionMap[id] = position;
-
+        positionMap[id] = side;
+        sponsorMap[id] = sponsor;
         return {
           ...userWithoutPassword,
+          sponsor,
           id,
           passwordHash,
         };
@@ -104,36 +107,35 @@ class UserService {
       // Create wallets
       await db
         .insert(walletsTable)
-        .values(
-          insertedData.map((user) => ({
-            userId: user.id,
-          })),
-        )
+        .values(insertedData.map((user) => ({ id: user.id })))
         .execute();
 
-      // Process tree registration with original position
-      const queueResults = await Promise.all(
+      // Queue each tree insert
+      await Promise.all(
         insertedData.map(async (user) => {
-          const sponsorDetails = await databaseService.fetchUserData(
-            user.sponsor,
-          );
-          if (!sponsorDetails) throw new Error("Sponsor not found");
+          const sponsorId = sponsorMap[user.id];
+          await treeQueueService.enqueue(sponsorId, async () => {
+            const sponsorData =
+              await databaseService.doesSponsorExists(sponsorId);
+            if (!sponsorData) throw new Error("Sponsor not found");
 
-          const position = positionMap[user.id];
+            // Increase the direct count
+            await db
+              .update(usersTable)
+              .set({
+                directUsersCount: sponsorData.direct + 1,
+              })
+              .where(eq(usersTable.id, sponsorId));
 
-          return await treeQueueService.processUserRegistration(
-            user.id,
-            user.sponsor,
-            position,
-            user.isActive,
-          );
+            const position = positionMap[user.id];
+            await treeService.insertIntoTree(user.id, position, sponsorId);
+          });
         }),
       );
 
       return {
         success: true,
         users: insertedData,
-        queueJobs: queueResults,
       };
     } catch (error) {
       console.error("Failed to register users:", error);
@@ -217,43 +219,13 @@ class UserService {
       .where(eq(usersTable.id, id));
   }
 
-  async getDirectPartners(id: User["id"]): Promise<SafeUser[]> {
-    const users = await db
+  async getDirectPartners(id: User["id"]) {
+    const data = await db
       .select(this.#returnUserObject)
       .from(usersTable)
-      .where(eq(usersTable.sponsor, id));
-    return users;
+      .where(eq(usersTable.id, id));
+    return data;
   }
-
-  // async activateId(id: User["id"], spenderName?: string): Promise<void> {
-  //   // spenderName is the one who paid for this ID activation
-  //   console.log("Spender Name:", spenderName);
-  //   const user = await databaseService.fetchUserData(id);
-  //   if (!user) throw new Error("User not found for id activation");
-
-  //   // Activate the user
-  //   await db
-  //     .update(usersTable)
-  //     .set({ isActive: true })
-  //     .where(eq(usersTable.id, id));
-
-  //   await db
-  //     .update(usersTable)
-  //     .set({
-  //       associatedActiveUsersCount: sql`${usersTable.associatedActiveUsersCount} + 1`,
-  //     })
-  //     .where(eq(usersTable.id, user.sponsor));
-
-  //   await emailService.sendIdActivationEmail(
-  //     {
-  //       email: user.email,
-  //       name: user.name,
-  //       userId: user.id,
-  //     },
-  //     activationTemplate,
-  //   );
-  //   return;
-  // }
 }
 export default UserService;
 export const userService = new UserService();

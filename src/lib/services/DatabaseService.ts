@@ -1,8 +1,7 @@
 import db from "@/db";
-import { usersTable } from "@/db/schema";
-import { User } from "@/types";
+import { SelectTree, SelectUser, treeTable, usersTable } from "@/db/schema";
+import { TreeUser, User } from "@/types";
 import { eq } from "drizzle-orm";
-
 export const safeUserReturn = {
   id: usersTable.id,
   name: usersTable.name,
@@ -12,23 +11,11 @@ export const safeUserReturn = {
   dialCode: usersTable.dialCode,
   image: usersTable.image,
 
-  sponsor: usersTable.sponsor,
-  leftUser: usersTable.leftUser,
-  rightUser: usersTable.rightUser,
-  parentUser: usersTable.parentUser,
-
   role: usersTable.role,
   permissions: usersTable.permissions,
 
   isActive: usersTable.isActive,
   isBlocked: usersTable.isBlocked,
-
-  leftCount: usersTable.leftCount,
-  rightCount: usersTable.rightCount,
-  leftActiveCount: usersTable.leftActiveCount,
-  rightActiveCount: usersTable.rightActiveCount,
-  leftBv: usersTable.leftBv,
-  rightBv: usersTable.rightBv,
 
   redeemedCount: usersTable.redeemedCount,
   directUsersCount: usersTable.directUsersCount,
@@ -38,9 +25,71 @@ export const safeUserReturn = {
   updatedAt: usersTable.updatedAt,
 };
 
-export type SafeUserReturn = {
-  [K in keyof typeof safeUserReturn]: User[K];
+export type SafeUserColumns = {
+  [K in keyof typeof safeUserReturn]: true;
 };
+
+export const safeUserColumns: SafeUserColumns = Object.fromEntries(
+  Object.keys(safeUserReturn).map((key) => [key, true]),
+) as SafeUserColumns;
+
+export const treeReturn = {
+  // tree details
+  id: treeTable.id, // Uncommented this line as it seems necessary
+  sponsor: treeTable.sponsor,
+  leftUser: treeTable.leftUser,
+  rightUser: treeTable.rightUser,
+  parentUser: treeTable.parentUser,
+  position: treeTable.position,
+
+  // stats for the team
+  leftCount: treeTable.leftCount,
+  rightCount: treeTable.rightCount,
+  leftActiveCount: treeTable.leftActiveCount,
+  rightActiveCount: treeTable.rightActiveCount,
+
+  // stats on the Bv
+  leftBv: treeTable.leftBv,
+  rightBv: treeTable.rightBv,
+  leftActiveBv: treeTable.leftActiveBv,
+  rightActiveBv: treeTable.rightActiveBv,
+};
+
+export type TreeColumns = {
+  [K in keyof typeof treeReturn]: true;
+};
+
+export const treeReturnColumns: TreeColumns = Object.fromEntries(
+  Object.keys(treeReturn).map((key) => [key, true]),
+) as TreeColumns;
+
+export type SafeUserReturn = {
+  [K in keyof typeof safeUserReturn]: SelectUser[K];
+};
+
+export type TreeReturn = {
+  [K in keyof typeof treeReturn]: SelectTree[K];
+};
+
+export const minimalTree = {
+  id: treeTable.id,
+  sponsor: treeTable.sponsor,
+  leftUser: treeTable.leftUser,
+  rightUser: treeTable.rightUser,
+  parentUser: treeTable.parentUser,
+  position: treeTable.position,
+};
+
+const syncCountTree = {
+  ...minimalTree,
+  leftCount: treeTable.leftCount,
+  rightCount: treeTable.rightCount,
+};
+
+export type MinimalTreeReturn = {
+  [K in keyof typeof minimalTree]: SelectTree[K];
+};
+
 export default class DatabaseService {
   /**
    * Fetches user data from the database
@@ -56,12 +105,57 @@ export default class DatabaseService {
     return userData[0];
   }
 
-  // async fetchTreeUserData(userId: User["id"]): Promise<TreeUser | null> {
-  //   const userData = await this.fetchUserData(userId);
-  //   if (!userData) return null;
-  //   // now we want to fine out the
-  //   // total left , total right , total acitve left , total active right
-  //   // total left bv , total right bv , total active left bv , total active right bv
-  // }
+  async doesSponsorExists(sponsor: TreeUser["sponsor"]) {
+    const user = await db
+      .select({
+        direct: usersTable.directUsersCount,
+        directActive: usersTable.activeDirectUsersCount,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, sponsor)) // Fixed: changed treeTable.id to usersTable.id
+      .limit(1);
+    if (!user[0]) return false;
+    return user[0];
+  }
+
+  async fetchTreeUserData(userId: User["id"]): Promise<TreeUser | null> {
+    // Get user data
+    const userData = await this.fetchUserData(userId);
+    if (!userData) return null;
+
+    // Get tree data
+    const treeData = await db
+      .select(treeReturn)
+      .from(treeTable)
+      .where(eq(treeTable.id, userId))
+      .limit(1);
+
+    if (!treeData[0]) return null;
+
+    // Combine user and tree data
+    return {
+      ...userData,
+      ...treeData[0],
+    };
+  }
+
+  async minimalTreeData(id: TreeUser["id"]) {
+    const result = await db
+      .select(minimalTree)
+      .from(treeTable)
+      .where(eq(treeTable.id, id));
+    if (!result[0]) return null;
+    return result[0];
+  }
+
+  async syncCountTreeData(id: TreeUser["id"]) {
+    const result = await db
+      .select(syncCountTree)
+      .from(treeTable)
+      .where(eq(treeTable.id, id));
+    if (!result[0]) return null;
+    return result[0];
+  }
 }
+
 export const databaseService = new DatabaseService();

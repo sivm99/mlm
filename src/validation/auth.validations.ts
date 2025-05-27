@@ -15,7 +15,7 @@ export const RegisterSchema = z
     country: z.string().default("global"),
     dialCode: z.string().max(4).default("+91"),
     sponsor: idField,
-    position: z
+    side: z
       .enum(["LEFT", "RIGHT"], {
         errorMap: () => ({
           message: "Position must be either LEFT or RIGHT",

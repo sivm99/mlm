@@ -5,6 +5,6 @@ export const packagesTable = pgTable("packages", {
   name: text("name").notNull(),
   price: real("price").notNull(),
   description: text("description"),
-  createdAt: timestamp("createdAt").defaultNow(),
-  updatedAt: timestamp("updatedAt").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });

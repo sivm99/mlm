@@ -20,7 +20,7 @@ export const payoutsTable = pgTable(
   "payouts",
   {
     id: serial("id").primaryKey(),
-    userId: integer("userId")
+    userId: integer("user_id")
       .notNull()
       .references(() => usersTable.id, {
         onDelete: "cascade",
@@ -28,9 +28,9 @@ export const payoutsTable = pgTable(
       }),
     amount: real("amount").notNull(),
     status: payoutStatusEnum("status").default("PENDING"),
-    payoutDate: timestamp("payoutDate").notNull(),
-    adminFee: real("adminFee").notNull(),
-    createdAt: timestamp("createdAt").defaultNow(),
+    payoutDate: timestamp("payout_date").notNull(),
+    adminFee: real("admin_fee").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => {
     return [

@@ -1,20 +1,30 @@
-import { pgTable, serial, real, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, real, timestamp, integer } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
+import { relations } from "drizzle-orm";
 
 export const walletsTable = pgTable("wallets", {
-  id: serial("id").primaryKey(),
-  alpoints: real("alpoints").notNull().default(0),
-  bv: real("bv").notNull().default(0),
-  incomeWallet: real("incomeWallet").notNull().default(0),
-  userId: integer("userId")
+  id: integer("id")
     .notNull()
     .references(() => usersTable.id, {
       onDelete: "cascade",
       onUpdate: "cascade",
-    }),
-  createdAt: timestamp("createdAt").notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+    })
+    .primaryKey(),
+
+  alpoints: real("alpoints").notNull().default(0),
+  bv: real("bv").notNull().default(0),
+  incomeWallet: real("income_wallet").notNull().default(0),
+
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+export const walleteRelations = relations(walletsTable, ({ one }) => ({
+  user: one(usersTable, {
+    fields: [walletsTable.id],
+    references: [usersTable.id],
+  }),
+}));
 
 export type InsertWallet = typeof walletsTable.$inferInsert;
 export type SelectWallet = typeof walletsTable.$inferSelect;

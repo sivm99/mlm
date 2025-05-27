@@ -16,20 +16,20 @@ export const paymentsTable = pgTable(
   "payments",
   {
     id: serial("id").primaryKey(),
-    userId: integer("userId")
+    userId: integer("user_id")
       .notNull()
       .references(() => usersTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
     amount: real("amount").notNull(),
-    packageId: integer("packageId").references(() => packagesTable.id, {
+    packageId: integer("package_id").references(() => packagesTable.id, {
       onDelete: "set null",
       onUpdate: "cascade",
     }),
     status: text("status").notNull(),
-    transactionId: text("transactionId"),
-    createdAt: timestamp("createdAt").defaultNow(),
+    transactionId: text("transaction_id"),
+    createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => {
     return [

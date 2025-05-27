@@ -1,15 +1,15 @@
-import { userService } from "@/lib/services";
-import TreeService from "@/lib/services/TreeService";
+import { userService, treeService, databaseService } from "@/lib/services";
 import { MyContext } from "@/types";
 import { RegisterUser } from "@/validation/auth.validations";
 
-const treeService = new TreeService();
 export default class UserController {
   static async getUser(c: MyContext) {
+    const { id } = c.get("user");
+    const data = await databaseService.fetchTreeUserData(id);
     return c.json({
       success: true,
       message: "User was reterieved successfully",
-      data: c.get("user"),
+      data,
     });
   }
 
@@ -53,20 +53,19 @@ export default class UserController {
   }
 
   static async getUserTree(c: MyContext) {
-    const user = c.get("user");
     const side = c.get("side");
-    const userId = user.id;
+    const userId = c.get("id");
     try {
       let data;
       switch (side) {
         case "FULL":
-          data = await treeService.getUserDownline(userId);
+          data = await treeService.getFullTeam(userId);
           break;
         case "LEFT":
-          data = await treeService.getLeftBranchUsers(userId);
+          data = await treeService.getLeftTeam(userId);
           break;
         default: // Assumes "RIGHT" if not FULL or LEFT
-          data = await treeService.getRightBranchUsers(userId);
+          data = await treeService.getRightTeam(userId);
           break;
       }
 

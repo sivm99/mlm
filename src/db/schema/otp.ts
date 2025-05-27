@@ -25,16 +25,16 @@ export const otpTypeEnum = pgEnum("otp_type", [
 export const otpTable = pgTable("otp", {
   id: serial("id").primaryKey(),
   type: otpTypeEnum("type").notNull(),
-  userId: integer("userId").references(() => usersTable.id, {
+  userId: integer("user_id").references(() => usersTable.id, {
     onDelete: "cascade",
     onUpdate: "cascade",
   }),
   code: text("code").notNull(),
   email: text("email").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(), // When the OTP was generated
-  expiresAt: timestamp("expiresAt").notNull(), // When the OTP will expire and become invalid
-  isValid: boolean("isValid").default(true).notNull(), // Whether OTP can still be used (false if expired, used, or invalidated)
-  isVerified: boolean("isVerified").default(false), // Whether OTP was successfully verified
+  createdAt: timestamp("created_at").defaultNow().notNull(), // When the OTP was generated
+  expiresAt: timestamp("expires_at").notNull(), // When the OTP will expire and become invalid
+  isValid: boolean("is_valid").default(true).notNull(), // Whether OTP can still be used (false if expired, used, or invalidated)
+  isVerified: boolean("is_verified").default(false), // Whether OTP was successfully verified
   // When an OTP is verified, isVerified becomes true and isValid should become false
 });
 

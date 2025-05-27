@@ -1,48 +1,23 @@
-import { User } from "./user";
+import { TreeUser } from "./tree";
+import { Side, User } from "./user";
 
-export type QueueJob = {
+export interface QueueJob {
   id: string;
-  type: JobType;
+  type: "USER_REGISTRATION" | "COUNT_UPDATE";
   data: unknown;
-  priority: number;
-  attempts: number;
-  maxAttempts: number;
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
   createdAt: Date;
-  processedAt?: Date;
-  completedAt?: Date;
-  failedAt?: Date;
   error?: string;
-  status: "pending" | "processing" | "completed" | "failed" | "retrying";
-};
+}
 
-export type JobType =
-  | "INSERT_USER_TO_TREE"
-  | "UPDATE_TREE_COUNTS"
-  | "UPDATE_PARENT_CHAIN"
-  | "ACTIVATE_USER"
-  | "DEACTIVATE_USER";
-
-export type InsertUserJobData = {
+export interface RegistrationJobData {
   userId: User["id"];
-  sponsorId: User["id"];
-  preferredSide: "LEFT" | "RIGHT";
-};
+  sponsor: TreeUser["id"];
+  position: Side;
+  isActive: boolean;
+}
 
-export type UpdateCountsJobData = {
+export interface CountUpdateJobData {
   userId: User["id"];
-  isActive: User["isActive"];
-  operation: "INCREMENT" | "DECREMENT";
-};
-export type ActivateUserData = Pick<InsertUserJobData, "userId">;
-export type UpdateCountData = {
-  leftCount?: number;
-  rightCount?: number;
-  leftActiveCount?: number;
-  rightActiveCount?: number;
-  leftBv?: number;
-  rightBv?: number;
-};
-export type UpdateParentChainJobData = {
-  userId: number;
-  changes: UpdateCountData;
-};
+  isActive: boolean;
+}

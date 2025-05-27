@@ -5,16 +5,16 @@ import { productsTable } from "./products";
 import { ordersTable } from "./orders";
 
 export const orderItemsTable = pgTable(
-  "orderItems",
+  "order_items",
   {
     id: serial("id").primaryKey(),
-    orderId: integer("orderId")
+    orderId: integer("order_id")
       .references(() => ordersTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       })
       .notNull(),
-    productId: integer("productId")
+    productId: integer("product_id")
       .references(() => productsTable.id, {
         onDelete: "restrict",
         onUpdate: "cascade",

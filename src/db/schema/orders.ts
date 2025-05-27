@@ -19,14 +19,14 @@ export const orderStatusEnum = pgEnum("orderStatus", [
 ]);
 export const ordersTable = pgTable("orders", {
   id: serial("id").primaryKey(),
-  userId: integer("userId")
+  userId: integer("user_id")
     .references(() => usersTable.id)
     .notNull(),
   status: orderStatusEnum("status").default("PENDING"),
-  deliveryAddress: text("deliveryAddress"),
-  totalAmount: real("totalAmount").notNull(),
-  createdAt: timestamp("createdAt").defaultNow(),
-  updatedAt: timestamp("updatedAt").defaultNow(),
+  deliveryAddress: text("delivery_address"),
+  totalAmount: real("total_amount").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const ordersRelations = relations(ordersTable, ({ one, many }) => ({

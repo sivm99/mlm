@@ -5,12 +5,13 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
-import { userPosition, usersTable } from "./users";
+import { usersTable } from "./users";
 import { relations } from "drizzle-orm";
+import { userPosition } from "./trees";
 
 export const referralsTable = pgTable("referrals", {
   slug: text("slug").notNull().primaryKey(),
-  userId: integer("userId")
+  userId: integer("user_id")
     .notNull()
     .references(() => usersTable.id, {
       onDelete: "set null",
@@ -28,21 +29,21 @@ export const referralsTable = pgTable("referrals", {
   registered: integer("registered").notNull().default(0), // number of  registered users who registerd using this link
   activated: integer("activated").notNull().default(0), // number of  activated users who activated using this link
 
-  isDeleted: boolean("isDeleted").notNull().default(false),
-  createdAt: timestamp("createdAt").notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+  isDeleted: boolean("is_deleted").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const referralsRelations = relations(referralsTable, ({ one }) => ({
   user: one(usersTable, {
     fields: [referralsTable.userId],
     references: [usersTable.id],
-    relationName: "userReferral",
+    relationName: "user_referral",
   }),
   sponsorUser: one(usersTable, {
     fields: [referralsTable.sponsor],
     references: [usersTable.id],
-    relationName: "sponsorReferral",
+    relationName: "sponsor_referral",
   }),
 }));
 

@@ -1,5 +1,5 @@
 import {
-  emailService,
+  // emailService,
   userService,
   otpService,
   referralService,
@@ -20,30 +20,30 @@ export default class AuthController {
           400,
         );
 
-      const otpVerifyResult = await otpService.verifyOtp({
-        type: "email_verify",
-        code: otp,
-        email: validUser[0].email,
-      });
-      if (!otpVerifyResult.success)
-        return c.json(
-          {
-            success: false,
-            message: otpVerifyResult.message,
-          },
-          400,
-        );
+      // const otpVerifyResult = await otpService.verifyOtp({
+      //   type: "email_verify",
+      //   code: otp,
+      //   email: validUser[0].email,
+      // });
+      // if (!otpVerifyResult.success)
+      //   return c.json(
+      //     {
+      //       success: false,
+      //       message: otpVerifyResult.message,
+      //     },
+      //     400,
+      //   );
 
       const { success, users } = await userService.registerUsers(validUser);
       const newUser = users[0];
       await userService.setTokenCookie(c, newUser.id);
 
-      emailService.sendSignupSuccessEmail({
-        userId: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        password: validUser[0].password,
-      });
+      // emailService.sendSignupSuccessEmail({
+      //   userId: newUser.id,
+      //   name: newUser.name,
+      //   email: newUser.email,
+      //   password: validUser[0].password,
+      // });
 
       if (validUser[0].referralCode)
         referralService.recordRegistration(validUser[0].referralCode);

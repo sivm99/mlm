@@ -9,3 +9,4 @@ const db = drizzle(client, {
 });
 
 export default db;
+export const adminId = 1_000_001;
