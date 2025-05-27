@@ -16,8 +16,13 @@ import { sign } from "hono/jwt";
 import { Context } from "hono";
 import { setCookie } from "hono/cookie";
 import { RegisterUser } from "@/validation/auth.validations";
-import { walletsTable } from "@/db/schema";
-import { databaseService, safeUserReturn } from "./DatabaseService";
+import { treeTable, walletsTable } from "@/db/schema";
+import {
+  databaseService,
+  safeUserColumns,
+  safeUserReturn,
+  treeReturnColumns,
+} from "./DatabaseService";
 import { treeService } from "./TreeService";
 import { treeQueueService } from "./TreeQueueService";
 // import { sql } from "drizzle-orm";
@@ -220,11 +225,23 @@ class UserService {
   }
 
   async getDirectPartners(id: User["id"]) {
-    const data = await db
-      .select(this.#returnUserObject)
-      .from(usersTable)
-      .where(eq(usersTable.id, id));
-    return data;
+    const rows = await db.query.treeTable.findMany({
+      columns: treeReturnColumns,
+      where: eq(treeTable.sponsor, id),
+      with: {
+        user: {
+          columns: safeUserColumns,
+        },
+      },
+    });
+
+    return rows.map((row) => {
+      return {
+        ...row.user,
+        ...row,
+        user: undefined, // Remove nested user object
+      };
+    });
   }
 }
 export default UserService;
