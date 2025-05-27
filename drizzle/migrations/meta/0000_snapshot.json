@@ -1,5 +1,5 @@
 {
-  "id": "560d2e6d-b8ef-4bf2-be72-0f0768e124fe",
+  "id": "a669a048-09e8-4029-8deb-68db08e5cdfa",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -124,13 +124,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "position": {
-          "name": "position",
-          "type": "userPosition",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
         "leftUser": {
           "name": "leftUser",
           "type": "integer",
@@ -142,6 +135,54 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": false
+        },
+        "parentUser": {
+          "name": "parentUser",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "leftCount": {
+          "name": "leftCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "rightCount": {
+          "name": "rightCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "leftActiveCount": {
+          "name": "leftActiveCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "rightActiveCount": {
+          "name": "rightActiveCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "leftBv": {
+          "name": "leftBv",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "rightBv": {
+          "name": "rightBv",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         },
         "isActive": {
           "name": "isActive",
@@ -157,22 +198,22 @@
           "notNull": true,
           "default": false
         },
-        "redeemedTimes": {
-          "name": "redeemedTimes",
+        "redeemedCount": {
+          "name": "redeemedCount",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
         },
-        "associatedUsersCount": {
-          "name": "associatedUsersCount",
+        "directUsersCount": {
+          "name": "directUsersCount",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
         },
-        "associatedActiveUsersCount": {
-          "name": "associatedActiveUsersCount",
+        "activeDirectUsersCount": {
+          "name": "activeDirectUsersCount",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -284,6 +325,19 @@
             "id"
           ],
           "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "users_parentUser_users_id_fk": {
+          "name": "users_parentUser_users_id_fk",
+          "tableFrom": "users",
+          "tableTo": "users",
+          "columnsFrom": [
+            "parentUser"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "cascade"
         }
       },

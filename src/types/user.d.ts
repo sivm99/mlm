@@ -1,4 +1,4 @@
-import { SelectUser } from "@/db/schema";
+import { ReferralSelect, SelectUser } from "@/db/schema";
 import { SafeUserReturn } from "@/lib/services";
 import { UpdateUser, UpdateUserByAdmin } from "@/validation";
 
@@ -14,9 +14,16 @@ export type LoginUser = Pick<User, "id"> & {
 export type SafeUser = SafeUserReturn;
 
 export type TreeUser = SafeUser; // for now it is just safe user;
+// export type TreeUser = SafeUser & TreeStats;
+
 export type EmailData = Record<string, string | number | undefined>;
 
 export type UpdateFromUser = UpdateUser;
 export type UpdateFromAdmin = UpdateUserByAdmin;
 
-export type Side = User["position"];
+export type Side = ReferralSelect["position"];
+export type UserWithWallet = SafeUserReturn & {
+  bv: number;
+  alpoints: number;
+  incomeWallet: number;
+};

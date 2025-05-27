@@ -13,9 +13,9 @@ export const safeUserReturn = {
   image: usersTable.image,
 
   sponsor: usersTable.sponsor,
-  position: usersTable.position,
   leftUser: usersTable.leftUser,
   rightUser: usersTable.rightUser,
+  parentUser: usersTable.parentUser,
 
   role: usersTable.role,
   permissions: usersTable.permissions,
@@ -23,9 +23,16 @@ export const safeUserReturn = {
   isActive: usersTable.isActive,
   isBlocked: usersTable.isBlocked,
 
-  redeemedTimes: usersTable.redeemedTimes,
-  associatedUsersCount: usersTable.associatedUsersCount,
-  associatedActiveUsersCount: usersTable.associatedActiveUsersCount,
+  leftCount: usersTable.leftCount,
+  rightCount: usersTable.rightCount,
+  leftActiveCount: usersTable.leftActiveCount,
+  rightActiveCount: usersTable.rightActiveCount,
+  leftBv: usersTable.leftBv,
+  rightBv: usersTable.rightBv,
+
+  redeemedCount: usersTable.redeemedCount,
+  directUsersCount: usersTable.directUsersCount,
+  activeDirectUsersCount: usersTable.activeDirectUsersCount,
 
   createdAt: usersTable.createdAt,
   updatedAt: usersTable.updatedAt,
@@ -38,7 +45,7 @@ export default class DatabaseService {
   /**
    * Fetches user data from the database
    */
-  async fetchUserData(userId: number): Promise<SafeUserReturn | null> {
+  async fetchUserData(userId: User["id"]): Promise<SafeUserReturn | null> {
     const userData = await db
       .select(safeUserReturn)
       .from(usersTable)
@@ -48,4 +55,13 @@ export default class DatabaseService {
     if (!userData[0]) return null;
     return userData[0];
   }
+
+  // async fetchTreeUserData(userId: User["id"]): Promise<TreeUser | null> {
+  //   const userData = await this.fetchUserData(userId);
+  //   if (!userData) return null;
+  //   // now we want to fine out the
+  //   // total left , total right , total acitve left , total active right
+  //   // total left bv , total right bv , total active left bv , total active right bv
+  // }
 }
+export const databaseService = new DatabaseService();

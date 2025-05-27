@@ -45,3 +45,5 @@ export const referralsRelations = relations(referralsTable, ({ one }) => ({
     relationName: "sponsorReferral",
   }),
 }));
+
+export type ReferralSelect = typeof referralsTable.$inferSelect;

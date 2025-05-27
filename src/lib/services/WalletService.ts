@@ -1,6 +1,6 @@
 import db from "@/db";
 import { eq, and, sql } from "drizzle-orm";
-import OtpService from "./OtpService";
+import OtpService, { otpService } from "./OtpService";
 import { EventEmitter } from "events";
 import {
   SelectTransaction,
@@ -16,6 +16,7 @@ import {
   WalletTransaction,
 } from "@/types";
 import DatabaseService from "./DatabaseService";
+import { eventEmitter } from "@/events";
 
 const databaseService = new DatabaseService();
 
@@ -369,3 +370,5 @@ export default class WalletService {
     return mapping[w];
   }
 }
+
+export const walletService = new WalletService(otpService, eventEmitter);

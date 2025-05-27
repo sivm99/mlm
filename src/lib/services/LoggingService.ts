@@ -1,10 +1,11 @@
 import db from "@/db";
 import { logsTable } from "@/db/schema/logs";
+import { User } from "@/types";
 
 export type LogData = {
   level?: string;
   action: string;
-  userId?: string;
+  userId?: User["id"];
   transactionId?: number;
   message: string;
   metadata?: Record<string, JSON>;

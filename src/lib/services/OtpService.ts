@@ -3,7 +3,7 @@ import { otpTable } from "@/db/schema";
 import { OTP, User } from "@/types";
 import { eq, and } from "drizzle-orm";
 import { generateRandomDigits } from "@/lib/cr";
-import EmailService, { UserEmail } from "./EmailService";
+import EmailService, { emailService, UserEmail } from "./EmailService";
 import { emailVerifyOtpTemplate, passwordResetTemplate } from "@/templates";
 
 export default class OtpService {
@@ -194,3 +194,5 @@ export default class OtpService {
       .execute();
   }
 }
+
+export const otpService = new OtpService(emailService);

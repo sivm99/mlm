@@ -1,13 +1,10 @@
-import EmailService from "@/lib/services/EmailService";
-import OtpService from "@/lib/services/OtpService";
-import ReferralService from "@/lib/services/ReferralService";
-import UserService from "@/lib/services/UserService";
+import {
+  emailService,
+  userService,
+  otpService,
+  referralService,
+} from "@/lib/services";
 import { MyContext } from "@/types";
-
-const userService = new UserService();
-const emailService = new EmailService();
-const otpService = new OtpService(emailService);
-const referralService = new ReferralService();
 
 export default class AuthController {
   static async registerUser(c: MyContext) {
@@ -47,13 +44,14 @@ export default class AuthController {
         email: newUser.email,
         password: validUser[0].password,
       });
+
       if (validUser[0].referralCode)
         referralService.recordRegistration(validUser[0].referralCode);
       return c.json({
         success,
-        data: newUser,
-        message: "User was registered",
-      });
+        data: newUser, // this one is one o
+        message: "User was registered", // this line is comment
+      }); // this one is next line comment
     } catch (error) {
       console.error("Error registering user:", error);
       return c.json(

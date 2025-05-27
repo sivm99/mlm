@@ -10,11 +10,12 @@ import {
 } from "@/db/schema";
 import { usersTable } from "@/db/schema";
 import { inArray } from "drizzle-orm";
+import { User } from "@/types";
 
 export type TransactionFilterParams = {
-  userId?: string;
-  fromUserId?: string;
-  toUserId?: string;
+  userId?: User["id"];
+  fromUserId?: User["id"];
+  toUserId?: User["id"];
   type?: (typeof transactionTypeEnum.enumValues)[number];
   status?: (typeof transactionStatusEnum.enumValues)[number];
   fromWalletType?: (typeof walletTypeEnum.enumValues)[number];
@@ -147,7 +148,7 @@ export default class TransactionService {
     );
 
     // Get user details for related users
-    const userIds = new Set<string>();
+    const userIds = new Set<User["id"]>();
     data.forEach((transaction) => {
       if (transaction.fromUserId) userIds.add(transaction.fromUserId);
       if (transaction.toUserId) userIds.add(transaction.toUserId);
@@ -189,9 +190,11 @@ export default class TransactionService {
    * Get transactions for a specific user
    */
   async getUserTransactions(
-    userId: string,
+    userId: User["id"],
     pagination: TransactionPaginationParams = {},
   ) {
     return this.getTransactions({ userId }, pagination);
   }
 }
+
+export const transactionService = new TransactionService();

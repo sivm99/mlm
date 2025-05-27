@@ -13,7 +13,7 @@ export default class LogsController {
       const limit = Number(c.req.query("limit")) || 100;
       const offset = Number(c.req.query("offset")) || 0;
       const level = c.req.query("level");
-      const userId = c.req.query("userId");
+      const userId = Number(c.req.query("userId"));
 
       const conditions = [];
       if (level) conditions.push(eq(logsTable.level, level));

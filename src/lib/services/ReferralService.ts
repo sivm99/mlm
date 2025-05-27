@@ -1,5 +1,5 @@
 import db from "@/db";
-import { Side } from "@/types";
+import { Side, User } from "@/types";
 import { generateRandomAlphanumeric } from "@/lib/cr";
 import { referralsTable } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
@@ -18,7 +18,11 @@ export default class ReferralService {
    * @param side - The position side for the referral
    * @returns Generated slug and full referral URL
    */
-  async generateReferralLink(userId: string, sponsor: string, side: Side) {
+  async generateReferralLink(
+    userId: User["id"],
+    sponsor: User["id"],
+    side: Side,
+  ) {
     let success = false;
     let slug = "";
     let attempts = 0;
@@ -178,10 +182,12 @@ export default class ReferralService {
    * @param sponsorId - The sponsor ID to get referrals for
    * @returns Array of referrals
    */
-  async getReferralsBySponsor(sponsorId: string) {
+  async getReferralsBySponsor(sponsorId: User["id"]) {
     return db
       .select()
       .from(referralsTable)
       .where(eq(referralsTable.sponsor, sponsorId));
   }
 }
+
+export const referralService = new ReferralService();

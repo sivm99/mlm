@@ -1,9 +1,8 @@
+import { userService } from "@/lib/services";
 import TreeService from "@/lib/services/TreeService";
-import UserService from "@/lib/services/UserService";
 import { MyContext } from "@/types";
 import { RegisterUser } from "@/validation/auth.validations";
 
-const userService = new UserService();
 const treeService = new TreeService();
 export default class UserController {
   static async getUser(c: MyContext) {

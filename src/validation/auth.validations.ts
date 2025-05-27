@@ -3,7 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { otpField, validationError, idField, emailField } from "./_common";
 
-export const registerSchema = z
+export const RegisterSchema = z
   .object({
     name: z.string().nonempty(),
     mobile: z.string(),
@@ -29,10 +29,10 @@ export const registerSchema = z
     path: ["passwordConfirm"],
   });
 
-export type RegisterUser = z.infer<typeof registerSchema>;
+export type RegisterUser = z.infer<typeof RegisterSchema>;
 export const registerValidate = zValidator(
   "json",
-  registerSchema,
+  RegisterSchema,
   (r, c: MyContext) => {
     if (!r.success) return validationError(r.error, c);
     c.set("registerUser", {

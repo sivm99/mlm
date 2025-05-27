@@ -4,6 +4,7 @@ import { usersTable } from "@/db/schema/users";
 import {
   LoginUser,
   SafeUser,
+  Side,
   UpdateFromAdmin,
   UpdateFromUser,
   User,
@@ -14,17 +15,13 @@ import { sign } from "hono/jwt";
 import { Context } from "hono";
 import { setCookie } from "hono/cookie";
 import { RegisterUser } from "@/validation/auth.validations";
-import TreeService from "./TreeService";
 import { walletsTable } from "@/db/schema";
-import DatabaseService, { safeUserReturn } from "./DatabaseService";
-import { sql } from "drizzle-orm";
-import EmailService from "./EmailService";
-import { activationTemplate } from "@/templates";
+import { databaseService, safeUserReturn } from "./DatabaseService";
+import { treeQueueService } from "./QueueService";
+// import { sql } from "drizzle-orm";
+// import { activationTemplate } from "@/templates";
 
 const jwtSecret = process.env.JWT_SECRET!;
-const treeService = new TreeService();
-const databaseService = new DatabaseService();
-const emailService = new EmailService();
 
 class UserService {
   #expireTimeInMinutes = Number(process.env.EXPIRE_TIME_IN_MINUTES) || 5;
@@ -68,16 +65,27 @@ class UserService {
     if (!Array.isArray(users) || users.length === 0) {
       throw new Error("You must provide at least one user in an array.");
     }
+
+    const positionMap: Record<string, Side> = {}; // id -> position
+
     const processedUsers = await Promise.all(
       users.map(async (user) => {
         if (!user.password) {
           throw new Error("User password was not given. Exiting.");
         }
+
         const id = await this.#getNewId();
         const passwordHash = await bunPassword.hash(user.password);
-        const { password, ...userWithoutPassword } = user;
+        const { password, position, ...userWithoutPassword } = user;
+
         if (this.#isDev)
-          console.warn(`Registering user with password: ${password}`);
+          console.warn(
+            `Registering user with password, position, referralCode: ${password}`,
+          );
+
+        // Save the position separately using id as key
+        positionMap[id] = position;
+
         return {
           ...userWithoutPassword,
           id,
@@ -85,12 +93,15 @@ class UserService {
         };
       }),
     );
+
     try {
+      // Insert users into DB
       const insertedData = await db
         .insert(usersTable)
         .values(processedUsers)
         .returning(this.#returnUserObject);
-      // ✅ Create wallets for each user (only userId needed)
+
+      // Create wallets
       await db
         .insert(walletsTable)
         .values(
@@ -100,16 +111,30 @@ class UserService {
         )
         .execute();
 
-      // ✅ Add users to tree SEQUENTIALLY to avoid race conditions
-      for (const user of insertedData) {
-        const sponserDetails = await databaseService.fetchUserData(
-          user.sponsor,
-        );
-        if (!sponserDetails) throw new Error("Sponsor not found");
-        await treeService.addUser(user.id, user.sponsor, user.position);
-      }
+      // Process tree registration with original position
+      const queueResults = await Promise.all(
+        insertedData.map(async (user) => {
+          const sponsorDetails = await databaseService.fetchUserData(
+            user.sponsor,
+          );
+          if (!sponsorDetails) throw new Error("Sponsor not found");
 
-      return { success: true, users: insertedData };
+          const position = positionMap[user.id];
+
+          return await treeQueueService.processUserRegistration(
+            user.id,
+            user.sponsor,
+            position,
+            user.isActive,
+          );
+        }),
+      );
+
+      return {
+        success: true,
+        users: insertedData,
+        queueJobs: queueResults,
+      };
     } catch (error) {
       console.error("Failed to register users:", error);
       throw new Error(
@@ -200,34 +225,35 @@ class UserService {
     return users;
   }
 
-  async activateId(id: User["id"], spenderName?: string): Promise<void> {
-    // spenderName is the one who paid for this ID activation
-    console.log("Spender Name:", spenderName);
-    const user = await databaseService.fetchUserData(id);
-    if (!user) throw new Error("User not found for id activation");
+  // async activateId(id: User["id"], spenderName?: string): Promise<void> {
+  //   // spenderName is the one who paid for this ID activation
+  //   console.log("Spender Name:", spenderName);
+  //   const user = await databaseService.fetchUserData(id);
+  //   if (!user) throw new Error("User not found for id activation");
 
-    // Activate the user
-    await db
-      .update(usersTable)
-      .set({ isActive: true })
-      .where(eq(usersTable.id, id));
+  //   // Activate the user
+  //   await db
+  //     .update(usersTable)
+  //     .set({ isActive: true })
+  //     .where(eq(usersTable.id, id));
 
-    await db
-      .update(usersTable)
-      .set({
-        associatedActiveUsersCount: sql`${usersTable.associatedActiveUsersCount} + 1`,
-      })
-      .where(eq(usersTable.id, user.sponsor));
+  //   await db
+  //     .update(usersTable)
+  //     .set({
+  //       associatedActiveUsersCount: sql`${usersTable.associatedActiveUsersCount} + 1`,
+  //     })
+  //     .where(eq(usersTable.id, user.sponsor));
 
-    await emailService.sendIdActivationEmail(
-      {
-        email: user.email,
-        name: user.name,
-        userId: user.id,
-      },
-      activationTemplate,
-    );
-    return;
-  }
+  //   await emailService.sendIdActivationEmail(
+  //     {
+  //       email: user.email,
+  //       name: user.name,
+  //       userId: user.id,
+  //     },
+  //     activationTemplate,
+  //   );
+  //   return;
+  // }
 }
 export default UserService;
+export const userService = new UserService();

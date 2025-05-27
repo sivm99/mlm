@@ -24,14 +24,20 @@ CREATE TABLE "users" (
 	"dialCode" text NOT NULL,
 	"image" text,
 	"sponsor" integer NOT NULL,
-	"position" "userPosition" NOT NULL,
 	"leftUser" integer,
 	"rightUser" integer,
+	"parentUser" integer,
+	"leftCount" integer DEFAULT 0 NOT NULL,
+	"rightCount" integer DEFAULT 0 NOT NULL,
+	"leftActiveCount" integer DEFAULT 0 NOT NULL,
+	"rightActiveCount" integer DEFAULT 0 NOT NULL,
+	"leftBv" real DEFAULT 0 NOT NULL,
+	"rightBv" real DEFAULT 0 NOT NULL,
 	"isActive" boolean DEFAULT false NOT NULL,
 	"isBlocked" boolean DEFAULT false NOT NULL,
-	"redeemedTimes" integer DEFAULT 0 NOT NULL,
-	"associatedUsersCount" integer DEFAULT 0 NOT NULL,
-	"associatedActiveUsersCount" integer DEFAULT 0 NOT NULL,
+	"redeemedCount" integer DEFAULT 0 NOT NULL,
+	"directUsersCount" integer DEFAULT 0 NOT NULL,
+	"activeDirectUsersCount" integer DEFAULT 0 NOT NULL,
 	"passwordHash" text,
 	"role" "userRole" DEFAULT 'USER' NOT NULL,
 	"permissions" jsonb DEFAULT '{}'::jsonb NOT NULL,
@@ -168,6 +174,7 @@ CREATE TABLE "transactions" (
 ALTER TABLE "users" ADD CONSTRAINT "users_sponsor_users_id_fk" FOREIGN KEY ("sponsor") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_leftUser_users_id_fk" FOREIGN KEY ("leftUser") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_rightUser_users_id_fk" FOREIGN KEY ("rightUser") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_parentUser_users_id_fk" FOREIGN KEY ("parentUser") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "wallets" ADD CONSTRAINT "wallets_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "orderItems" ADD CONSTRAINT "orderItems_orderId_orders_id_fk" FOREIGN KEY ("orderId") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "orderItems" ADD CONSTRAINT "orderItems_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint

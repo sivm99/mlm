@@ -7,6 +7,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  real,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -34,7 +35,6 @@ export const usersTable = pgTable(
         onUpdate: "cascade",
       }),
 
-    position: userPosition("position").notNull(),
     leftUser: integer("leftUser").references((): AnyPgColumn => usersTable.id, {
       onDelete: "set null",
       onUpdate: "cascade",
@@ -46,14 +46,30 @@ export const usersTable = pgTable(
         onUpdate: "cascade",
       },
     ),
+    parentUser: integer("parentUser").references(
+      (): AnyPgColumn => usersTable.id,
+      {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      },
+    ),
+    // .notNull(),
+    // stats which we will update use the queue n jobs
+    // if anyone below comes we will udpate them until upto the parent
+    leftCount: integer("leftCount").notNull().default(0),
+    rightCount: integer("rightCount").notNull().default(0),
+    leftActiveCount: integer("leftActiveCount").notNull().default(0),
+    rightActiveCount: integer("rightActiveCount").notNull().default(0),
+    leftBv: real("leftBv").notNull().default(0),
+    rightBv: real("rightBv").notNull().default(0),
 
     isActive: boolean("isActive").notNull().default(false),
     isBlocked: boolean("isBlocked").notNull().default(false),
 
-    redeemedTimes: integer("redeemedTimes").notNull().default(0),
-    associatedUsersCount: integer("associatedUsersCount").notNull().default(0), // number of referrad users
+    redeemedCount: integer("redeemedCount").notNull().default(0),
+    directUsersCount: integer("directUsersCount").notNull().default(0), // number of referrad users
 
-    associatedActiveUsersCount: integer("associatedActiveUsersCount")
+    activeDirectUsersCount: integer("activeDirectUsersCount")
       .notNull()
       .default(0), // number of users who was referrad and activated their account as well
     passwordHash: text("passwordHash"),

@@ -1,14 +1,7 @@
-import { eventEmitter } from "@/events";
-import EmailService from "@/lib/services/EmailService";
-import OtpService from "@/lib/services/OtpService";
-import TransactionService from "@/lib/services/TransactionService";
-import WalletService from "@/lib/services/WalletService";
+import { walletService } from "@/lib/services";
+import { transactionService } from "@/lib/services/TransactionService";
 import { MyContext } from "@/types";
 
-const emailService = new EmailService();
-const otpService = new OtpService(emailService);
-const walletService = new WalletService(otpService, eventEmitter);
-const transactionService = new TransactionService();
 export class WalletController {
   /**
    * Get user wallet details

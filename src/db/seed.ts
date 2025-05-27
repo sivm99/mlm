@@ -16,6 +16,7 @@ async function seed() {
       role: User["role"];
       passwordHash: User["passwordHash"];
       isActive: true;
+      parentUser: User["id"];
     } = {
       id: 1_000_001,
       name: "Master",
@@ -25,6 +26,7 @@ async function seed() {
       dialCode: "+1",
       sponsor: 1_000_001,
       position: "LEFT",
+      parentUser: 1_000_001,
       role: "ADMIN",
       password: "",
       isActive: true,
