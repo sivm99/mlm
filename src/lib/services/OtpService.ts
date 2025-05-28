@@ -94,6 +94,7 @@ export default class OtpService {
         break;
       case "fund_transfer":
         subject = "Verify fund transfer";
+        template = emailVerifyOtpTemplate;
         break;
       case "usdt_withdrawal":
         subject = "Verify USDT withdrawal";

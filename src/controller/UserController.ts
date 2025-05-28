@@ -53,19 +53,19 @@ export default class UserController {
   }
 
   static async getUserTree(c: MyContext) {
-    const { id } = c.get("user");
     const side = c.get("side");
     const userId = c.get("id");
     try {
       let data;
+      let self;
       switch (side) {
         case "FULL":
           data = await treeService.getFullTeam(userId);
-          if (id === userId) {
-            const self = await databaseService.fetchTreeUserData(id);
-            if (!self) return;
-            data.push(self);
-          }
+          // if (id === userId) {
+          self = await databaseService.fetchTreeUserData(userId);
+          if (!self) return;
+          data.push(self);
+          // }
           break;
         case "LEFT":
           data = await treeService.getLeftTeam(userId);

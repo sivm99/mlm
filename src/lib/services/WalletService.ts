@@ -34,7 +34,7 @@ export default class WalletService {
    */
   async getUserWallet(userId: number) {
     const wallet = await db.query.walletsTable.findFirst({
-      where: eq(walletsTable.userId, userId),
+      where: eq(walletsTable.id, userId),
     });
 
     if (!wallet) {
@@ -206,7 +206,7 @@ export default class WalletService {
         // Validate sufficient balance for debit operations
         if (params.fromUserId && params.fromWalletType) {
           const fromWallet = await tx.query.walletsTable.findFirst({
-            where: eq(walletsTable.userId, params.fromUserId),
+            where: eq(walletsTable.id, params.fromUserId),
           });
 
           if (!fromWallet) {
@@ -226,7 +226,7 @@ export default class WalletService {
               [params.fromWalletType]: sql`${walletsTable[this.mapWalletTypeToKeyOfWallet(params.fromWalletType)]} - ${params.amount}`,
               updatedAt: new Date(),
             })
-            .where(eq(walletsTable.userId, params.fromUserId));
+            .where(eq(walletsTable.id, params.fromUserId));
         }
 
         // Credit to destination wallet
@@ -240,7 +240,7 @@ export default class WalletService {
                 [params.toWalletType]: sql`${walletsTable[this.mapWalletTypeToKeyOfWallet(params.toWalletType)]} + ${creditAmount}`,
                 updatedAt: new Date(),
               })
-              .where(eq(walletsTable.userId, params.toUserId));
+              .where(eq(walletsTable.id, params.toUserId));
           }
         }
 

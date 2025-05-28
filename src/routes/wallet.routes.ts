@@ -19,7 +19,7 @@ const router = new Hono();
 router
   .use("*", authenticate)
   .get("/", WalletController.getWallet)
-  .post(
+  .get(
     "/generate-otp",
     generateWalletOtpValidate,
     WalletController.generateWalletOtp,

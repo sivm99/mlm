@@ -16,7 +16,7 @@ import {
 } from "./_common";
 
 const generateOtpSchema = z.object({
-  walletoperations: z.enum(walletOperation),
+  walletoperations: z.enum(walletOperation).default("transfer"),
 });
 
 export const generateWalletOtpValidate = zValidator(
