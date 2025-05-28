@@ -84,7 +84,7 @@ export const bulkAddValidate = zValidator(
 
 const treeListSidesSchema = z.object({
   side: z.enum(["LEFT", "RIGHT", "FULL"]).default("FULL"),
-  id: idField,
+  id: idField.optional(),
 });
 
 export const getTreeListValidate = zValidator(
