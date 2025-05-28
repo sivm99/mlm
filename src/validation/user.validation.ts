@@ -84,10 +84,7 @@ export const bulkAddValidate = zValidator(
 
 const treeListSidesSchema = z.object({
   side: z.enum(["LEFT", "RIGHT", "FULL"]).default("FULL"),
-  id: z
-    .string()
-    .regex(/^[1-9]\d{6}$/)
-    .optional(),
+  id: idField,
 });
 
 export const getTreeListValidate = zValidator(
@@ -95,7 +92,7 @@ export const getTreeListValidate = zValidator(
   treeListSidesSchema,
   (r, c: MyContext) => {
     if (!r.success) return validationError(r.error, c);
-    if (r.data.id) c.set("id", Number(r.data.id));
+    if (r.data.id) c.set("id", r.data.id);
     else c.set("id", c.get("user").id);
     c.set("side", r.data.side);
   },

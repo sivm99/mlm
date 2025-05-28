@@ -4,7 +4,26 @@ import { ZodError } from "zod";
 
 export const otpField = z.string().length(6).regex(/\d/);
 
-export const idField = z.number().int().gte(1_000_000).lt(10_000_000);
+export const idField = z.union([
+  z.number().int().gte(1_000_000).lt(10_000_000),
+  z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .refine((n) => n >= 1_000_000 && n < 10_000_000 && Number.isInteger(n), {
+      message: "ID must be an integer between 1,000,000 and 9,999,999",
+    }),
+]);
+export const idFieldString = z
+  .union([z.number().int().transform(String), z.string().regex(/^\d+$/)])
+  .refine(
+    (val) => {
+      const num = Number(val);
+      return num >= 1_000_000 && num < 10_000_000 && Number.isInteger(num);
+    },
+    { message: "ID must be an integer between 1,000,000 and 9,999,999" },
+  );
+
 export const emailField = z
   .string()
   .email()

@@ -107,7 +107,7 @@ export default class TreeService {
     return this.getTeam(userId, "RIGHT", maxDepth);
   }
 
-  async getFullTeam(userId: TreeUser["id"], maxDepth: number = 5) {
+  async getFullTeam(userId: TreeUser["id"], maxDepth: number = 3) {
     const leftTeam = await this.getTeam(userId, "LEFT", maxDepth);
     const rightTeam = await this.getTeam(userId, "RIGHT", maxDepth);
     return [...leftTeam, ...rightTeam];
