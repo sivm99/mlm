@@ -123,7 +123,11 @@ export default class OtpService {
   /**
    * Verifies an OTP for the given type and email
    */
-  async verifyOtp(params: { type: OTP["type"]; email: string; code: string }) {
+  async verifyOtp(params: {
+    type: OTP["type"];
+    email: User["email"];
+    code: OTP["code"];
+  }) {
     const { type, email, code } = params;
 
     // Find the OTP record

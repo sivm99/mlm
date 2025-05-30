@@ -44,11 +44,15 @@ export const treeTable = pgTable(
     rightActiveCount: integer("right_active_count").notNull().default(0),
     leftBv: real("left_bv").notNull().default(0),
     rightBv: real("right_bv").notNull().default(0),
-    leftActiveBv: real("left_active_bv").notNull().default(0),
-    rightActiveBv: real("right_active_bv").notNull().default(0),
+
+    // leftActiveBv: real("left_active_bv").notNull().default(0),
+    // rightActiveBv: real("right_active_bv").notNull().default(0),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
   },
   (table) => {
     return [
@@ -62,7 +66,7 @@ export type InsertTree = typeof treeTable.$inferInsert;
 export type SelectTree = typeof treeTable.$inferSelect;
 
 export const treeRelations = relations(treeTable, ({ one }) => ({
-  user: one(usersTable, {
+  userRelation: one(usersTable, {
     fields: [treeTable.id],
     references: [usersTable.id],
     relationName: "userTree",

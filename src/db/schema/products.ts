@@ -20,7 +20,10 @@ export const productsTable = pgTable(
     price: real("price").notNull(),
     stock: integer("stock").default(0),
     createdAt: timestamp("created_at").defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
   },
   (table) => {
     return [index("idx_products_name").on(table.name)];

@@ -1,17 +1,35 @@
 CREATE TYPE "public"."userRole" AS ENUM('ADMIN', 'SUB_ADMIN', 'USER');--> statement-breakpoint
-CREATE TYPE "public"."orderStatus" AS ENUM('PENDING', 'PROCESSING', 'DELIVERED', 'CANCELLED');--> statement-breakpoint
+CREATE TYPE "public"."delivery_method" AS ENUM('self_collect', 'shipping');--> statement-breakpoint
+CREATE TYPE "public"."order_status" AS ENUM('PENDING', 'PROCESSING', 'DELIVERED', 'CANCELLED');--> statement-breakpoint
 CREATE TYPE "public"."payoutStatus" AS ENUM('PENDING', 'PROCESSED', 'FAILED');--> statement-breakpoint
 CREATE TYPE "public"."otp_type" AS ENUM('email_verify', 'forget_password', 'profile_edit', 'fund_transfer', 'usdt_withdrawal', 'convert_income_wallet', 'add_wallet_address', 'ticket_raise_for_wallet');--> statement-breakpoint
 CREATE TYPE "public"."transaction_status" AS ENUM('pending', 'completed', 'failed', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."transaction_type" AS ENUM('income_payout', 'income_to_alpoints', 'alpoints_transfer', 'id_activation', 'weekly_payout_earned', 'matching_income_earned', 'fund_addition', 'admin_adjustment');--> statement-breakpoint
 CREATE TYPE "public"."wallet_type" AS ENUM('alpoints', 'income_wallet', 'bv');--> statement-breakpoint
 CREATE TYPE "public"."userPosition" AS ENUM('LEFT', 'RIGHT');--> statement-breakpoint
+CREATE TABLE "addresses" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"title" text NOT NULL,
+	"mobile" text NOT NULL,
+	"address1" text NOT NULL,
+	"address2" text,
+	"address3" text,
+	"city" text NOT NULL,
+	"state" text NOT NULL,
+	"zip" text NOT NULL,
+	"country" text NOT NULL,
+	"is_deleted" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp (3) DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "config" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"key" text NOT NULL,
 	"value" text NOT NULL,
 	"description" text,
-	"updated_at" timestamp DEFAULT now(),
+	"updated_at" timestamp (3) DEFAULT now() NOT NULL,
 	CONSTRAINT "config_key_unique" UNIQUE("key")
 );
 --> statement-breakpoint
@@ -32,16 +50,16 @@ CREATE TABLE "users" (
 	"role" "userRole" DEFAULT 'USER' NOT NULL,
 	"permissions" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "wallets" (
 	"id" integer PRIMARY KEY NOT NULL,
-	"alpoints" real DEFAULT 0 NOT NULL,
-	"bv" real DEFAULT 0 NOT NULL,
-	"income_wallet" real DEFAULT 0 NOT NULL,
+	"alpoints" integer DEFAULT 0 NOT NULL,
+	"bv" integer DEFAULT 0 NOT NULL,
+	"income_wallet" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "order_items" (
@@ -55,11 +73,12 @@ CREATE TABLE "order_items" (
 CREATE TABLE "orders" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
-	"status" "orderStatus" DEFAULT 'PENDING',
-	"delivery_address" text,
+	"status" "order_status" DEFAULT 'PENDING',
+	"delivery_address" integer,
+	"delivery_method" "delivery_method" DEFAULT 'self_collect',
 	"total_amount" real NOT NULL,
 	"created_at" timestamp DEFAULT now(),
-	"updated_at" timestamp DEFAULT now()
+	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "packages" (
@@ -68,7 +87,7 @@ CREATE TABLE "packages" (
 	"price" real NOT NULL,
 	"description" text,
 	"created_at" timestamp DEFAULT now(),
-	"updated_at" timestamp DEFAULT now()
+	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "payments" (
@@ -98,7 +117,7 @@ CREATE TABLE "products" (
 	"price" real NOT NULL,
 	"stock" integer DEFAULT 0,
 	"created_at" timestamp DEFAULT now(),
-	"updated_at" timestamp DEFAULT now()
+	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "referrals" (
@@ -111,7 +130,7 @@ CREATE TABLE "referrals" (
 	"activated" integer DEFAULT 0 NOT NULL,
 	"is_deleted" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "otp" (
@@ -147,9 +166,9 @@ CREATE TABLE "transactions" (
 	"to_user_id" integer,
 	"from_wallet_type" "wallet_type",
 	"to_wallet_type" "wallet_type",
-	"amount" real NOT NULL,
+	"amount" integer NOT NULL,
 	"deduction_amount" real DEFAULT 0,
-	"net_amount" real NOT NULL,
+	"net_amount" integer NOT NULL,
 	"deduction_percentage" real DEFAULT 0,
 	"description" text,
 	"reference" text,
@@ -157,7 +176,7 @@ CREATE TABLE "transactions" (
 	"otp_verified" boolean DEFAULT false,
 	"requires_otp" boolean DEFAULT false,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "user_trees" (
@@ -173,16 +192,16 @@ CREATE TABLE "user_trees" (
 	"right_active_count" integer DEFAULT 0 NOT NULL,
 	"left_bv" real DEFAULT 0 NOT NULL,
 	"right_bv" real DEFAULT 0 NOT NULL,
-	"left_active_bv" real DEFAULT 0 NOT NULL,
-	"right_active_bv" real DEFAULT 0 NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "addresses" ADD CONSTRAINT "addresses_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "wallets" ADD CONSTRAINT "wallets_id_users_id_fk" FOREIGN KEY ("id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_delivery_address_addresses_id_fk" FOREIGN KEY ("delivery_address") REFERENCES "public"."addresses"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "payments" ADD CONSTRAINT "payments_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "payments" ADD CONSTRAINT "payments_package_id_packages_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."packages"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "payouts" ADD CONSTRAINT "payouts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint

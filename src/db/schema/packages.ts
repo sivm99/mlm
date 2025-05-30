@@ -6,5 +6,8 @@ export const packagesTable = pgTable("packages", {
   price: real("price").notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
 });

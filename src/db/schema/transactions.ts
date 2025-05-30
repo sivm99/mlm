@@ -50,9 +50,9 @@ export const transactionsTable = pgTable("transactions", {
   toWalletType: walletTypeEnum("to_wallet_type"),
 
   // Amount details
-  amount: real("amount").notNull(),
+  amount: integer("amount").notNull(),
   deductionAmount: real("deduction_amount").default(0),
-  netAmount: real("net_amount").notNull(),
+  netAmount: integer("net_amount").notNull(),
   deductionPercentage: real("deduction_percentage").default(0),
 
   // Additional info
@@ -65,7 +65,10 @@ export const transactionsTable = pgTable("transactions", {
   requiresOtp: boolean("requires_otp").default(false),
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
 });
 
 export type InsertTransaction = typeof transactionsTable.$inferInsert;

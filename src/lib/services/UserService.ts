@@ -5,6 +5,8 @@ import {
   LoginUser,
   SafeUser,
   Side,
+  SponsorIncrementArgs,
+  ToggleAccountArgs,
   TreeUser,
   UpdateFromAdmin,
   UpdateFromUser,
@@ -25,6 +27,7 @@ import {
 } from "./DatabaseService";
 import { treeService } from "./TreeService";
 import { treeQueueService } from "./TreeQueueService";
+import { walletService } from "./WalletService";
 // import { sql } from "drizzle-orm";
 // import { activationTemplate } from "@/templates";
 
@@ -123,15 +126,11 @@ class UserService {
             const sponsorData =
               await databaseService.doesSponsorExists(sponsorId);
             if (!sponsorData) throw new Error("Sponsor not found");
-
-            // Increase the direct count
-            await db
-              .update(usersTable)
-              .set({
-                directUsersCount: sponsorData.direct + 1,
-              })
-              .where(eq(usersTable.id, sponsorId));
-
+            await this.sponsorCountIncrement({
+              id: sponsorId,
+              directCount: 1,
+              activeDirectCount: 0,
+            });
             const position = positionMap[user.id];
             await treeService.insertIntoTree(user.id, position, sponsorId);
           });
@@ -206,7 +205,6 @@ class UserService {
       .update(usersTable)
       .set({
         passwordHash: await bunPassword.hash(password),
-        updatedAt: new Date(),
       })
       .where(eq(usersTable.id, id));
   }
@@ -215,11 +213,33 @@ class UserService {
     id: User["id"],
     updatedUser: UpdateFromUser | UpdateFromAdmin,
   ) {
+    await db.update(usersTable).set(updatedUser).where(eq(usersTable.id, id));
+  }
+
+  async sponsorCountIncrement({
+    id,
+    directCount = 1,
+    activeDirectCount = 0,
+  }: SponsorIncrementArgs) {
+    const sponsorData = await databaseService.fetchUserData(id);
+    if (!sponsorData) throw new Error("Sponsor does not exist exist");
     await db
       .update(usersTable)
       .set({
-        ...updatedUser,
-        updatedAt: new Date(),
+        directUsersCount: sponsorData.directUsersCount + directCount,
+        activeDirectUsersCount:
+          sponsorData.activeDirectUsersCount + activeDirectCount,
+      })
+      .where(eq(usersTable.id, id));
+  }
+
+  async toggleAccountStatus({ id, isActive = true }: ToggleAccountArgs) {
+    const user = await databaseService.fetchUserData(id);
+    if (!user) throw new Error("The user does not exist");
+    await db
+      .update(usersTable)
+      .set({
+        isActive,
       })
       .where(eq(usersTable.id, id));
   }
@@ -229,7 +249,7 @@ class UserService {
       columns: treeReturnColumns,
       where: eq(treeTable.sponsor, id),
       with: {
-        user: {
+        userRelation: {
           columns: safeUserColumns,
         },
       },
@@ -237,11 +257,103 @@ class UserService {
 
     return rows.map((row) => {
       return {
-        ...row.user,
+        ...row.userRelation,
         ...row,
         user: undefined, // Remove nested user object
       };
     });
+  }
+
+  async activateUserIds(fromUserId: User["id"], toUserIds: User["id"][]) {
+    const results: {
+      userId: User["id"];
+      success: boolean;
+      error?: string;
+    }[] = [];
+
+    for (const toUserId of toUserIds) {
+      await treeQueueService.enqueue(fromUserId, async () => {
+        try {
+          const toUser = await databaseService.minimalTreeData(toUserId);
+          if (!toUser) {
+            results.push({
+              userId: toUserId,
+              success: false,
+              error: "User does not exist",
+            });
+            return;
+          }
+          const transaction = await walletService.activateId(
+            fromUserId,
+            toUserId,
+            6800, // amount in cents
+            26.471, // deduction percentage
+          );
+
+          if (transaction.status !== "completed") {
+            console.log(
+              `[enqueue] Transaction failed: ${transaction.status} for user: ${toUserId}`,
+            );
+            results.push({
+              userId: toUserId,
+              success: false,
+              error: `Transaction status: ${transaction.status}`,
+            });
+            return;
+          }
+
+          console.log(`[enqueue] Transaction successful for user: ${toUserId}`);
+
+          const sponsorData = await databaseService.doesSponsorExists(
+            toUser.sponsor,
+          );
+          if (!sponsorData) {
+            console.log(`[enqueue] Sponsor not found for user: ${toUserId}`);
+            results.push({
+              userId: toUserId,
+              success: false,
+              error: "Sponsor not found",
+            });
+            return;
+          }
+
+          console.log(`[enqueue] Sponsor found. Incrementing counts...`);
+          await this.sponsorCountIncrement({
+            id: toUser.sponsor,
+            directCount: 0,
+            activeDirectCount: 1,
+          });
+
+          console.log(`[enqueue] Activating account for user: ${toUser.id}`);
+          await this.toggleAccountStatus({
+            id: toUser.id,
+            isActive: true,
+          });
+
+          console.log(`[enqueue] Syncing BV and active count...`);
+          await treeService.syncBvAndActiveCount(
+            toUser.parentUser,
+            toUser.position,
+            50,
+          );
+
+          console.log(`[enqueue] Finished processing for user: ${toUserId}`);
+          results.push({
+            userId: toUserId,
+            success: true,
+          });
+        } catch (err) {
+          console.log(`[enqueue] Error occurred for user: ${toUserId}`, err);
+          results.push({
+            userId: toUserId,
+            success: false,
+            error: String(err) || "Unexpected error",
+          });
+        }
+      });
+    }
+
+    return results;
   }
 }
 export default UserService;

@@ -7,7 +7,10 @@ export const configTable = pgTable(
     key: text("key").unique().notNull(),
     value: text("value").notNull(),
     description: text("description"),
-    updatedAt: timestamp("updated_at").defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
   },
   (table) => {
     return [index("idx_config_key").on(table.key)];

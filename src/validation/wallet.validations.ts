@@ -33,7 +33,7 @@ export const generateWalletOtpValidate = zValidator(
 const transferAlpSchema = z.object({
   fromUserId: idField,
   toUserId: idField,
-  amount: amountField,
+  amountInCents: amountField,
   otp: otpField,
   description: z.string().min(10),
 });
@@ -66,9 +66,11 @@ export const transferAlPointsValidate = zValidator(
 );
 
 const convertIncomeToAlpSchema = transferAlpSchema.pick({
-  amount: true,
+  amountInCents: true,
   otp: true,
 });
+
+export type ConvertIncomeToALP = z.infer<typeof convertIncomeToAlpSchema>;
 
 export const convertIncomeToAlpValidate = zValidator(
   "json",
@@ -81,7 +83,7 @@ export const convertIncomeToAlpValidate = zValidator(
 
 const adminAddAlpSchema = transferAlpSchema.pick({
   toUserId: true,
-  amount: true,
+  amountInCents: true,
   description: true,
 });
 
@@ -101,7 +103,7 @@ const ListingSchema = z.object({
   offset: offsetField.optional(),
   type: z.enum(trasactionType).default("alpoints_transfer"),
   status: z.enum(transactionStatus).default("completed"),
-  cursor: z.number(), // cursor for the id
+  cursor: z.string(), // cursor for the id
 });
 
 export type TransactionListing = z.infer<typeof ListingSchema>;

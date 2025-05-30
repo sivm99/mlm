@@ -13,6 +13,8 @@ import { paymentsTable } from "./payments";
 import { payoutsTable } from "./payouts";
 import { treeTable } from "./trees";
 import { walletsTable } from "./wallets";
+import { addressesTable } from "./addresses";
+import { ordersTable } from "./orders";
 
 export const userRole = pgEnum("userRole", ["ADMIN", "SUB_ADMIN", "USER"]);
 
@@ -41,7 +43,10 @@ export const usersTable = pgTable(
     permissions: jsonb("permissions").notNull().default({}),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
   },
   (table) => {
     return [index("idx_users_email").on(table.email)];
@@ -54,7 +59,21 @@ export type SelectUser = typeof usersTable.$inferSelect;
 export const usersRelations = relations(usersTable, ({ one, many }) => ({
   payments: many(paymentsTable),
   payouts: many(payoutsTable),
-  tree: one(treeTable),
   wallet: one(walletsTable),
-  // orders: many(orderItemsTable),
+  tree: one(treeTable, {
+    fields: [usersTable.id],
+    references: [treeTable.id],
+    relationName: "userTree",
+  }),
+  parentUsers: many(treeTable, {
+    relationName: "parentUserTree",
+  }),
+  leftUsers: many(treeTable, {
+    relationName: "leftUserTree",
+  }),
+  rightUsers: many(treeTable, {
+    relationName: "rightUserTree",
+  }),
+  orders: many(ordersTable),
+  addresses: many(addressesTable),
 }));

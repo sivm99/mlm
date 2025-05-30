@@ -51,8 +51,6 @@ export const treeReturn = {
   // stats on the Bv
   leftBv: treeTable.leftBv,
   rightBv: treeTable.rightBv,
-  leftActiveBv: treeTable.leftActiveBv,
-  rightActiveBv: treeTable.rightActiveBv,
 };
 
 export type TreeColumns = {
@@ -84,6 +82,14 @@ const syncCountTree = {
   ...minimalTree,
   leftCount: treeTable.leftCount,
   rightCount: treeTable.rightCount,
+};
+
+const syncBvAndActiveCountTree = {
+  ...minimalTree,
+  leftActiveCount: treeTable.leftActiveCount,
+  rightActiveCount: treeTable.rightActiveCount,
+  leftBv: treeTable.leftBv,
+  rightBv: treeTable.rightBv,
 };
 
 export type MinimalTreeReturn = {
@@ -151,6 +157,15 @@ export default class DatabaseService {
   async syncCountTreeData(id: TreeUser["id"]) {
     const result = await db
       .select(syncCountTree)
+      .from(treeTable)
+      .where(eq(treeTable.id, id));
+    if (!result[0]) return null;
+    return result[0];
+  }
+
+  async syncBvAndActiveCountTreeData(id: TreeUser["id"]) {
+    const result = await db
+      .select(syncBvAndActiveCountTree)
       .from(treeTable)
       .where(eq(treeTable.id, id));
     if (!result[0]) return null;

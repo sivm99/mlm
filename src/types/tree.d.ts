@@ -11,8 +11,6 @@ export type TreeStats = {
   rightActiveCount: TreeUser["rightActiveCount"];
   leftBv: TreeUser["leftBv"];
   rightBv: TreeUser["rightBv"];
-  leftActiveBv: TreeUser["leftActiveBv"];
-  rightActiveBv: TreeUser["rightActiveBv"];
 };
 
 export type TreePlacementResult = {

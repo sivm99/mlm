@@ -4,7 +4,7 @@ import { User } from "./user";
 export type TransferParams = {
   fromUserId: User["id"];
   toUserId: User["id"];
-  amount: number;
+  amountInCents: number;
   type: "alpoints_transfer";
   description: string | undefined;
   otp: string | undefined;
@@ -14,7 +14,7 @@ export type Wallet = SelectWallet;
 
 export type ConvertIncomeParams = {
   userId: User["id"];
-  amount: number;
+  amountInCents: number;
   type: "income_to_alpoints" | "income_payout";
   otp: string;
 };
@@ -25,7 +25,7 @@ export type WalletTransaction = {
   toUserId: User["id"] | undefined;
   fromWalletType: SelectTransaction["fromWalletType"] | undefined;
   toWalletType: SelectTransaction["toWalletType"] | undefined;
-  amount: number;
+  amountInCents: number;
   deductionPercentage: number | undefined;
   description: string | undefined;
   reference: string | undefined;

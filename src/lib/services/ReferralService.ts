@@ -115,7 +115,6 @@ export default class ReferralService {
       .update(referralsTable)
       .set({
         [statType]: referral[statType] + 1,
-        updatedAt: new Date(),
       })
       .where(eq(referralsTable.slug, slug))
       .execute();

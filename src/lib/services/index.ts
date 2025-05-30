@@ -7,3 +7,5 @@ export * from "./ReferralService";
 export * from "./TreeService";
 export * from "./UserService";
 export * from "./WalletService";
+export * from "./OrderService";
+export * from "./AddressService";

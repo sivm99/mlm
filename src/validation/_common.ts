@@ -41,14 +41,17 @@ export const offsetField = z
   .default(0)
   .refine((r) => Math.floor(r)); // r could be real number
 
-export const amountField = z.number().gt(0);
+export const amountField = z.number().int().gt(0);
 export const descriptionFiled = z.string().min(10);
 
 export const validationError = (error: ZodError, c: MyContext) =>
   c.json(
     {
       success: false,
-      message: JSON.stringify(error.flatten().fieldErrors, null, 2),
+      message:
+        error.issues.length > 0
+          ? error.issues[0].message
+          : "Validation error occurred",
       errors: error.flatten().fieldErrors,
     },
     400,

@@ -24,3 +24,15 @@ export type UserWithWallet = SafeUserReturn & {
   alpoints: number;
   incomeWallet: number;
 };
+
+export type SponsorIncrementArgs = {
+  id: User["id"];
+  directCount: 1 | 0;
+  activeDirectCount: 1 | 0;
+};
+
+export type ToggleAccountArgs = {
+  id: User["id"];
+  isActive: User["isActive"];
+  // addBv: boolean;
+};

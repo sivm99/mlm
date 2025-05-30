@@ -3,6 +3,7 @@ import { authenticate, authenticateAdmin } from "@/middleware/auth";
 import {
   bulkAddValidate,
   getTreeListValidate,
+  idActivateValidate,
   updateUserByAdminValidate,
   updateUserValidate,
 } from "@/validation/user.validation";
@@ -14,6 +15,7 @@ const router = new Hono()
   .patch("/", updateUserValidate, UserController.updateUser)
   .get("/tree-list", getTreeListValidate, UserController.getUserTree)
   .get("/direct-partners", UserController.getDirectPartners)
+  .post("/activate-id", idActivateValidate, UserController.activateUserId)
   .post(
     "/admin/bulk-add",
     authenticateAdmin,

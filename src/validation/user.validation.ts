@@ -1,7 +1,8 @@
 import z from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { MyContext } from "@/types";
-import { emailField, idField, validationError } from "./_common";
+import { emailField, idField, otpField, validationError } from "./_common";
+import { addressService, treeService } from "@/lib/services";
 
 const updateUserByAdminSchema = z.object({
   id: idField.optional(),
@@ -43,6 +44,7 @@ export type UpdateUser = z.infer<typeof updateUserSchema>;
 export const updateUserValidate = zValidator(
   "json",
   updateUserSchema,
+
   (r, c: MyContext) => {
     if (!r.success) return validationError(r.error, c);
     const user = c.get("user");
@@ -90,10 +92,98 @@ const treeListSidesSchema = z.object({
 export const getTreeListValidate = zValidator(
   "query",
   treeListSidesSchema,
-  (r, c: MyContext) => {
+  async (r, c: MyContext) => {
+    const { id: selfId } = c.get("user");
     if (!r.success) return validationError(r.error, c);
-    if (r.data.id) c.set("id", r.data.id);
-    else c.set("id", c.get("user").id);
+
+    if (r.data.id) {
+      if (r.data.id === selfId) {
+        c.set("id", r.data.id);
+      } else {
+        const isChildNode = await treeService.verifyChildNode(
+          r.data.id,
+          selfId,
+        );
+
+        if (isChildNode) {
+          c.set("id", r.data.id);
+        } else {
+          return c.json(
+            {
+              success: false,
+              message: "You don't have permission to view this node",
+            },
+            403,
+          );
+        }
+      }
+    } else {
+      c.set("id", selfId);
+    }
+
     c.set("side", r.data.side);
+  },
+);
+
+const idActivateSchema = z.discriminatedUnion("deliveryMethod", [
+  z.object({
+    userId: idField,
+    deliveryMethod: z.literal("self_collect"),
+    address: z.number().optional(), // optional here
+    otp: otpField,
+  }),
+  z.object({
+    userId: idField,
+    deliveryMethod: z.literal("shipping"),
+    address: z.number(), // required here
+    otp: otpField,
+  }),
+]);
+
+export type ActivateUserId = z.infer<typeof idActivateSchema>;
+
+export const idActivateValidate = zValidator(
+  "json",
+  idActivateSchema,
+  async (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error, c);
+    const user = c.get("user");
+    const selfId = user.id;
+
+    if (r.data.deliveryMethod === "shipping") {
+      if (!r.data.address) return;
+      const address = await addressService.getAddressById(r.data.address);
+      if (!address)
+        c.json(
+          {
+            success: false,
+            message: "You must Provide shipping address",
+          },
+          400,
+        );
+    }
+
+    if (selfId !== r.data.userId) {
+      const isChildNode = await treeService.verifyChildNode(
+        r.data.userId,
+        selfId,
+      );
+
+      if (!isChildNode) {
+        {
+          return c.json(
+            {
+              success: false,
+              message: "You don't have permission to activate this id",
+            },
+            403,
+          );
+        }
+      }
+    }
+
+    c.set("activateUserIdPayload", {
+      ...r.data,
+    });
   },
 );

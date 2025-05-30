@@ -1,4 +1,4 @@
-import { pgTable, real, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, timestamp, integer } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { relations } from "drizzle-orm";
 
@@ -11,12 +11,15 @@ export const walletsTable = pgTable("wallets", {
     })
     .primaryKey(),
 
-  alpoints: real("alpoints").notNull().default(0),
-  bv: real("bv").notNull().default(0),
-  incomeWallet: real("income_wallet").notNull().default(0),
+  alpoints: integer("alpoints").notNull().default(0),
+  bv: integer("bv").notNull().default(0),
+  incomeWallet: integer("income_wallet").notNull().default(0),
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
 });
 
 export const walleteRelations = relations(walletsTable, ({ one }) => ({

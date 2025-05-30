@@ -70,7 +70,7 @@ async function seed() {
       country: "United States",
       dialCode: "+1",
       role: "USER",
-      isActive: true,
+      isActive: false,
       passwordHash: await password.hash("password123"),
     };
     const level1LeftWallet: InsertWallet = {
@@ -91,7 +91,7 @@ async function seed() {
       country: "United Kingdom",
       dialCode: "+44",
       role: "USER",
-      isActive: true,
+      isActive: false,
       passwordHash: await password.hash("password123"),
     };
     const level1RightWallet: InsertWallet = {
@@ -113,7 +113,7 @@ async function seed() {
       country: "Canada",
       dialCode: "+1",
       role: "USER",
-      isActive: true,
+      isActive: false,
       passwordHash: await password.hash("password123"),
     };
     const level2LeftLeftWallet: InsertWallet = {
@@ -134,7 +134,7 @@ async function seed() {
       country: "Australia",
       dialCode: "+61",
       role: "USER",
-      isActive: true,
+      isActive: false,
       passwordHash: await password.hash("password123"),
     };
     const level2LeftRightWallet: InsertWallet = {
@@ -156,7 +156,7 @@ async function seed() {
       country: "Germany",
       dialCode: "+49",
       role: "USER",
-      isActive: true,
+      isActive: false,
       passwordHash: await password.hash("password123"),
     };
     const level2RightLeftWallet: InsertWallet = {
@@ -177,7 +177,7 @@ async function seed() {
       country: "France",
       dialCode: "+33",
       role: "USER",
-      isActive: true,
+      isActive: false,
       passwordHash: await password.hash("password123"),
     };
     const level2RightRightWallet: InsertWallet = {
@@ -199,7 +199,7 @@ async function seed() {
       country: "Japan",
       dialCode: "+81",
       role: "USER",
-      isActive: true,
+      isActive: false,
       passwordHash: await password.hash("password123"),
     };
     const level3LeftLeftLeftWallet: InsertWallet = {
@@ -243,7 +243,7 @@ async function seed() {
         country: "Brazil",
         dialCode: "+55",
         role: "USER",
-        isActive: true,
+        isActive: false,
         passwordHash: await password.hash("password123"),
       },
       {
@@ -254,7 +254,7 @@ async function seed() {
         country: "Mexico",
         dialCode: "+52",
         role: "USER",
-        isActive: true,
+        isActive: false,
         passwordHash: await password.hash("password123"),
       },
       {
@@ -265,7 +265,7 @@ async function seed() {
         country: "South Korea",
         dialCode: "+82",
         role: "USER",
-        isActive: true,
+        isActive: false,
         passwordHash: await password.hash("password123"),
       },
       {
@@ -287,7 +287,7 @@ async function seed() {
         country: "Italy",
         dialCode: "+39",
         role: "USER",
-        isActive: true,
+        isActive: false,
         passwordHash: await password.hash("password123"),
       },
       {
@@ -298,7 +298,7 @@ async function seed() {
         country: "Russia",
         dialCode: "+7",
         role: "USER",
-        isActive: true,
+        isActive: false,
         passwordHash: await password.hash("password123"),
       },
     ];

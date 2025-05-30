@@ -31,7 +31,10 @@ export const referralsTable = pgTable("referrals", {
 
   isDeleted: boolean("is_deleted").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
 });
 
 export const referralsRelations = relations(referralsTable, ({ one }) => ({

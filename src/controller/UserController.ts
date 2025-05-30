@@ -1,4 +1,11 @@
-import { userService, treeService, databaseService } from "@/lib/services";
+import { InsertOrder } from "@/db/schema";
+import {
+  userService,
+  treeService,
+  databaseService,
+  otpService,
+  orderService,
+} from "@/lib/services";
 import { MyContext } from "@/types";
 import { RegisterUser } from "@/validation/auth.validations";
 
@@ -60,12 +67,10 @@ export default class UserController {
       let self;
       switch (side) {
         case "FULL":
-          data = await treeService.getFullTeam(userId);
-          // if (id === userId) {
+          data = await treeService.getFullTeam(userId, 4);
           self = await databaseService.fetchTreeUserData(userId);
           if (!self) return;
           data.push(self);
-          // }
           break;
         case "LEFT":
           data = await treeService.getLeftTeam(userId);
@@ -110,6 +115,70 @@ export default class UserController {
           error: error instanceof Error ? error.message : "Unknown error",
         },
         400,
+      );
+    }
+  }
+
+  static async activateUserId(c: MyContext) {
+    try {
+      const self = c.get("user");
+      const { otp, userId, address, deliveryMethod } = c.get(
+        "activateUserIdPayload",
+      );
+
+      const verifyResult = await otpService.verifyOtp({
+        type: "fund_transfer",
+        email: self.email,
+        code: otp,
+      });
+
+      if (!verifyResult.success) {
+        return c.json(
+          {
+            success: false,
+            message: verifyResult.message,
+          },
+          403,
+        );
+      }
+
+      const [{ success, error }] = await userService.activateUserIds(self.id, [
+        userId,
+      ]);
+
+      if (error) {
+        return c.json(
+          {
+            success,
+            message: error,
+          },
+          400,
+        );
+      }
+
+      const newOrder: InsertOrder = {
+        userId,
+        totalAmount: 50,
+        deliveryMethod,
+        deliveryAddress: address,
+      };
+
+      const data = await orderService.placeOrder(newOrder);
+
+      return c.json({
+        success: true,
+        message: "Your ID has been activated successfully",
+        data,
+      });
+    } catch (err) {
+      console.error("Error in activateUserId:", err);
+      return c.json(
+        {
+          success: false,
+          message: "Something went wrong during activation or order placement.",
+          error: err instanceof Error ? err.message : String(err),
+        },
+        500,
       );
     }
   }

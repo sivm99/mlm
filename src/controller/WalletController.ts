@@ -93,7 +93,7 @@ export class WalletController {
 
       return c.json({
         success: true,
-        message: `Successfully converted ${body.amount} to AL Points (10% deduction applied)`,
+        message: `Successfully converted ${body.amountInCents} to AL Points (10% deduction applied)`,
         data: transaction,
       });
     } catch (error) {
@@ -144,12 +144,14 @@ export class WalletController {
    */
   static async activateId(c: MyContext) {
     try {
+      const { id: selfId } = c.get("user");
       const userIds = c.get("ids"); // any one can do update the id of anyone by transferring
-      const activationAmount = 50; // 50 alpoints will be deducted for 1 id
+      const activationAmount = 68; // 68 alpoints will be deducted for 1 id
       const data = [];
 
       for (const userId of userIds) {
         const transaction = await walletService.activateId(
+          selfId,
           userId,
           activationAmount,
         );
@@ -215,7 +217,8 @@ export class AdminWalletController {
   static async addFunds(c: MyContext) {
     try {
       const { id: adminuserid } = c.get("user");
-      const { toUserId, amount, description } = c.get("adminAddAlpoints");
+      const { toUserId, amountInCents, description } =
+        c.get("adminAddAlpoints");
 
       const transaction = await walletService.adminExecute({
         type: "fund_addition",
@@ -223,7 +226,7 @@ export class AdminWalletController {
         toUserId,
         fromWalletType: undefined, // since its just admin
         toWalletType: "alpoints",
-        amount,
+        amountInCents,
         deductionPercentage: undefined,
         description: description || `admin fund addition by ${adminuserid}`,
         reference: undefined,
@@ -251,8 +254,11 @@ export class AdminWalletController {
    * Get all transactions (admin only)
    */
   static async getAllTransactions(c: MyContext) {
+    const a = c.get("transactionListing");
     try {
-      const data = await transactionService.getTransactions();
+      const data = await transactionService.getTransactions(undefined, {
+        cursorId: Number(a.cursor),
+      });
       return c.json({
         success: true,
         data,

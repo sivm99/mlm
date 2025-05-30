@@ -107,7 +107,7 @@ export default class TreeService {
     return this.getTeam(userId, "RIGHT", maxDepth);
   }
 
-  async getFullTeam(userId: TreeUser["id"], maxDepth: number = 5) {
+  async getFullTeam(userId: TreeUser["id"], maxDepth: number = 4) {
     const leftTeam = await this.getTeam(userId, "LEFT", maxDepth);
     const rightTeam = await this.getTeam(userId, "RIGHT", maxDepth);
     return [...leftTeam, ...rightTeam];
@@ -209,6 +209,89 @@ export default class TreeService {
       console.error("Error syncing parent chain count:", error);
       throw error;
     }
+  }
+
+  async syncBvAndActiveCount(
+    parentId: TreeUser["id"],
+    side: TreeUser["position"],
+    bv: number = 50,
+  ): Promise<void> {
+    let currentNodeId = parentId;
+    let updatedCount = 0;
+    let updatedBv = 0;
+
+    try {
+      // Start from the immediate parent and traverse up to the admin
+      while (true) {
+        const currentNode =
+          await databaseService.syncBvAndActiveCountTreeData(currentNodeId);
+        if (!currentNode) break;
+
+        // Increment the appropriate count based on the side
+        if (side === "LEFT") {
+          updatedCount = currentNode.leftActiveCount + 1;
+          updatedBv = currentNode.leftBv + bv;
+          await db
+            .update(treeTable)
+            .set({ leftActiveCount: updatedCount, leftBv: updatedBv })
+            .where(eq(treeTable.id, currentNodeId));
+        } else {
+          updatedCount = currentNode.rightActiveCount + 1;
+          updatedBv = currentNode.rightBv + bv;
+          await db
+            .update(treeTable)
+            .set({ rightActiveCount: updatedCount, rightBv: updatedBv })
+            .where(eq(treeTable.id, currentNodeId));
+        }
+
+        // If current node is the admin (parent is self), we're done
+        if (currentNode.parentUser === currentNode.id) {
+          break;
+        }
+
+        // Move up the tree to the parent node
+        currentNodeId = currentNode.parentUser;
+
+        // Now we need to check which side of the parent this node is on
+        const parentNode = await databaseService.minimalTreeData(currentNodeId);
+        if (!parentNode) break;
+        side = currentNode.position;
+      }
+      console.log(`Synced count for parent chain starting from ${parentId}`);
+    } catch (error) {
+      console.error("Error syncing parent chain count:", error);
+      throw error;
+    }
+  }
+
+  async verifyChildNode(
+    childId: TreeUser["id"],
+    parentId: TreeUser["id"],
+  ): Promise<boolean> {
+    const parentNode = await databaseService.minimalTreeData(parentId);
+    if (!parentNode) return false;
+
+    if (parentNode.leftUser === childId || parentNode.rightUser === childId)
+      return true;
+
+    // Recursively check both children if they exist
+    if (parentNode.leftUser) {
+      const foundInLeft = await this.verifyChildNode(
+        parentNode.leftUser,
+        parentNode.id,
+      );
+      if (foundInLeft) return true;
+    }
+
+    if (parentNode.rightUser) {
+      const foundInRight = await this.verifyChildNode(
+        parentNode.rightUser,
+        parentNode.id,
+      );
+      if (foundInRight) return true;
+    }
+
+    return false;
   }
 }
 
