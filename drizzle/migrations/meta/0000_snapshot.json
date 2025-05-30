@@ -1,5 +1,5 @@
 {
-  "id": "d43b518a-7953-4dec-b5a2-2fb99c882f3c",
+  "id": "30d10f84-5e52-42ea-a610-1d7b98eb4ad7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -339,21 +339,21 @@
         },
         "alpoints": {
           "name": "alpoints",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": true,
           "default": 0
         },
         "bv": {
           "name": "bv",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": true,
           "default": 0
         },
         "income_wallet": {
           "name": "income_wallet",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": true,
           "default": 0
@@ -1309,7 +1309,7 @@
         },
         "amount": {
           "name": "amount",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": true
         },
@@ -1322,7 +1322,7 @@
         },
         "net_amount": {
           "name": "net_amount",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": true
         },

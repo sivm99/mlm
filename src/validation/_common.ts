@@ -41,7 +41,7 @@ export const offsetField = z
   .default(0)
   .refine((r) => Math.floor(r)); // r could be real number
 
-export const amountField = z.number().int().gt(0);
+export const amountField = z.number().gt(0);
 export const descriptionFiled = z.string().min(10);
 
 export const validationError = (error: ZodError, c: MyContext) =>

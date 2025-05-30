@@ -1,6 +1,7 @@
 import { pgTable, timestamp, integer } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { relations } from "drizzle-orm";
+import { real } from "drizzle-orm/pg-core";
 
 export const walletsTable = pgTable("wallets", {
   id: integer("id")
@@ -11,9 +12,9 @@ export const walletsTable = pgTable("wallets", {
     })
     .primaryKey(),
 
-  alpoints: integer("alpoints").notNull().default(0),
-  bv: integer("bv").notNull().default(0),
-  incomeWallet: integer("income_wallet").notNull().default(0),
+  alpoints: real("alpoints").notNull().default(0),
+  bv: real("bv").notNull().default(0),
+  incomeWallet: real("income_wallet").notNull().default(0),
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })

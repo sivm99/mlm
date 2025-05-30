@@ -93,7 +93,7 @@ export class WalletController {
 
       return c.json({
         success: true,
-        message: `Successfully converted ${body.amountInCents} to AL Points (10% deduction applied)`,
+        message: `Successfully converted ${body.amount} to AL Points (10% deduction applied)`,
         data: transaction,
       });
     } catch (error) {
@@ -217,8 +217,7 @@ export class AdminWalletController {
   static async addFunds(c: MyContext) {
     try {
       const { id: adminuserid } = c.get("user");
-      const { toUserId, amountInCents, description } =
-        c.get("adminAddAlpoints");
+      const { toUserId, amount, description } = c.get("adminAddAlpoints");
 
       const transaction = await walletService.adminExecute({
         type: "fund_addition",
@@ -226,7 +225,7 @@ export class AdminWalletController {
         toUserId,
         fromWalletType: undefined, // since its just admin
         toWalletType: "alpoints",
-        amountInCents,
+        amount,
         deductionPercentage: undefined,
         description: description || `admin fund addition by ${adminuserid}`,
         reference: undefined,

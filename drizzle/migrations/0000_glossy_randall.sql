@@ -55,9 +55,9 @@ CREATE TABLE "users" (
 --> statement-breakpoint
 CREATE TABLE "wallets" (
 	"id" integer PRIMARY KEY NOT NULL,
-	"alpoints" integer DEFAULT 0 NOT NULL,
-	"bv" integer DEFAULT 0 NOT NULL,
-	"income_wallet" integer DEFAULT 0 NOT NULL,
+	"alpoints" real DEFAULT 0 NOT NULL,
+	"bv" real DEFAULT 0 NOT NULL,
+	"income_wallet" real DEFAULT 0 NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
@@ -166,9 +166,9 @@ CREATE TABLE "transactions" (
 	"to_user_id" integer,
 	"from_wallet_type" "wallet_type",
 	"to_wallet_type" "wallet_type",
-	"amount" integer NOT NULL,
+	"amount" real NOT NULL,
 	"deduction_amount" real DEFAULT 0,
-	"net_amount" integer NOT NULL,
+	"net_amount" real NOT NULL,
 	"deduction_percentage" real DEFAULT 0,
 	"description" text,
 	"reference" text,

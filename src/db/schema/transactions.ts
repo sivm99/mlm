@@ -50,9 +50,9 @@ export const transactionsTable = pgTable("transactions", {
   toWalletType: walletTypeEnum("to_wallet_type"),
 
   // Amount details
-  amount: integer("amount").notNull(),
+  amount: real("amount").notNull(),
   deductionAmount: real("deduction_amount").default(0),
-  netAmount: integer("net_amount").notNull(),
+  netAmount: real("net_amount").notNull(),
   deductionPercentage: real("deduction_percentage").default(0),
 
   // Additional info

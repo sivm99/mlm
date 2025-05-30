@@ -286,7 +286,7 @@ class UserService {
           const transaction = await walletService.activateId(
             fromUserId,
             toUserId,
-            6800, // amount in cents
+            68, // amount in cents
             26.471, // deduction percentage
           );
 

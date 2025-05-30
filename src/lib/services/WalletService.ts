@@ -46,10 +46,10 @@ export default class WalletService {
 
   /**
    * Transfer AL Points between users (no charges for downline/upline)
-   * @param params.amount Amount in cents
+   * @param params.amount Amount in real value
    */
   async transferAlPoints(params: TransferParams) {
-    const { fromUserId, toUserId, amountInCents, otp, description } = params;
+    const { fromUserId, toUserId, amount, otp, description } = params;
 
     // Verify OTP if provided
     if (otp) {
@@ -72,7 +72,7 @@ export default class WalletService {
       toUserId,
       fromWalletType: "alpoints",
       toWalletType: "alpoints",
-      amountInCents,
+      amount,
       description: description || `AL Points transfer to user ${toUserId}`,
       requiresOtp: true,
       reference: undefined,
@@ -83,10 +83,10 @@ export default class WalletService {
 
   /**
    * Convert income wallet to AL Points (10% deduction)
-   * @param params.amountInCents Amount in cents
+   * @param params.amount Amount in real value
    */
   async convertIncomeToAlpoints(params: ConvertIncomeParams) {
-    const { userId, amountInCents, otp } = params;
+    const { userId, amount, otp } = params;
 
     // Verify OTP
     const user = await databaseService.fetchUserData(userId);
@@ -107,7 +107,7 @@ export default class WalletService {
       toUserId: userId,
       fromWalletType: "income_wallet",
       toWalletType: "alpoints",
-      amountInCents,
+      amount,
       deductionPercentage: 10,
       description: "Convert income wallet to AL Points",
       requiresOtp: true,
@@ -118,10 +118,10 @@ export default class WalletService {
 
   /**
    * Payout from income wallet (10% deduction)
-   * @param params.amountInCents Amount in cents
+   * @param params.amount Amount in real value
    */
   async payoutFromIncome(params: ConvertIncomeParams) {
-    const { userId, amountInCents, otp } = params;
+    const { userId, amount, otp } = params;
 
     // Verify OTP
     const user = await databaseService.fetchUserData(userId);
@@ -142,7 +142,7 @@ export default class WalletService {
       toUserId: undefined,
       toWalletType: undefined,
       fromWalletType: "income_wallet",
-      amountInCents,
+      amount,
       deductionPercentage: 10,
       description: "Income wallet payout",
       requiresOtp: true,
@@ -153,11 +153,11 @@ export default class WalletService {
 
   /**
    * Add income to user's income wallet (from cron jobs)
-   * @param amountInCents Amount in cents
+   * @param amount Amount in real value
    */
   async addIncome(
     userId: User["id"],
-    amountInCents: number,
+    amount: number,
     type: "weekly_payout_earned" | "matching_income_earned",
     description?: string,
   ) {
@@ -167,7 +167,7 @@ export default class WalletService {
       toUserId: userId,
       fromWalletType: undefined,
       toWalletType: "income_wallet",
-      amountInCents,
+      amount,
       description: description || `${type.replace("_", " ")} income`,
       deductionPercentage: 10,
       reference: undefined,
@@ -178,12 +178,12 @@ export default class WalletService {
 
   /**
    * Activate ID using AL Points (no charges)
-   * @param activationAmountInCents Amount in cents for activation (default: 6800 cents = $68)
+   * @param activationAmount Amount in real value for activation (default: 68 = $68)
    */
   async activateId(
     fromUserId: User["id"],
     toUserId: User["id"],
-    activationAmountInCents: number = 6800,
+    activationAmount: number = 68,
     deductionPercentage: number = 26.471,
   ) {
     return await this.executeTransaction({
@@ -192,7 +192,7 @@ export default class WalletService {
       toUserId,
       fromWalletType: "alpoints",
       toWalletType: "bv",
-      amountInCents: activationAmountInCents,
+      amount: activationAmount,
       deductionPercentage,
       description: "ID Activation",
       reference: undefined,
@@ -203,18 +203,20 @@ export default class WalletService {
 
   /**
    * Core transaction execution with proper validation and logging
-   * All amounts are in cents
+   * All amounts are in real value
    */
   private async executeTransaction(params: WalletTransaction) {
     return await db.transaction(async (tx) => {
       try {
-        // Calculate amounts in cents
-        const deductionAmountInCents = params.deductionPercentage
-          ? Math.floor(
-              (params.amountInCents * params.deductionPercentage) / 100,
+        // Calculate amounts
+        const deductionAmount = params.deductionPercentage
+          ? parseFloat(
+              ((params.amount * params.deductionPercentage) / 100).toFixed(2),
             )
           : 0;
-        const netAmountInCents = params.amountInCents - deductionAmountInCents;
+        const netAmount = parseFloat(
+          (params.amount - deductionAmount).toFixed(2),
+        );
 
         // Validate sufficient balance for debit operations
         if (params.fromUserId && params.fromWalletType) {
@@ -226,9 +228,9 @@ export default class WalletService {
             throw new Error("Source wallet not found");
           }
 
-          const currentBalanceInCents =
+          const currentBalance =
             fromWallet[this.mapWalletTypeToKeyOfWallet(params.fromWalletType)];
-          if (currentBalanceInCents < params.amountInCents) {
+          if (currentBalance < params.amount) {
             throw new Error(`Insufficient ${params.fromWalletType} balance`);
           }
 
@@ -236,21 +238,20 @@ export default class WalletService {
           await tx
             .update(walletsTable)
             .set({
-              [params.fromWalletType]: sql`${walletsTable[this.mapWalletTypeToKeyOfWallet(params.fromWalletType)]} - ${params.amountInCents}`,
+              [params.fromWalletType]: sql`${walletsTable[this.mapWalletTypeToKeyOfWallet(params.fromWalletType)]} - ${params.amount}`,
             })
             .where(eq(walletsTable.id, params.fromUserId));
         }
 
         // Credit to destination wallet
         if (params.toUserId && params.toWalletType) {
-          const creditAmountInCents =
-            params.type === "income_payout" ? 0 : netAmountInCents;
+          const creditAmount = params.type === "income_payout" ? 0 : netAmount;
 
-          if (creditAmountInCents > 0) {
+          if (creditAmount > 0) {
             await tx
               .update(walletsTable)
               .set({
-                [params.toWalletType]: sql`${walletsTable[this.mapWalletTypeToKeyOfWallet(params.toWalletType)]} + ${creditAmountInCents}`,
+                [params.toWalletType]: sql`${walletsTable[this.mapWalletTypeToKeyOfWallet(params.toWalletType)]} + ${creditAmount}`,
               })
               .where(eq(walletsTable.id, params.toUserId));
           }
@@ -266,9 +267,9 @@ export default class WalletService {
             toUserId: params.toUserId,
             fromWalletType: params.fromWalletType,
             toWalletType: params.toWalletType,
-            amount: params.amountInCents,
-            deductionAmount: deductionAmountInCents,
-            netAmount: netAmountInCents,
+            amount: params.amount,
+            deductionAmount: deductionAmount,
+            netAmount: netAmount,
             deductionPercentage: params.deductionPercentage || 0,
             description: params.description,
             reference: params.reference,
@@ -285,9 +286,9 @@ export default class WalletService {
           transactionId: transaction[0].id,
           message: `Transaction completed: ${params.type}`,
           metadata: {
-            amountInCents: params.amountInCents,
-            netAmountInCents: netAmountInCents,
-            deductionAmountInCents: deductionAmountInCents,
+            amount: params.amount,
+            netAmount: netAmount,
+            deductionAmount: deductionAmount,
             type: params.type,
           },
         });
@@ -301,7 +302,7 @@ export default class WalletService {
           toUserId: params.toUserId,
           fromWalletType: params.fromWalletType,
           toWalletType: params.toWalletType,
-          amount: params.amountInCents,
+          amount: params.amount,
           netAmount: 0,
           description: `Failed: ${String(error)}`,
           requiresOtp: params.requiresOtp || false,

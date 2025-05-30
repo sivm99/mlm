@@ -33,7 +33,7 @@ export const generateWalletOtpValidate = zValidator(
 const transferAlpSchema = z.object({
   fromUserId: idField,
   toUserId: idField,
-  amountInCents: amountField,
+  amount: amountField,
   otp: otpField,
   description: z.string().min(10),
 });
@@ -66,7 +66,7 @@ export const transferAlPointsValidate = zValidator(
 );
 
 const convertIncomeToAlpSchema = transferAlpSchema.pick({
-  amountInCents: true,
+  amount: true,
   otp: true,
 });
 
@@ -83,7 +83,7 @@ export const convertIncomeToAlpValidate = zValidator(
 
 const adminAddAlpSchema = transferAlpSchema.pick({
   toUserId: true,
-  amountInCents: true,
+  amount: true,
   description: true,
 });
 
