@@ -29,6 +29,10 @@ export const addressesTable = pgTable("addresses", {
   zip: text("zip").notNull(),
   country: text("country").notNull(),
 
+  addedBy: integer("added_by").references(() => usersTable.id, {
+    onUpdate: "set null",
+    onDelete: "set null",
+  }),
   isDeleted: boolean("is_deleted").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
@@ -42,6 +46,12 @@ export const addressRelations = relations(addressesTable, ({ one, many }) => ({
   user: one(usersTable, {
     fields: [addressesTable.userId],
     references: [usersTable.id],
+    relationName: "address_user_relation",
+  }),
+  addedByUser: one(usersTable, {
+    fields: [addressesTable.addedBy],
+    references: [usersTable.id],
+    relationName: "added_by_user_relation",
   }),
 }));
 

@@ -14,6 +14,11 @@ export const idField = z.union([
       message: "ID must be an integer between 1,000,000 and 9,999,999",
     }),
 ]);
+
+export const otherIdField = z
+  .union([z.number().int().gt(0), z.string().regex(/^\d+$/).transform(Number)])
+  .transform(Number);
+
 export const idFieldString = z
   .union([z.number().int().transform(String), z.string().regex(/^\d+$/)])
   .refine(

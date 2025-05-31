@@ -222,7 +222,7 @@ class UserService {
     activeDirectCount = 0,
   }: SponsorIncrementArgs) {
     const sponsorData = await databaseService.fetchUserData(id);
-    if (!sponsorData) throw new Error("Sponsor does not exist exist");
+    if (!sponsorData) throw new Error("Sponsor does not exist");
     await db
       .update(usersTable)
       .set({
@@ -291,9 +291,6 @@ class UserService {
           );
 
           if (transaction.status !== "completed") {
-            console.log(
-              `[enqueue] Transaction failed: ${transaction.status} for user: ${toUserId}`,
-            );
             results.push({
               userId: toUserId,
               success: false,
@@ -302,13 +299,10 @@ class UserService {
             return;
           }
 
-          console.log(`[enqueue] Transaction successful for user: ${toUserId}`);
-
           const sponsorData = await databaseService.doesSponsorExists(
             toUser.sponsor,
           );
           if (!sponsorData) {
-            console.log(`[enqueue] Sponsor not found for user: ${toUserId}`);
             results.push({
               userId: toUserId,
               success: false,
@@ -317,33 +311,28 @@ class UserService {
             return;
           }
 
-          console.log(`[enqueue] Sponsor found. Incrementing counts...`);
           await this.sponsorCountIncrement({
             id: toUser.sponsor,
             directCount: 0,
             activeDirectCount: 1,
           });
 
-          console.log(`[enqueue] Activating account for user: ${toUser.id}`);
           await this.toggleAccountStatus({
             id: toUser.id,
             isActive: true,
           });
 
-          console.log(`[enqueue] Syncing BV and active count...`);
           await treeService.syncBvAndActiveCount(
             toUser.parentUser,
             toUser.position,
             50,
           );
 
-          console.log(`[enqueue] Finished processing for user: ${toUserId}`);
           results.push({
             userId: toUserId,
             success: true,
           });
         } catch (err) {
-          console.log(`[enqueue] Error occurred for user: ${toUserId}`, err);
           results.push({
             userId: toUserId,
             success: false,

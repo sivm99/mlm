@@ -1,9 +1,12 @@
 import {
   ActivateUserId,
   BulkAdd,
+  CreateAddress,
+  ListAddresses,
   OTPEmail,
   RegisterUser,
   ResetPassword,
+  UpdateAddress,
 } from "@/validation";
 import { LoginUser, SafeUser, Side, UpdateFromAdmin } from "./user";
 import { Context } from "hono";
@@ -33,6 +36,9 @@ export type Variables = {
   adminAddAlpoints: AdminAddALP;
   transactionListing: TransactionListing;
   activateUserIdPayload: ActivateUserId;
+  createAddress: CreateAddress;
+  updateAddress: UpdateAddress;
+  listAddresses: ListAddresses;
 };
 export type MyContext = Context<{ Variables: Variables }>;
 export type OTP = OTPTYPE;
