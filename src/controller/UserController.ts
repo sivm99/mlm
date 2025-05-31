@@ -126,21 +126,20 @@ export default class UserController {
         "activateUserIdPayload",
       );
 
-      const verifyResult = await otpService.verifyOtp({
-        type: "fund_transfer",
-        email: self.email,
-        code: otp,
-      });
-
-      if (!verifyResult.success) {
-        return c.json(
-          {
-            success: false,
-            message: verifyResult.message,
-          },
-          403,
-        );
-      }
+      // const verifyResult = await otpService.verifyOtp({
+      //   type: "fund_transfer",
+      //   email: self.email,
+      //   code: otp,
+      // });
+      // if (!verifyResult.success) {
+      //   return c.json(
+      //     {
+      //       success: false,
+      //       message: verifyResult.message,
+      //     },
+      //     403,
+      //   );
+      // }
 
       const [{ success, error }] = await userService.activateUserIds(self.id, [
         userId,

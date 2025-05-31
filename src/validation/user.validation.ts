@@ -153,7 +153,7 @@ export const idActivateValidate = zValidator(
     if (r.data.deliveryMethod === "shipping") {
       if (!r.data.address) return;
       const address = await addressService.getAddressById(r.data.address);
-      if (!address)
+      if (!address || address.userId !== r.data.userId)
         c.json(
           {
             success: false,
