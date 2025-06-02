@@ -11,7 +11,7 @@ import { Hono } from "hono";
 const router = new Hono()
   .use("*", authenticate)
   .post("/", createAddressValidate, AddressController.createAddress)
-  .get("/", userIdFromQueryValidate, AddressController.getUserAddresses)
+  .get("/:userId", userIdFromQueryValidate, AddressController.getUserAddresses)
   .get("/:id", otherIdFromParamsValidate, AddressController.getAddress)
   .patch(
     "/:id",
