@@ -84,3 +84,15 @@ export const otherIdFromParamsValidate = zValidator(
     c.set("id", r.data.id);
   },
 );
+
+export const userIdFromQueryValidate = zValidator(
+  "query",
+  z.object({
+    id: idField.optional(),
+  }),
+  (r, c: MyContext) => {
+    if (!r.success) return validationError(r.error, c);
+    if (r.data.id) c.set("id", r.data.id);
+    else c.set("id", c.get("user").id);
+  },
+);
