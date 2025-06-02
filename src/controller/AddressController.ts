@@ -181,7 +181,6 @@ export default class AddressController {
 
   static async getUserAddresses(c: MyContext) {
     try {
-      // const user = c.get("user");
       const userId = c.get("id");
       const addresses = await addressService.getAddressesByUserId(userId);
 
