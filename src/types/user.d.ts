@@ -36,3 +36,5 @@ export type ToggleAccountArgs = {
   isActive: User["isActive"];
   // addBv: boolean;
 };
+
+export type UserId = User["id"];

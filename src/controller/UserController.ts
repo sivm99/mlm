@@ -3,11 +3,10 @@ import {
   userService,
   treeService,
   databaseService,
-  otpService,
   orderService,
 } from "@/lib/services";
 import { MyContext } from "@/types";
-import { RegisterUser } from "@/validation/auth.validations";
+import { RegisterUser } from "@/validation";
 
 export default class UserController {
   static async getUser(c: MyContext) {
@@ -122,24 +121,9 @@ export default class UserController {
   static async activateUserId(c: MyContext) {
     try {
       const self = c.get("user");
-      const { otp, userId, address, deliveryMethod } = c.get(
+      const { userId, address, deliveryMethod } = c.get(
         "activateUserIdPayload",
       );
-
-      const verifyResult = await otpService.verifyOtp({
-        type: "fund_transfer",
-        email: self.email,
-        code: otp,
-      });
-      if (!verifyResult.success) {
-        return c.json(
-          {
-            success: false,
-            message: verifyResult.message,
-          },
-          403,
-        );
-      }
 
       const [{ success, error }] = await userService.activateUserIds(self.id, [
         userId,

@@ -8,7 +8,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { relations } from "drizzle-orm";
-import { ordersTable } from "./orders";
 
 export const addressesTable = pgTable("addresses", {
   id: serial("id").primaryKey(),
@@ -41,8 +40,7 @@ export const addressesTable = pgTable("addresses", {
     .$onUpdate(() => new Date()),
 });
 
-export const addressRelations = relations(addressesTable, ({ one, many }) => ({
-  orders: many(ordersTable),
+export const addressRelations = relations(addressesTable, ({ one }) => ({
   user: one(usersTable, {
     fields: [addressesTable.userId],
     references: [usersTable.id],

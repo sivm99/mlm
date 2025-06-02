@@ -11,6 +11,7 @@ import {
   multiIdsVaildate,
   transactionListingValidate,
   transferAlPointsValidate,
+  verifyWalletOtpValidate,
 } from "@/validation";
 import { Hono } from "hono";
 
@@ -23,6 +24,11 @@ router
     "/generate-otp",
     generateWalletOtpValidate,
     WalletController.generateWalletOtp,
+  )
+  .post(
+    "/verify-otp",
+    verifyWalletOtpValidate,
+    WalletController.verifyWalletOtp,
   )
   .post(
     "/transfer",

@@ -3,12 +3,13 @@ import {
   BulkAdd,
   CreateAddress,
   ListAddresses,
+  ListArHistory,
   OTPEmail,
   RegisterUser,
   ResetPassword,
   UpdateAddress,
 } from "@/validation";
-import { LoginUser, SafeUser, Side, UpdateFromAdmin } from "./user";
+import { LoginUser, SafeUser, Side, UpdateFromAdmin, UserId } from "./user";
 import { Context } from "hono";
 import { OTPTYPE, WalletOperations } from "@/db/schema";
 import {
@@ -16,6 +17,7 @@ import {
   ConvertIncomeToALP,
   TransactionListing,
   TrasferALPoints,
+  VerifyWalletOtp,
 } from "@/validation/wallet.validations";
 
 export type Variables = {
@@ -27,10 +29,11 @@ export type Variables = {
   updatedUser: UpdateFromAdmin;
   bulkAdd: BulkAdd;
   side: Side | "FULL";
-  id: SafeUser["id"];
-  ids: SafeUser["id"][];
+  id: UserId;
+  ids: UserId[];
   resetPassword: ResetPassword;
   walletOperation: WalletOperations[number];
+  verifyWalletOtp: VerifyWalletOtp;
   transferAlPoints: TrasferALPoints;
   convertIncomeToAlp: ConvertIncomeToALP;
   adminAddAlpoints: AdminAddALP;
@@ -39,6 +42,7 @@ export type Variables = {
   createAddress: CreateAddress;
   updateAddress: UpdateAddress;
   listAddresses: ListAddresses;
+  listArHistory: ListArHistory;
 };
 export type MyContext = Context<{ Variables: Variables }>;
 export type OTP = OTPTYPE;

@@ -15,6 +15,7 @@ import { treeTable } from "./trees";
 import { walletsTable } from "./wallets";
 import { addressesTable } from "./addresses";
 import { ordersTable } from "./orders";
+import { arHistoryTable } from "./arHistory";
 
 export const userRole = pgEnum("userRole", ["ADMIN", "SUB_ADMIN", "USER"]);
 
@@ -75,5 +76,11 @@ export const usersRelations = relations(usersTable, ({ one, many }) => ({
     relationName: "rightUserTree",
   }),
   orders: many(ordersTable),
-  addresses: many(addressesTable),
+  addresses: many(addressesTable, {
+    relationName: "userAddresses",
+  }),
+  addedByAddress: many(addressesTable, { relationName: "addedByAddresses" }),
+  arHistories: many(arHistoryTable, {
+    relationName: "userArHistoryRelation",
+  }),
 }));

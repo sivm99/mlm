@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { idField, limitField, otherIdField, validationError } from "./_common";
+import {
+  idField,
+  limitField,
+  otherIdField,
+  pageField,
+  validationError,
+} from "./_common";
 import { zValidator } from "@hono/zod-validator";
 import { MyContext } from "@/types";
 
@@ -54,7 +60,7 @@ export const updateAddressValidate = zValidator(
 );
 
 const listAddressesSchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
+  page: pageField,
   limit: limitField(50).default(10),
   title: z.string().optional(),
   city: z.string().optional(),

@@ -13,3 +13,4 @@ export * from "./logs";
 export * from "./transactions";
 export * from "./trees";
 export * from "./addresses";
+export * from "./arHistory";

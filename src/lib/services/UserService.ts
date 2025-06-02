@@ -3,22 +3,21 @@ import { generateRandomDigits } from "@/lib/cr";
 import { usersTable } from "@/db/schema/users";
 import {
   LoginUser,
+  MyContext,
   SafeUser,
   Side,
   SponsorIncrementArgs,
   ToggleAccountArgs,
-  TreeUser,
   UpdateFromAdmin,
   UpdateFromUser,
   User,
+  UserId,
 } from "@/types";
 import { password as bunPassword } from "bun";
 import { eq } from "drizzle-orm";
 import { sign } from "hono/jwt";
-import { Context } from "hono";
 import { setCookie } from "hono/cookie";
-import { RegisterUser } from "@/validation/auth.validations";
-import { treeTable, walletsTable } from "@/db/schema";
+import { InsertArHistory, treeTable, walletsTable } from "@/db/schema";
 import {
   databaseService,
   safeUserColumns,
@@ -28,18 +27,21 @@ import {
 import { treeService } from "./TreeService";
 import { treeQueueService } from "./TreeQueueService";
 import { walletService } from "./WalletService";
-// import { sql } from "drizzle-orm";
-// import { activationTemplate } from "@/templates";
+import { arHistoryService } from "./ArHistoryService";
+import { RegisterUser } from "@/validation";
 
 const jwtSecret = process.env.JWT_SECRET!;
 
-class UserService {
+export default class UserService {
   #expireTimeInMinutes = Number(process.env.EXPIRE_TIME_IN_MINUTES) || 5;
   #isDev = process.env.NODE_ENV === "development" ? true : false;
   #host = process.env.HOST || "::1:5000";
   #returnUserObject = safeUserReturn;
+  #bvCount = 50;
+  #packagePrice = 68;
+  #deductionPercentage = 26.471;
 
-  async #getJwtString(id: User["id"]) {
+  async #getJwtString(id: UserId) {
     const payload = {
       id,
       exp: Math.floor(Date.now() / 1000) + 60 * this.#expireTimeInMinutes,
@@ -77,7 +79,7 @@ class UserService {
     }
 
     const positionMap: Record<number, Side> = {}; // id -> position
-    const sponsorMap: Record<number, TreeUser["id"]> = {}; // id -> sponsor
+    const sponsorMap: Record<number, UserId> = {}; // id -> sponsor
 
     const processedUsers = await Promise.all(
       users.map(async (user) => {
@@ -183,7 +185,7 @@ class UserService {
     }
   }
 
-  async setTokenCookie(c: Context, id: User["id"]) {
+  async setTokenCookie(c: MyContext, id: UserId) {
     const jwt = await this.#getJwtString(id);
     return setCookie(c, "token", jwt, {
       path: "/",
@@ -264,9 +266,9 @@ class UserService {
     });
   }
 
-  async activateUserIds(fromUserId: User["id"], toUserIds: User["id"][]) {
+  async activateUserIds(fromUserId: UserId, toUserIds: UserId[]) {
     const results: {
-      userId: User["id"];
+      userId: UserId;
       success: boolean;
       error?: string;
     }[] = [];
@@ -286,8 +288,8 @@ class UserService {
           const transaction = await walletService.activateId(
             fromUserId,
             toUserId,
-            68, // amount in cents
-            26.471, // deduction percentage
+            this.#packagePrice,
+            this.#deductionPercentage,
           );
 
           if (transaction.status !== "completed") {
@@ -325,8 +327,16 @@ class UserService {
           await treeService.syncBvAndActiveCount(
             toUser.parentUser,
             toUser.position,
-            50,
+            this.#bvCount,
           );
+
+          // make the arHistory as well now
+          const arHistory: InsertArHistory = {
+            fromUserId,
+            toUserId,
+            investment: this.#packagePrice,
+          };
+          await arHistoryService.addArHistory(arHistory);
 
           results.push({
             userId: toUserId,
@@ -345,5 +355,4 @@ class UserService {
     return results;
   }
 }
-export default UserService;
 export const userService = new UserService();

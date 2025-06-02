@@ -1,7 +1,7 @@
 import z from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { MyContext } from "@/types";
-import { emailField, idField, otpField, validationError } from "./_common";
+import { emailField, idField, validationError } from "./_common";
 import { addressService, databaseService, treeService } from "@/lib/services";
 
 const updateUserByAdminSchema = z.object({
@@ -129,14 +129,12 @@ const idActivateSchema = z.discriminatedUnion("deliveryMethod", [
   z.object({
     userId: idField,
     deliveryMethod: z.literal("self_collect"),
-    address: z.number().optional(), // optional here
-    otp: otpField,
+    address: z.number().optional(),
   }),
   z.object({
     userId: idField,
     deliveryMethod: z.literal("shipping"),
-    address: z.number(), // required here
-    otp: otpField,
+    address: z.number(),
   }),
 ]);
 

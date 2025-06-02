@@ -15,6 +15,13 @@
       "when": 1748670894686,
       "tag": "0001_silky_shiva",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1748888906575,
+      "tag": "0002_hesitant_warbound",
+      "breakpoints": true
     }
   ]
 }

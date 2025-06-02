@@ -4,3 +4,4 @@ export * from "./listing.validations";
 export * from "./referral.validations";
 export * from "./wallet.validations";
 export * from "./address.validations";
+export * from "./arHistory.validations";

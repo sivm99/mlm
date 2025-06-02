@@ -61,3 +61,5 @@ export const validationError = (error: ZodError, c: MyContext) =>
     },
     400,
   );
+
+export const pageField = z.coerce.number().int().positive().default(1);

@@ -1,4 +1,4 @@
-import { walletService } from "@/lib/services";
+import { otpService, walletService } from "@/lib/services";
 import { transactionService } from "@/lib/services/TransactionService";
 import { MyContext } from "@/types";
 
@@ -50,6 +50,39 @@ export class WalletController {
     }
   }
 
+  /**
+   * Verify OTP for wallet operations
+   * @param c - Context object containing user information and OTP details
+   * @returns JSON response indicating verification success or failure
+   */
+  static async verifyWalletOtp(c: MyContext) {
+    const self = c.get("user");
+    const { otp, walletoperations } = c.get("verifyWalletOtp");
+    const map = {
+      transfer: "fund_transfer",
+      convert: "convert_income_wallet",
+      payout: "usdt_withdrawal",
+    } as const;
+    const verifyResult = await otpService.verifyOtp({
+      type: map[walletoperations],
+      email: self.email,
+      code: otp,
+    });
+    if (!verifyResult.success) {
+      return c.json(
+        {
+          success: false,
+          message: verifyResult.message,
+        },
+        403,
+      );
+    }
+
+    return c.json({
+      success: true,
+      message: "OTP verified successfully",
+    });
+  }
   /**
    * Transfer AL Points to another user
    */

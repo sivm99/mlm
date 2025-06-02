@@ -19,6 +19,10 @@ const generateOtpSchema = z.object({
   walletoperations: z.enum(walletOperation).default("transfer"),
 });
 
+const verifyOtpSchema = generateOtpSchema.extend({
+  otp: otpField,
+});
+export type VerifyWalletOtp = z.infer<typeof verifyOtpSchema>;
 export const generateWalletOtpValidate = zValidator(
   "query",
   generateOtpSchema,
@@ -27,6 +31,17 @@ export const generateWalletOtpValidate = zValidator(
       return validationError(r.error, c);
     }
     c.set("walletOperation", r.data.walletoperations);
+  },
+);
+
+export const verifyWalletOtpValidate = zValidator(
+  "json",
+  verifyOtpSchema,
+  (r, c: MyContext) => {
+    if (!r.success) {
+      return validationError(r.error, c);
+    }
+    c.set("verifyWalletOtp", r.data);
   },
 );
 
