@@ -2,7 +2,7 @@ import z from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { MyContext } from "@/types";
 import { emailField, idField, otpField, validationError } from "./_common";
-import { addressService, treeService } from "@/lib/services";
+import { addressService, databaseService, treeService } from "@/lib/services";
 
 const updateUserByAdminSchema = z.object({
   id: idField.optional(),
@@ -147,43 +147,86 @@ export const idActivateValidate = zValidator(
   idActivateSchema,
   async (r, c: MyContext) => {
     if (!r.success) return validationError(r.error, c);
-    const user = c.get("user");
-    const selfId = user.id;
 
-    if (r.data.deliveryMethod === "shipping") {
-      if (!r.data.address) return;
-      const address = await addressService.getAddressById(r.data.address);
-      if (!address || address.userId !== r.data.userId)
-        c.json(
+    const user = c.get("user");
+    const userId = user.id;
+    const { deliveryMethod, address: addressId, userId: targetUserId } = r.data;
+
+    // Handle shipping address validation
+    if (deliveryMethod === "shipping") {
+      if (!addressId) {
+        return c.json(
           {
             success: false,
-            message: "You must Provide shipping address",
+            message: "Shipping address is required.",
           },
           400,
         );
-    }
+      }
 
-    if (selfId !== r.data.userId) {
-      const isChildNode = await treeService.verifyChildNode(
-        r.data.userId,
-        selfId,
-      );
-
-      if (!isChildNode) {
-        {
-          return c.json(
-            {
-              success: false,
-              message: "You don't have permission to activate this id",
-            },
-            403,
-          );
-        }
+      const address = await addressService.getAddressById(addressId);
+      if (!address || address.userId !== targetUserId) {
+        return c.json(
+          {
+            success: false,
+            message: "Invalid or unauthorized shipping address.",
+          },
+          400,
+        );
       }
     }
 
-    c.set("activateUserIdPayload", {
-      ...r.data,
-    });
+    // Self activation case
+    if (userId === targetUserId) {
+      if (user.isActive) {
+        return c.json(
+          {
+            success: false,
+            message: "Your ID is already activated.",
+          },
+          400,
+        );
+      }
+
+      const userFromDb = await databaseService.fetchUserData(targetUserId);
+      if (!userFromDb) {
+        return c.json(
+          {
+            success: false,
+            message: "User not found.",
+          },
+          404,
+        );
+      }
+
+      if (userFromDb.isActive) {
+        return c.json(
+          {
+            success: false,
+            message: "Your ID is already activated.",
+          },
+          400,
+        );
+      }
+    }
+
+    // Activating someone else's ID — check permissions
+    if (userId !== targetUserId) {
+      const isChildNode = await treeService.verifyChildNode(
+        targetUserId,
+        userId,
+      );
+      if (!isChildNode) {
+        return c.json(
+          {
+            success: false,
+            message: "You don't have permission to activate this ID.",
+          },
+          403,
+        );
+      }
+    }
+
+    c.set("activateUserIdPayload", { ...r.data });
   },
 );
