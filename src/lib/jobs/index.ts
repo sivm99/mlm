@@ -1,8 +1,7 @@
-import { env } from "bun";
 import { RedisQueue } from "./redis-adaptor";
 import { Worker } from "./worker";
 
-const redisUrl = env.REDIS_URL || "redis://localhost:6379";
+const redisUrl = Bun.env.REDIS_URL || "redis://localhost:6379";
 const queue = new RedisQueue<{ email: string; body: string }>(
   redisUrl,
   "test-queue",

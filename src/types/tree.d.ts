@@ -1,16 +1,28 @@
-import { MinimalTreeReturn, TreeReturn } from "@/lib/services";
+import { TreeReturn } from "@/lib/services";
 import { SafeUser, Side } from "./user";
+import { SelectUserStats } from "@/db/schema";
+import { SQL } from "drizzle-orm";
 
-export type TreeUser = SafeUser & TreeReturn; // for now it is just safe user;
-export type TreeNode = MinimalTreeReturn;
+export type TreeUser = SafeUser & TreeReturn;
+export type UserStats = SelectUserStats;
 
 export type TreeStats = {
-  leftCount: TreeUser["leftCount"];
-  rightCount: TreeUser["rightCount"];
-  leftActiveCount: TreeUser["leftActiveCount"];
-  rightActiveCount: TreeUser["rightActiveCount"];
-  leftBv: TreeUser["leftBv"];
-  rightBv: TreeUser["rightBv"];
+  leftCount?: SelectUserStats["leftCount"];
+  rightCount?: SelectUserStats["rightCount"];
+  leftActiveCount?: SelectUserStats["leftActiveCount"];
+  rightActiveCount?: SelectUserStats["rightActiveCount"];
+  leftBv?: SelectUserStats["leftBv"];
+  rightBv?: SelectUserStats["rightBv"];
+  todayLeftCount?: SelectUserStats["todayLeftCount"];
+  todayRightCount?: SelectUserStats["todayRightCount"];
+  todayLeftActiveCount?: SelectUserStats["todayLeftActiveCount"];
+  todayRightActiveCount?: SelectUserStats["todayRightActiveCount"];
+  todayLeftBv?: SelectUserStats["todayLeftBv"];
+  todayRightBv?: SelectUserStats["todayRightBv"];
+};
+
+export type TreeStatsUpdate = {
+  [K in keyof TreeStats]: SQL<unknown>;
 };
 
 export type TreePlacementResult = {

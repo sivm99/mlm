@@ -1,11 +1,4 @@
-import {
-  pgTable,
-  integer,
-  real,
-  timestamp,
-  pgEnum,
-  boolean,
-} from "drizzle-orm/pg-core";
+import { pgTable, integer, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
@@ -20,8 +13,8 @@ export const treeTable = pgTable(
         onDelete: "cascade",
         onUpdate: "cascade",
       })
+      .notNull()
       .primaryKey(),
-
     leftUser: integer("left_user").references(() => usersTable.id, {
       onDelete: "set null",
       onUpdate: "cascade",
@@ -30,8 +23,6 @@ export const treeTable = pgTable(
       onDelete: "set null",
       onUpdate: "cascade",
     }),
-    position: userPosition("position").notNull().default("LEFT"),
-
     parentUser: integer("parent_user")
       .references(() => usersTable.id, {
         onDelete: "cascade",
@@ -45,15 +36,7 @@ export const treeTable = pgTable(
       })
       .notNull(),
 
-    leftCount: integer("left_count").notNull().default(0),
-    rightCount: integer("right_count").notNull().default(0),
-    leftActiveCount: integer("left_active_count").notNull().default(0),
-    rightActiveCount: integer("right_active_count").notNull().default(0),
-    leftBv: real("left_bv").notNull().default(0),
-    rightBv: real("right_bv").notNull().default(0),
-
-    // if its a complementory id then matching income of this id wont be counted in the parent
-    isComplementoryId: boolean("is_complementory_id").notNull().default(false),
+    position: userPosition("position").notNull().default("LEFT"),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })

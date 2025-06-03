@@ -1,2 +1,0 @@
-ALTER TABLE "addresses" ADD COLUMN "added_by" integer;--> statement-breakpoint
-ALTER TABLE "addresses" ADD CONSTRAINT "addresses_added_by_users_id_fk" FOREIGN KEY ("added_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE set null;

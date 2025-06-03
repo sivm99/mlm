@@ -32,12 +32,7 @@ export const usersTable = pgTable(
 
     isActive: boolean("is_active").notNull().default(false),
     isBlocked: boolean("is_blocked").notNull().default(false),
-    redeemedCount: integer("redeemed_count").notNull().default(0),
-
-    directUsersCount: integer("direct_users_count").notNull().default(0),
-    activeDirectUsersCount: integer("active_direct_users_count")
-      .notNull()
-      .default(0),
+    isComplementoryId: boolean("is_complementory_id").notNull().default(false),
 
     passwordHash: text("password_hash").notNull(),
     role: userRole("role").notNull().default("USER"),

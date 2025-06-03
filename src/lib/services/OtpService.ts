@@ -1,13 +1,13 @@
 import db from "@/db";
 import { otpTable } from "@/db/schema";
-import { OTP, User } from "@/types";
+import { OTP, User, UserId } from "@/types";
 import { eq, and } from "drizzle-orm";
 import { generateRandomDigits } from "@/lib/cr";
 import EmailService, { emailService, UserEmail } from "./EmailService";
 import { emailVerifyOtpTemplate, passwordResetTemplate } from "@/templates";
 
 export default class OtpService {
-  #expireTimeInMinutes = Number(process.env.OTP_EXPIRE_TIME_IN_MINUTES) || 5;
+  #expireTimeInMinutes = Number(Bun.env.OTP_EXPIRE_TIME_IN_MINUTES) || 5;
   #emailService: EmailService;
 
   constructor(emailService: EmailService) {
@@ -23,7 +23,7 @@ export default class OtpService {
   async generateOtp(params: {
     type: OTP["type"];
     email: User["email"];
-    userId?: User["id"];
+    userId?: UserId;
     name?: User["name"];
   }) {
     const { type, email, userId, name } = params;

@@ -4,7 +4,7 @@ import { getCookie } from "hono/cookie";
 import { MyContext, SafeUser } from "@/types";
 import UserService from "@/lib/services/UserService";
 
-const jwtSecret = process.env.JWT_SECRET!;
+const jwtSecret = Bun.env.JWT_SECRET!;
 const userService = new UserService();
 
 // Define strict return types for verifyAndGetUser

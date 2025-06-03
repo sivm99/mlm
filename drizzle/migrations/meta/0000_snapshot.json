@@ -1,5 +1,5 @@
 {
-  "id": "30d10f84-5e52-42ea-a610-1d7b98eb4ad7",
+  "id": "756a0a83-2c93-47d1-89cc-575dcf0fff50",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -74,6 +74,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "added_by": {
+          "name": "added_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "is_deleted": {
           "name": "is_deleted",
           "type": "boolean",
@@ -110,6 +116,99 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "cascade"
+        },
+        "addresses_added_by_users_id_fk": {
+          "name": "addresses_added_by_users_id_fk",
+          "tableFrom": "addresses",
+          "tableTo": "users",
+          "columnsFrom": [
+            "added_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "set null"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ar_history": {
+      "name": "ar_history",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "from_user_id": {
+          "name": "from_user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "to_user_id": {
+          "name": "to_user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activity_type": {
+          "name": "activity_type",
+          "type": "ar_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'activate'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "investment": {
+          "name": "investment",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 68
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ar_history_from_user_id_users_id_fk": {
+          "name": "ar_history_from_user_id_users_id_fk",
+          "tableFrom": "ar_history",
+          "tableTo": "users",
+          "columnsFrom": [
+            "from_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "ar_history_to_user_id_users_id_fk": {
+          "name": "ar_history_to_user_id_users_id_fk",
+          "tableFrom": "ar_history",
+          "tableTo": "users",
+          "columnsFrom": [
+            "to_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -186,6 +285,65 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.first_eligible": {
+      "name": "first_eligible",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "reward_id": {
+          "name": "reward_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "first_eligible_id_users_id_fk": {
+          "name": "first_eligible_id_users_id_fk",
+          "tableFrom": "first_eligible",
+          "tableTo": "users",
+          "columnsFrom": [
+            "id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "first_eligible_reward_id_rewards_id_fk": {
+          "name": "first_eligible_reward_id_rewards_id_fk",
+          "tableFrom": "first_eligible",
+          "tableTo": "rewards",
+          "columnsFrom": [
+            "reward_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.users": {
       "name": "users",
       "schema": "",
@@ -246,26 +404,12 @@
           "notNull": true,
           "default": false
         },
-        "redeemed_count": {
-          "name": "redeemed_count",
-          "type": "integer",
+        "is_complementory_id": {
+          "name": "is_complementory_id",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "default": 0
-        },
-        "direct_users_count": {
-          "name": "direct_users_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "active_direct_users_count": {
-          "name": "active_direct_users_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
+          "default": false
         },
         "password_hash": {
           "name": "password_hash",
@@ -358,6 +502,13 @@
           "notNull": true,
           "default": 0
         },
+        "income_wallet_limit": {
+          "name": "income_wallet_limit",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -415,7 +566,7 @@
           "name": "product_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "quantity": {
           "name": "quantity",
@@ -786,6 +937,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "reward_id": {
+          "name": "reward_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "amount": {
           "name": "amount",
           "type": "real",
@@ -880,6 +1037,19 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "cascade"
+        },
+        "payouts_reward_id_rewards_id_fk": {
+          "name": "payouts_reward_id_rewards_id_fk",
+          "tableFrom": "payouts",
+          "tableTo": "rewards",
+          "columnsFrom": [
+            "reward_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1437,14 +1607,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "position": {
-          "name": "position",
-          "type": "userPosition",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'LEFT'"
-        },
         "parent_user": {
           "name": "parent_user",
           "type": "integer",
@@ -1457,47 +1619,13 @@
           "primaryKey": false,
           "notNull": true
         },
-        "left_count": {
-          "name": "left_count",
-          "type": "integer",
+        "position": {
+          "name": "position",
+          "type": "userPosition",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": 0
-        },
-        "right_count": {
-          "name": "right_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "left_active_count": {
-          "name": "left_active_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "right_active_count": {
-          "name": "right_active_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "left_bv": {
-          "name": "left_bv",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "right_bv": {
-          "name": "right_bv",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
+          "default": "'LEFT'"
         },
         "created_at": {
           "name": "created_at",
@@ -1618,9 +1746,285 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.rewards": {
+      "name": "rewards",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "reward_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'na'"
+        },
+        "status": {
+          "name": "status",
+          "type": "reward_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "amount_paid": {
+          "name": "amount_paid",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_payment_date": {
+          "name": "next_payment_date",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'2020-01-01T00:00:00.000Z'"
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "rewards_order_id_orders_id_fk": {
+          "name": "rewards_order_id_orders_id_fk",
+          "tableFrom": "rewards",
+          "tableTo": "orders",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "rewards_user_id_users_id_fk": {
+          "name": "rewards_user_id_users_id_fk",
+          "tableFrom": "rewards",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_stats": {
+      "name": "user_stats",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "redeemed_count": {
+          "name": "redeemed_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "direct_users_count": {
+          "name": "direct_users_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "active_direct_users_count": {
+          "name": "active_direct_users_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "left_count": {
+          "name": "left_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "right_count": {
+          "name": "right_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "left_active_count": {
+          "name": "left_active_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "right_active_count": {
+          "name": "right_active_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "left_bv": {
+          "name": "left_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "right_bv": {
+          "name": "right_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "today_left_count": {
+          "name": "today_left_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "today_right_count": {
+          "name": "today_right_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "today_left_active_count": {
+          "name": "today_left_active_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "today_right_active_count": {
+          "name": "today_right_active_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "today_left_bv": {
+          "name": "today_left_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "today_right_bv": {
+          "name": "today_right_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cf_left_bv": {
+          "name": "cf_left_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cf_right_bv": {
+          "name": "cf_right_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_stats_id_users_id_fk": {
+          "name": "user_stats_id_users_id_fk",
+          "tableFrom": "user_stats",
+          "tableTo": "users",
+          "columnsFrom": [
+            "id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {
+    "public.ar_enum": {
+      "name": "ar_enum",
+      "schema": "public",
+      "values": [
+        "activate",
+        "reactivate"
+      ]
+    },
     "public.userRole": {
       "name": "userRole",
       "schema": "public",
@@ -1692,7 +2096,9 @@
         "weekly_payout_earned",
         "matching_income_earned",
         "fund_addition",
-        "admin_adjustment"
+        "admin_adjustment",
+        "increase_wallet_limit",
+        "order_partial_payment"
       ]
     },
     "public.wallet_type": {
@@ -1710,6 +2116,25 @@
       "values": [
         "LEFT",
         "RIGHT"
+      ]
+    },
+    "public.reward_type": {
+      "name": "reward_type",
+      "schema": "public",
+      "values": [
+        "payout",
+        "order",
+        "na"
+      ]
+    },
+    "public.reward_status": {
+      "name": "reward_status",
+      "schema": "public",
+      "values": [
+        "active",
+        "pending",
+        "closed",
+        "paused"
       ]
     }
   },

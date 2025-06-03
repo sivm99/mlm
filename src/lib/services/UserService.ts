@@ -16,7 +16,12 @@ import {
 import { eq } from "drizzle-orm";
 import { sign } from "hono/jwt";
 import { setCookie } from "hono/cookie";
-import { InsertArHistory, treeTable, walletsTable } from "@/db/schema";
+import {
+  InsertArHistory,
+  treeTable,
+  userStatsTable,
+  walletsTable,
+} from "@/db/schema";
 import {
   databaseService,
   safeUserColumns,
@@ -28,13 +33,14 @@ import { treeQueueService } from "./TreeQueueService";
 import { walletService } from "./WalletService";
 import { arHistoryService } from "./ArHistoryService";
 import { RegisterUser } from "@/validation";
+import { sql } from "drizzle-orm";
 
-const jwtSecret = process.env.JWT_SECRET!;
+const jwtSecret = Bun.env.JWT_SECRET!;
 
 export default class UserService {
-  #expireTimeInMinutes = Number(process.env.EXPIRE_TIME_IN_MINUTES) || 5;
-  #isDev = process.env.NODE_ENV === "development" ? true : false;
-  #host = process.env.HOST || "::1:5000";
+  #expireTimeInMinutes = Number(Bun.env.EXPIRE_TIME_IN_MINUTES) || 5;
+  #isDev = Bun.env.NODE_ENV === "development" ? true : false;
+  #host = Bun.env.HOST || "::1:5000";
   #returnUserObject = safeUserReturn;
   #bvCount = 50;
   #packagePrice = 68;
@@ -113,11 +119,12 @@ export default class UserService {
         .values(processedUsers)
         .returning(this.#returnUserObject);
 
+      const userIds = insertedData.map((user) => ({ id: user.id }));
+
       // Create wallets
-      await db
-        .insert(walletsTable)
-        .values(insertedData.map((user) => ({ id: user.id })))
-        .execute();
+      await db.insert(walletsTable).values(userIds).execute();
+      // create stats
+      await db.insert(userStatsTable).values(userIds).execute();
 
       // Queue each tree insert
       await Promise.all(
@@ -127,11 +134,13 @@ export default class UserService {
             const sponsorData =
               await databaseService.doesSponsorExists(sponsorId);
             if (!sponsorData) throw new Error("Sponsor not found");
+
             await this.sponsorCountIncrement({
               id: sponsorId,
               directCount: 1,
               activeDirectCount: 0,
             });
+
             const position = positionMap[user.id];
             await treeService.insertIntoTree(user.id, position, sponsorId);
           });
@@ -210,10 +219,7 @@ export default class UserService {
       .where(eq(usersTable.id, id));
   }
 
-  async updateUser(
-    id: User["id"],
-    updatedUser: UpdateFromUser | UpdateFromAdmin,
-  ) {
+  async updateUser(id: UserId, updatedUser: UpdateFromUser | UpdateFromAdmin) {
     await db.update(usersTable).set(updatedUser).where(eq(usersTable.id, id));
   }
 
@@ -222,16 +228,13 @@ export default class UserService {
     directCount = 1,
     activeDirectCount = 0,
   }: SponsorIncrementArgs) {
-    const sponsorData = await databaseService.fetchUserData(id);
-    if (!sponsorData) throw new Error("Sponsor does not exist");
     await db
-      .update(usersTable)
+      .update(userStatsTable)
       .set({
-        directUsersCount: sponsorData.directUsersCount + directCount,
-        activeDirectUsersCount:
-          sponsorData.activeDirectUsersCount + activeDirectCount,
+        directUsersCount: sql` ${userStatsTable.directUsersCount} + ${directCount}`,
+        activeDirectUsersCount: sql`${userStatsTable.activeDirectUsersCount} + ${activeDirectCount}`,
       })
-      .where(eq(usersTable.id, id));
+      .where(eq(userStatsTable.id, id));
   }
 
   async toggleAccountStatus({ id, isActive = true }: ToggleAccountArgs) {
@@ -275,7 +278,7 @@ export default class UserService {
     for (const toUserId of toUserIds) {
       await treeQueueService.enqueue(fromUserId, async () => {
         try {
-          const toUser = await databaseService.minimalTreeData(toUserId);
+          const toUser = await databaseService.getTreeData(toUserId);
           if (!toUser) {
             results.push({
               userId: toUserId,
@@ -323,10 +326,10 @@ export default class UserService {
             isActive: true,
           });
 
-          await treeService.syncBvAndActiveCount(
+          await treeService.syncParentChain(
             toUser.parentUser,
             toUser.position,
-            this.#bvCount,
+            { updateActiveCount: true, bv: this.#bvCount },
           );
 
           // make the arHistory as well now

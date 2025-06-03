@@ -1,7 +1,6 @@
 import { drizzle } from "drizzle-orm/bun-sql";
 import * as schema from "./schema";
-
-const client = new Bun.SQL(process.env.DATABASE_URL!);
+const client = new Bun.SQL(Bun.env.DATABASE_URL!);
 
 const isDev = Bun.env.NODE_ENV === "development" ? true : false;
 const db = drizzle(client, {

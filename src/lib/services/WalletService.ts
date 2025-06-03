@@ -170,6 +170,7 @@ export default class WalletService {
 
   /**
    * Add income to user's income wallet (from cron jobs)
+   * it will incure no fees or charges
    * This will also reduce the user's income wallet limit by the amount added
    * @param userId - User ID to add income to
    * @param amount - Amount in real value to add
@@ -191,7 +192,7 @@ export default class WalletService {
       toWalletType: "income_wallet",
       amount,
       description: description || `${type.replace("_", " ")} income`,
-      deductionPercentage: 10,
+      deductionPercentage: 0,
       reference: undefined,
       metadata: undefined,
       requiresOtp: false,

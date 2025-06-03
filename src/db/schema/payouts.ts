@@ -29,7 +29,7 @@ export const payoutsTable = pgTable(
       }),
 
     rewardId: integer("reward_id")
-      .notNull()
+      // .notNull()
       .references(() => rewardsTable.id),
 
     amount: real("amount").notNull(),

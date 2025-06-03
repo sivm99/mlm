@@ -1,584 +1,376 @@
 import { eq } from "drizzle-orm";
-import db, { adminId } from "..";
 import {
   InsertProduct,
   InsertTree,
   InsertUser,
-  InsertWallet,
   productsTable,
   treeTable,
   usersTable,
   walletsTable,
+  userStatsTable,
 } from "../schema";
+import { BunSQLDatabase } from "drizzle-orm/bun-sql";
+import { adminId } from "..";
 
 const generateId = () => Math.floor(1000000 + Math.random() * 9000000);
 const adminEmail = Bun.env.ADMIN_EMAIL || "admin@example.com";
-// Create user data for all levels
-export async function generateUserIds() {
-  return {
-    level1LeftId: generateId(),
-    level1RightId: generateId(),
-    level2LeftLeftId: generateId(),
-    level2LeftRightId: generateId(),
-    level2RightLeftId: generateId(),
-    level2RightRightId: generateId(),
-    level3LeftLeftLeftId: generateId(),
-    level3LeftLeftRightId: generateId(),
-    level3LeftRightLeftId: generateId(),
-    level3LeftRightRightId: generateId(),
-    level3RightLeftLeftId: generateId(),
-    level3RightLeftRightId: generateId(),
-    level3RightRightLeftId: generateId(),
-    level3RightRightRightId: generateId(),
-  };
+
+// Tree structure definition - much cleaner!
+interface TreeNode {
+  id: number;
+  name: string;
+  email: string;
+  mobile: string;
+  country: string;
+  dialCode: string;
+  isActive: boolean;
+  sponsor: number;
+  parentUser: number;
+  position: "LEFT" | "RIGHT";
+  left?: TreeNode;
+  right?: TreeNode;
 }
 
-export async function createAdminUserData() {
-  const adminUser: InsertUser = {
+export async function generateTreeStructure(): Promise<TreeNode> {
+  // Generate all IDs first
+  const ids = {
+    // Level 1
+    level1Left: generateId(),
+    level1Right: generateId(),
+    // Level 2
+    level2LL: generateId(),
+    level2LR: generateId(),
+    level2RL: generateId(),
+    level2RR: generateId(),
+    // Level 3
+    level3LLL: generateId(),
+    level3LLR: generateId(),
+    level3LRL: generateId(),
+    level3LRR: generateId(),
+    level3RLL: generateId(),
+    level3RLR: generateId(),
+    level3RRL: generateId(),
+    level3RRR: generateId(),
+  };
+
+  // Build the tree structure
+  const tree: TreeNode = {
     id: adminId,
-    name: "Master",
-    mobile: "9999999999",
+    name: "Master Admin",
     email: adminEmail,
+    mobile: "9999999999",
     country: "Global",
     dialCode: "+1",
-    role: "ADMIN",
     isActive: true,
-    passwordHash: await Bun.password.hash(process.env.ADMIN_PASSWORD!),
-  };
-  const adminWallet: InsertWallet = {
-    id: adminId,
-  };
-  const adminTree: InsertTree = {
-    id: adminId,
     sponsor: adminId,
-    position: "LEFT",
     parentUser: adminId,
-  };
-
-  return { adminUser, adminWallet, adminTree };
-}
-
-// Create level 1 user data
-export async function createLevel1UserData(ids: {
-  level1LeftId: number;
-  level1RightId: number;
-}) {
-  const { level1LeftId, level1RightId } = ids;
-
-  const level1LeftUser: InsertUser = {
-    id: level1LeftId,
-    name: "User Left L1",
-    mobile: "1111111111",
-    email: "left1@example.com",
-    country: "United States",
-    dialCode: "+1",
-    role: "USER",
-    isActive: false,
-    passwordHash: await Bun.password.hash("password123"),
-  };
-  const level1LeftWallet: InsertWallet = {
-    id: level1LeftId,
-  };
-  const level1LeftTree: InsertTree = {
-    id: level1LeftId,
-    sponsor: adminId,
     position: "LEFT",
-    parentUser: adminId,
-  };
-
-  const level1RightUser: InsertUser = {
-    id: level1RightId,
-    name: "User Right L1",
-    mobile: "2222222222",
-    email: "right1@example.com",
-    country: "United Kingdom",
-    dialCode: "+44",
-    role: "USER",
-    isActive: false,
-    passwordHash: await Bun.password.hash("password123"),
-  };
-  const level1RightWallet: InsertWallet = {
-    id: level1RightId,
-  };
-  const level1RightTree: InsertTree = {
-    id: level1RightId,
-    sponsor: adminId,
-    position: "RIGHT",
-    parentUser: adminId,
-  };
-
-  return {
-    users: [level1LeftUser, level1RightUser],
-    wallets: [level1LeftWallet, level1RightWallet],
-    trees: [level1LeftTree, level1RightTree],
-    ids: { level1LeftId, level1RightId },
-  };
-}
-
-// Create level 2 user data
-export async function createLevel2UserData(ids: {
-  level1LeftId: number;
-  level1RightId: number;
-  level2LeftLeftId: number;
-  level2LeftRightId: number;
-  level2RightLeftId: number;
-  level2RightRightId: number;
-}) {
-  const {
-    level1LeftId,
-    level1RightId,
-    level2LeftLeftId,
-    level2LeftRightId,
-    level2RightLeftId,
-    level2RightRightId,
-  } = ids;
-
-  const level2LeftLeftUser: InsertUser = {
-    id: level2LeftLeftId,
-    name: "User LL L2",
-    mobile: "3333333333",
-    email: "leftleft2@example.com",
-    country: "Canada",
-    dialCode: "+1",
-    role: "USER",
-    isActive: false,
-    passwordHash: await Bun.password.hash("password123"),
-  };
-  const level2LeftLeftWallet: InsertWallet = {
-    id: level2LeftLeftId,
-  };
-  const level2LeftLeftTree: InsertTree = {
-    id: level2LeftLeftId,
-    sponsor: level1LeftId,
-    position: "LEFT",
-    parentUser: level1LeftId,
-  };
-
-  const level2LeftRightUser: InsertUser = {
-    id: level2LeftRightId,
-    name: "User LR L2",
-    mobile: "4444444444",
-    email: "leftright2@example.com",
-    country: "Australia",
-    dialCode: "+61",
-    role: "USER",
-    isActive: false,
-    passwordHash: await Bun.password.hash("password123"),
-  };
-  const level2LeftRightWallet: InsertWallet = {
-    id: level2LeftRightId,
-  };
-  const level2LeftRightTree: InsertTree = {
-    id: level2LeftRightId,
-    sponsor: level1LeftId,
-    position: "RIGHT",
-    parentUser: level1LeftId,
-  };
-
-  const level2RightLeftUser: InsertUser = {
-    id: level2RightLeftId,
-    name: "User RL L2",
-    mobile: "5555555555",
-    email: "rightleft2@example.com",
-    country: "Germany",
-    dialCode: "+49",
-    role: "USER",
-    isActive: false,
-    passwordHash: await Bun.password.hash("password123"),
-  };
-  const level2RightLeftWallet: InsertWallet = {
-    id: level2RightLeftId,
-  };
-  const level2RightLeftTree: InsertTree = {
-    id: level2RightLeftId,
-    sponsor: level1RightId,
-    position: "LEFT",
-    parentUser: level1RightId,
-  };
-
-  const level2RightRightUser: InsertUser = {
-    id: level2RightRightId,
-    name: "User RR L2",
-    mobile: "6666666666",
-    email: "rightright2@example.com",
-    country: "France",
-    dialCode: "+33",
-    role: "USER",
-    isActive: false,
-    passwordHash: await Bun.password.hash("password123"),
-  };
-  const level2RightRightWallet: InsertWallet = {
-    id: level2RightRightId,
-  };
-  const level2RightRightTree: InsertTree = {
-    id: level2RightRightId,
-    sponsor: level1RightId,
-    position: "RIGHT",
-    parentUser: level1RightId,
-  };
-
-  return {
-    users: [
-      level2LeftLeftUser,
-      level2LeftRightUser,
-      level2RightLeftUser,
-      level2RightRightUser,
-    ],
-    wallets: [
-      level2LeftLeftWallet,
-      level2LeftRightWallet,
-      level2RightLeftWallet,
-      level2RightRightWallet,
-    ],
-    trees: [
-      level2LeftLeftTree,
-      level2LeftRightTree,
-      level2RightLeftTree,
-      level2RightRightTree,
-    ],
-  };
-}
-
-// Create level 3 user data
-export async function createLevel3UserData(ids: {
-  level2LeftLeftId: number;
-  level2LeftRightId: number;
-  level2RightLeftId: number;
-  level2RightRightId: number;
-  level3LeftLeftLeftId: number;
-  level3LeftLeftRightId: number;
-  level3LeftRightLeftId: number;
-  level3LeftRightRightId: number;
-  level3RightLeftLeftId: number;
-  level3RightLeftRightId: number;
-  level3RightRightLeftId: number;
-  level3RightRightRightId: number;
-}) {
-  const {
-    level2LeftLeftId,
-    level2LeftRightId,
-    level2RightLeftId,
-    level2RightRightId,
-    level3LeftLeftLeftId,
-    level3LeftLeftRightId,
-    level3LeftRightLeftId,
-    level3LeftRightRightId,
-    level3RightLeftLeftId,
-    level3RightLeftRightId,
-    level3RightRightLeftId,
-    level3RightRightRightId,
-  } = ids;
-
-  const level3LeftLeftLeftUser: InsertUser = {
-    id: level3LeftLeftLeftId,
-    name: "User LLL L3",
-    mobile: "7777777771",
-    email: "lll3@example.com",
-    country: "Japan",
-    dialCode: "+81",
-    role: "USER",
-    isActive: false,
-    passwordHash: await Bun.password.hash("password123"),
-  };
-  const level3LeftLeftLeftWallet: InsertWallet = {
-    id: level3LeftLeftLeftId,
-  };
-  const level3LeftLeftLeftTree: InsertTree = {
-    id: level3LeftLeftLeftId,
-    sponsor: level2LeftLeftId,
-    position: "LEFT",
-    parentUser: level2LeftLeftId,
-  };
-
-  const level3LeftLeftRightUser: InsertUser = {
-    id: level3LeftLeftRightId,
-    name: "User LLR L3",
-    mobile: "7777777772",
-    email: "llr3@example.com",
-    country: "India",
-    dialCode: "+91",
-    role: "USER",
-    isActive: false,
-    passwordHash: await Bun.password.hash("password123"),
-  };
-  const level3LeftLeftRightWallet: InsertWallet = {
-    id: level3LeftLeftRightId,
-  };
-  const level3LeftLeftRightTree: InsertTree = {
-    id: level3LeftLeftRightId,
-    sponsor: level2LeftLeftId,
-    position: "RIGHT",
-    parentUser: level2LeftLeftId,
-  };
-
-  // Additional level 3 users
-  const users: InsertUser[] = [
-    {
-      id: level3LeftRightLeftId,
-      name: "User LRL L3",
-      mobile: "7777777773",
-      email: "lrl3@example.com",
-      country: "Brazil",
-      dialCode: "+55",
-      role: "USER",
-      isActive: false,
-      passwordHash: await Bun.password.hash("password123"),
-    },
-    {
-      id: level3LeftRightRightId,
-      name: "User LRR L3",
-      mobile: "7777777774",
-      email: "lrr3@example.com",
-      country: "Mexico",
-      dialCode: "+52",
-      role: "USER",
-      isActive: false,
-      passwordHash: await Bun.password.hash("password123"),
-    },
-    {
-      id: level3RightLeftLeftId,
-      name: "User RLL L3",
-      mobile: "7777777775",
-      email: "rll3@example.com",
-      country: "South Korea",
-      dialCode: "+82",
-      role: "USER",
-      isActive: false,
-      passwordHash: await Bun.password.hash("password123"),
-    },
-    {
-      id: level3RightLeftRightId,
-      name: "User RLR L3",
-      mobile: "7777777776",
-      email: "rlr3@example.com",
-      country: "Spain",
-      dialCode: "+34",
-      role: "USER",
-      isActive: false,
-      passwordHash: await Bun.password.hash("password123"),
-    },
-    {
-      id: level3RightRightLeftId,
-      name: "User RRL L3",
-      mobile: "7777777777",
-      email: "rrl3@example.com",
-      country: "Italy",
-      dialCode: "+39",
-      role: "USER",
-      isActive: false,
-      passwordHash: await Bun.password.hash("password123"),
-    },
-    {
-      id: level3RightRightRightId,
-      name: "User RRR L3",
-      mobile: "7777777778",
-      email: "rrr3@example.com",
-      country: "Russia",
-      dialCode: "+7",
-      role: "USER",
-      isActive: false,
-      passwordHash: await Bun.password.hash("password123"),
-    },
-  ];
-
-  const wallets: InsertWallet[] = users.map((user) => ({ id: user.id }));
-
-  const trees: InsertTree[] = [
-    {
-      id: level3LeftRightLeftId,
-      sponsor: level2LeftRightId,
+    left: {
+      id: ids.level1Left,
+      name: "User L1-Left",
+      email: "l1left@example.com",
+      mobile: "1111111111",
+      country: "United States",
+      dialCode: "+1",
+      isActive: true,
+      sponsor: adminId,
+      parentUser: adminId,
       position: "LEFT",
-      parentUser: level2LeftRightId,
+      left: {
+        id: ids.level2LL,
+        name: "User L2-LeftLeft",
+        email: "l2ll@example.com",
+        mobile: "2222222221",
+        country: "Canada",
+        dialCode: "+1",
+        isActive: true,
+        sponsor: ids.level1Left,
+        parentUser: ids.level1Left,
+        position: "LEFT",
+        left: {
+          id: ids.level3LLL,
+          name: "User L3-LLL",
+          email: "l3lll@example.com",
+          mobile: "3333333331",
+          country: "Japan",
+          dialCode: "+81",
+          isActive: false,
+          sponsor: ids.level2LL,
+          parentUser: ids.level2LL,
+          position: "LEFT",
+        },
+        right: {
+          id: ids.level3LLR,
+          name: "User L3-LLR",
+          email: "l3llr@example.com",
+          mobile: "3333333332",
+          country: "India",
+          dialCode: "+91",
+          isActive: true,
+          sponsor: ids.level2LL,
+          parentUser: ids.level2LL,
+          position: "RIGHT",
+        },
+      },
+      right: {
+        id: ids.level2LR,
+        name: "User L2-LeftRight",
+        email: "l2lr@example.com",
+        mobile: "2222222222",
+        country: "Australia",
+        dialCode: "+61",
+        isActive: false,
+        sponsor: ids.level1Left,
+        parentUser: ids.level1Left,
+        position: "RIGHT",
+        left: {
+          id: ids.level3LRL,
+          name: "User L3-LRL",
+          email: "l3lrl@example.com",
+          mobile: "3333333333",
+          country: "Brazil",
+          dialCode: "+55",
+          isActive: true,
+          sponsor: ids.level2LR,
+          parentUser: ids.level2LR,
+          position: "LEFT",
+        },
+        right: {
+          id: ids.level3LRR,
+          name: "User L3-LRR",
+          email: "l3lrr@example.com",
+          mobile: "3333333334",
+          country: "Mexico",
+          dialCode: "+52",
+          isActive: true,
+          sponsor: ids.level2LR,
+          parentUser: ids.level2LR,
+          position: "RIGHT",
+        },
+      },
     },
-    {
-      id: level3LeftRightRightId,
-      sponsor: level2LeftRightId,
+    right: {
+      id: ids.level1Right,
+      name: "User L1-Right",
+      email: "l1right@example.com",
+      mobile: "1111111112",
+      country: "United Kingdom",
+      dialCode: "+44",
+      isActive: true,
+      sponsor: adminId,
+      parentUser: adminId,
       position: "RIGHT",
-      parentUser: level2LeftRightId,
+      left: {
+        id: ids.level2RL,
+        name: "User L2-RightLeft",
+        email: "l2rl@example.com",
+        mobile: "2222222223",
+        country: "Germany",
+        dialCode: "+49",
+        isActive: false,
+        sponsor: ids.level1Right,
+        parentUser: ids.level1Right,
+        position: "LEFT",
+        left: {
+          id: ids.level3RLL,
+          name: "User L3-RLL",
+          email: "l3rll@example.com",
+          mobile: "3333333335",
+          country: "South Korea",
+          dialCode: "+82",
+          isActive: true,
+          sponsor: ids.level2RL,
+          parentUser: ids.level2RL,
+          position: "LEFT",
+        },
+        right: {
+          id: ids.level3RLR,
+          name: "User L3-RLR",
+          email: "l3rlr@example.com",
+          mobile: "3333333336",
+          country: "Spain",
+          dialCode: "+34",
+          isActive: false,
+          sponsor: ids.level2RL,
+          parentUser: ids.level2RL,
+          position: "RIGHT",
+        },
+      },
+      right: {
+        id: ids.level2RR,
+        name: "User L2-RightRight",
+        email: "l2rr@example.com",
+        mobile: "2222222224",
+        country: "France",
+        dialCode: "+33",
+        isActive: true,
+        sponsor: ids.level1Right,
+        parentUser: ids.level1Right,
+        position: "RIGHT",
+        left: {
+          id: ids.level3RRL,
+          name: "User L3-RRL",
+          email: "l3rrl@example.com",
+          mobile: "3333333337",
+          country: "Italy",
+          dialCode: "+39",
+          isActive: true,
+          sponsor: ids.level2RR,
+          parentUser: ids.level2RR,
+          position: "LEFT",
+        },
+        right: {
+          id: ids.level3RRR,
+          name: "User L3-RRR",
+          email: "l3rrr@example.com",
+          mobile: "3333333338",
+          country: "Russia",
+          dialCode: "+7",
+          isActive: true,
+          sponsor: ids.level2RR,
+          parentUser: ids.level2RR,
+          position: "RIGHT",
+        },
+      },
     },
-    {
-      id: level3RightLeftLeftId,
-      sponsor: level2RightLeftId,
-      position: "LEFT",
-      parentUser: level2RightLeftId,
-    },
-    {
-      id: level3RightLeftRightId,
-      sponsor: level2RightLeftId,
-      position: "RIGHT",
-      parentUser: level2RightLeftId,
-    },
-    {
-      id: level3RightRightLeftId,
-      sponsor: level2RightRightId,
-      position: "LEFT",
-      parentUser: level2RightRightId,
-    },
-    {
-      id: level3RightRightRightId,
-      sponsor: level2RightRightId,
-      position: "RIGHT",
-      parentUser: level2RightRightId,
-    },
-  ];
-
-  return {
-    mainUsers: [level3LeftLeftLeftUser, level3LeftLeftRightUser],
-    mainWallets: [level3LeftLeftLeftWallet, level3LeftLeftRightWallet],
-    mainTrees: [level3LeftLeftLeftTree, level3LeftLeftRightTree],
-    additionalUsers: users,
-    additionalWallets: wallets,
-    additionalTrees: trees,
   };
+
+  return tree;
 }
 
-// Insert user data into database
-export async function insertUserData(
-  users: InsertUser[],
-  wallets: InsertWallet[],
-  trees: InsertTree[],
-  message: string,
-) {
-  console.log(`Adding ${message}`);
-  await db.insert(usersTable).values(users).onConflictDoNothing();
-  await db.insert(walletsTable).values(wallets).onConflictDoNothing();
-  await db.insert(treeTable).values(trees).onConflictDoNothing();
-  console.log(`${message} seeded successfully!`);
+// Extract all users from tree structure
+async function extractUsers(node: TreeNode): Promise<InsertUser[]> {
+  const users: InsertUser[] = [];
+
+  const traverse = async (currentNode: TreeNode) => {
+    const user: InsertUser = {
+      id: currentNode.id,
+      name: currentNode.name,
+      email: currentNode.email,
+      mobile: currentNode.mobile,
+      country: currentNode.country,
+      dialCode: currentNode.dialCode,
+      isActive: currentNode.isActive,
+      role: currentNode.id === adminId ? "ADMIN" : "USER",
+      passwordHash: await Bun.password.hash(
+        currentNode.id === adminId ? Bun.env.ADMIN_PASSWORD! : "password123",
+      ),
+    };
+    users.push(user);
+
+    if (currentNode.left) await traverse(currentNode.left);
+    if (currentNode.right) await traverse(currentNode.right);
+  };
+
+  await traverse(node);
+  return users;
 }
 
-// Update tree references
-export async function updateTreeReferences(ids: {
-  level1LeftId: number;
-  level1RightId: number;
-  level2LeftLeftId: number;
-  level2LeftRightId: number;
-  level2RightLeftId: number;
-  level2RightRightId: number;
-  level3LeftLeftLeftId: number;
-  level3LeftLeftRightId: number;
-  level3LeftRightLeftId: number;
-  level3LeftRightRightId: number;
-  level3RightLeftLeftId: number;
-  level3RightLeftRightId: number;
-  level3RightRightLeftId: number;
-  level3RightRightRightId: number;
-}) {
-  const {
-    level1LeftId,
-    level1RightId,
-    level2LeftLeftId,
-    level2LeftRightId,
-    level2RightLeftId,
-    level2RightRightId,
-    level3LeftLeftLeftId,
-    level3LeftLeftRightId,
-    level3LeftRightLeftId,
-    level3LeftRightRightId,
-    level3RightLeftLeftId,
-    level3RightLeftRightId,
-    level3RightRightLeftId,
-    level3RightRightRightId,
-  } = ids;
+// Extract all tree relationships
+function extractTrees(node: TreeNode): InsertTree[] {
+  const trees: InsertTree[] = [];
 
-  // Update tree references for admin
-  await db
-    .update(treeTable)
-    .set({
-      leftUser: level1LeftId,
-      rightUser: level1RightId,
-      leftCount: 7, // Left subtree has 7 users
-      rightCount: 7, // Right subtree has 7 users
-      leftActiveCount: 6, // Based on isActive flags
-      rightActiveCount: 6, // Based on isActive flags
-    })
-    .where(eq(treeTable.id, adminId));
+  const traverse = (currentNode: TreeNode) => {
+    const tree: InsertTree = {
+      id: currentNode.id,
+      sponsor: currentNode.sponsor,
+      parentUser: currentNode.parentUser,
+      position: currentNode.position,
+    };
+    trees.push(tree);
 
-  // Update tree references for level 1 left
-  await db
-    .update(treeTable)
-    .set({
-      leftUser: level2LeftLeftId,
-      rightUser: level2LeftRightId,
-      leftCount: 3,
-      rightCount: 3,
-      leftActiveCount: 2,
-      rightActiveCount: 3,
-    })
-    .where(eq(treeTable.id, level1LeftId));
+    if (currentNode.left) traverse(currentNode.left);
+    if (currentNode.right) traverse(currentNode.right);
+  };
 
-  // Update tree references for level 1 right
-  await db
-    .update(treeTable)
-    .set({
-      leftUser: level2RightLeftId,
-      rightUser: level2RightRightId,
-      leftCount: 3,
-      rightCount: 3,
-      leftActiveCount: 2,
-      rightActiveCount: 3,
-    })
-    .where(eq(treeTable.id, level1RightId));
-
-  // Update tree references for level 2 left-left
-  await db
-    .update(treeTable)
-    .set({
-      leftUser: level3LeftLeftLeftId,
-      rightUser: level3LeftLeftRightId,
-      leftCount: 1,
-      rightCount: 1,
-      leftActiveCount: 1,
-      rightActiveCount: 0,
-    })
-    .where(eq(treeTable.id, level2LeftLeftId));
-
-  // Update tree references for level 2 left-right
-  await db
-    .update(treeTable)
-    .set({
-      leftUser: level3LeftRightLeftId,
-      rightUser: level3LeftRightRightId,
-      leftCount: 1,
-      rightCount: 1,
-      leftActiveCount: 1,
-      rightActiveCount: 1,
-    })
-    .where(eq(treeTable.id, level2LeftRightId));
-
-  // Update tree references for level 2 right-left
-  await db
-    .update(treeTable)
-    .set({
-      leftUser: level3RightLeftLeftId,
-      rightUser: level3RightLeftRightId,
-      leftCount: 1,
-      rightCount: 1,
-      leftActiveCount: 1,
-      rightActiveCount: 0,
-    })
-    .where(eq(treeTable.id, level2RightLeftId));
-
-  // Update tree references for level 2 right-right
-  await db
-    .update(treeTable)
-    .set({
-      leftUser: level3RightRightLeftId,
-      rightUser: level3RightRightRightId,
-      leftCount: 1,
-      rightCount: 1,
-      leftActiveCount: 1,
-      rightActiveCount: 1,
-    })
-    .where(eq(treeTable.id, level2RightRightId));
-
-  console.log("Tree structure completely updated!");
+  traverse(node);
+  return trees;
 }
 
-export async function insertProduct() {
+// Generate user IDs for wallet and stats tables
+function extractUserIds(node: TreeNode): number[] {
+  const ids: number[] = [];
+
+  const traverse = (currentNode: TreeNode) => {
+    ids.push(currentNode.id);
+    if (currentNode.left) traverse(currentNode.left);
+    if (currentNode.right) traverse(currentNode.right);
+  };
+
+  traverse(node);
+  return ids;
+}
+
+// Update tree references (left/right users)
+async function updateTreeReferences(node: TreeNode, db: BunSQLDatabase) {
+  const updateNode = async (currentNode: TreeNode) => {
+    await db
+      .update(treeTable)
+      .set({
+        leftUser: currentNode.left?.id || null,
+        rightUser: currentNode.right?.id || null,
+      })
+      .where(eq(treeTable.id, currentNode.id));
+
+    if (currentNode.left) await updateNode(currentNode.left);
+    if (currentNode.right) await updateNode(currentNode.right);
+  };
+
+  await updateNode(node);
+  console.log("Tree references updated successfully!");
+}
+
+// Main seeding function
+export async function seedBinaryTree(db: BunSQLDatabase) {
+  try {
+    console.log("🌱 Starting binary tree seeding...");
+
+    // 1. Generate tree structure
+    const treeStructure = await generateTreeStructure();
+
+    // 2. Extract data for each table
+    const users = await extractUsers(treeStructure);
+    const trees = extractTrees(treeStructure);
+    const userIds = extractUserIds(treeStructure);
+
+    // 3. Insert users first
+    console.log("👥 Inserting users...");
+    await db.insert(usersTable).values(users).onConflictDoNothing();
+
+    // 4. Insert wallets (just IDs needed)
+    console.log("💰 Creating wallets...");
+    const wallets = userIds.map((id) => ({ id }));
+    await db.insert(walletsTable).values(wallets).onConflictDoNothing();
+
+    // 5. Insert user stats (just IDs needed)
+    console.log("📊 Creating user stats...");
+    const userStats = userIds.map((id) => ({ id }));
+    await db.insert(userStatsTable).values(userStats).onConflictDoNothing();
+
+    // 6. Insert tree relationships
+    console.log("🌳 Creating tree structure...");
+    await db.insert(treeTable).values(trees).onConflictDoNothing();
+
+    // 7. Update tree references (left/right users)
+    console.log("🔗 Updating tree references...");
+    await updateTreeReferences(treeStructure, db);
+
+    // 8. Insert sample product
+    console.log("📦 Adding sample product...");
+    await insertProduct(db);
+
+    console.log("✅ Binary tree seeding completed successfully!");
+  } catch (error) {
+    console.error("❌ Error during seeding:", error);
+    throw error;
+  }
+}
+
+export async function insertProduct(db: BunSQLDatabase) {
   const cellogen: InsertProduct = {
     name: "Cellogen",
     price: 52,
     description: "By Alprimus",
   };
-  await db.insert(productsTable).values(cellogen);
+  await db.insert(productsTable).values(cellogen).onConflictDoNothing();
 }

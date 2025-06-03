@@ -7,7 +7,7 @@ import {
   ordersTable,
   payoutsTable,
   InsertOrder,
-  usersTable,
+  userStatsTable,
 } from "@/db/schema";
 import {
   ClaimOrderResult,
@@ -37,7 +37,7 @@ export default class SalesRewardService {
     MAX_WEEKS: 104, // 104 weeks maximum
     TOTAL_PAYOUT_AMOUNT: 312, // $3 * 104 weeks = $312
     ORDER_IMMEDIATE_CLOSE: true,
-    ADMIN_FEE: 2.7,
+    ADMIN_FEE: 0,
   } as const;
 
   /**
@@ -56,8 +56,7 @@ export default class SalesRewardService {
 
       if (existing) return existing;
 
-      // Fetch user data and validate eligibility
-      const self = await databaseService.fetchUserData(userId);
+      const self = await databaseService.getUserStats(userId);
       if (!self || self.activeDirectUsersCount < 2) {
         return false;
       }
@@ -155,15 +154,8 @@ export default class SalesRewardService {
         })
         .where(eq(rewardsTable.id, rewardId));
 
-      const user = await databaseService.fetchUserData(reward.userId);
-      if (!user)
-        return {
-          success: false,
-          rewardId,
-          message: "Reward is not in pending status",
-        };
-      await db.update(usersTable).set({
-        redeemedCount: sql`${user.redeemedCount} + ${1}`,
+      await db.update(userStatsTable).set({
+        redeemedCount: sql`${userStatsTable.redeemedCount} + 1`,
       });
 
       return {
@@ -259,16 +251,8 @@ export default class SalesRewardService {
 
       await orderService.placeSalesRewardOrder(orderId); // this will add the 6 package quantity
 
-      const user = await databaseService.fetchUserData(reward.userId);
-      if (!user)
-        return {
-          success: false,
-          rewardId,
-          orderId: 0,
-          message: "Failed to create order",
-        };
-      await db.update(usersTable).set({
-        redeemedCount: sql`${user.redeemedCount} + ${1}`,
+      await db.update(userStatsTable).set({
+        redeemedCount: sql`${userStatsTable.redeemedCount} + 1`,
       });
 
       return {

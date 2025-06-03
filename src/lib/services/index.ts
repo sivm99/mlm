@@ -11,3 +11,5 @@ export * from "./OrderService";
 export * from "./AddressService";
 export * from "./ArHistoryService";
 export * from "./SalesRewardService";
+export * from "./CronJobService";
+export * from "./MatchingIncomeService";

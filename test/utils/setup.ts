@@ -1,7 +1,6 @@
 // import { drizzle } from "drizzle-orm/bun-sql";
-// import { SQL } from "bun";
 
-// const testClient = new SQL(process.env.TEST_DATABASE_URL!);
+// const testClient = new Bun.SQL(Bun.env.TEST_DATABASE_URL!);
 // const db = drizzle(testClient, {
 //   schema,
 //   logger: true,

@@ -9,7 +9,7 @@ export type ReferralStat = "impressions" | "registered" | "activated";
 
 const databaseService = new DatabaseService();
 export default class ReferralService {
-  #frontendHost = process.env.FRONTEND_HOST || "http://localhost:5173";
+  #frontendHost = Bun.env.FRONTEND_HOST || "http://localhost:5173";
 
   /**
    * Generate a new referral link

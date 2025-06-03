@@ -1,8 +1,9 @@
-import { treeTable } from "@/db/schema";
-import { TreeUser, UserId } from "@/types";
+import { treeTable, userStatsTable } from "@/db/schema";
+import { TreeStatsUpdate, TreeUser, UserId } from "@/types";
 import { eq } from "drizzle-orm";
 import { databaseService } from "./DatabaseService";
 import db from "@/db";
+import { sql } from "drizzle-orm";
 
 export default class TreeService {
   async insertIntoTree(
@@ -18,7 +19,7 @@ export default class TreeService {
     }
 
     // Get parent node details
-    const parentNode = await databaseService.minimalTreeData(parentId);
+    const parentNode = await databaseService.getTreeData(parentId);
     if (!parentNode) {
       throw new Error(`Parent node with ID ${parentId} not found`);
     }
@@ -45,7 +46,7 @@ export default class TreeService {
     }
 
     // Update the counts in the parent chain after insertion
-    await this.syncParentChainCount(parentId, side);
+    await this.syncParentChain(parentId, side, { updateCount: true });
   }
 
   async findTheParentUser(
@@ -53,7 +54,7 @@ export default class TreeService {
     side: TreeUser["position"],
   ): Promise<TreeUser["id"] | null> {
     // Start from the sponsor node
-    let currentNode = await databaseService.minimalTreeData(startId);
+    let currentNode = await databaseService.getTreeData(startId);
     if (!currentNode) return null;
 
     // Check if we can directly add under the sponsor on the specified side
@@ -78,7 +79,7 @@ export default class TreeService {
     // Perform BFS to find the first node with an available spot on the specified side
     while (queue.length > 0) {
       const nodeId = queue.shift()!;
-      currentNode = await databaseService.minimalTreeData(nodeId);
+      currentNode = await databaseService.getTreeData(nodeId);
 
       if (!currentNode) continue;
 
@@ -122,7 +123,7 @@ export default class TreeService {
     side: TreeUser["position"],
     maxDepth: number,
   ) {
-    const rootNode = await databaseService.minimalTreeData(userId);
+    const rootNode = await databaseService.getMinimalTreeData(userId);
     if (!rootNode) return [];
 
     const userIds: UserId[] = [];
@@ -142,7 +143,7 @@ export default class TreeService {
 
       userIds.push(nodeId);
 
-      const node = await databaseService.minimalTreeData(nodeId);
+      const node = await databaseService.getMinimalTreeData(nodeId);
       if (!node) continue;
 
       if (node.leftUser !== null) {
@@ -160,41 +161,69 @@ export default class TreeService {
     const populatedData = await Promise.all(
       userIds.map((id) => databaseService.fetchTreeUserData(id)),
     );
-    return populatedData.filter((d) => d !== null);
+    // we have verified it already that these exist so we just return
+    // return populatedData.filter((d) => d !== null);
+    return populatedData;
   }
 
   /**
    * Updates the count (leftCount or rightCount) for the entire parent chain
    * starting from the given parentId up to the admin node
    */
-  async syncParentChainCount(
-    parentId: TreeUser["id"],
+  async syncParentChain(
+    parentId: UserId,
     side: TreeUser["position"],
+    options: {
+      updateCount?: boolean;
+      updateActiveCount?: boolean;
+      bv?: number;
+    } = { updateCount: true },
   ): Promise<void> {
     let currentNodeId = parentId;
-    let updatedCount = 0;
 
     try {
       // Start from the immediate parent and traverse up to the admin
       while (true) {
-        const currentNode =
-          await databaseService.syncCountTreeData(currentNodeId);
+        const currentNode = await databaseService.getTreeData(currentNodeId);
         if (!currentNode) break;
 
-        // Increment the appropriate count based on the side
+        // Prepare update object based on side and options
+        const updateSet: TreeStatsUpdate = {};
+
         if (side === "LEFT") {
-          updatedCount = currentNode.leftCount + 1;
-          await db
-            .update(treeTable)
-            .set({ leftCount: updatedCount })
-            .where(eq(treeTable.id, currentNodeId));
+          if (options.updateCount) {
+            updateSet.leftCount = sql`${userStatsTable.leftCount} + 1`;
+            updateSet.todayLeftCount = sql`${userStatsTable.todayLeftCount} + 1`;
+          }
+          if (options.updateActiveCount) {
+            updateSet.leftActiveCount = sql`${userStatsTable.leftActiveCount} + 1`;
+            updateSet.todayLeftActiveCount = sql`${userStatsTable.todayLeftActiveCount} + 1`;
+          }
+          if (options.bv && options.bv > 0) {
+            updateSet.leftBv = sql`${userStatsTable.leftBv} + ${options.bv}`;
+            updateSet.todayLeftBv = sql`${userStatsTable.todayLeftBv} + ${options.bv}`;
+          }
         } else {
-          updatedCount = currentNode.rightCount + 1;
-          await db
-            .update(treeTable)
-            .set({ rightCount: updatedCount })
-            .where(eq(treeTable.id, currentNodeId));
+          if (options.updateCount) {
+            updateSet.rightCount = sql`${userStatsTable.rightCount} + 1`;
+            updateSet.todayRightCount = sql`${userStatsTable.todayRightCount} + 1`;
+          }
+          if (options.updateActiveCount) {
+            updateSet.rightActiveCount = sql`${userStatsTable.rightActiveCount} + 1`;
+            updateSet.todayRightActiveCount = sql`${userStatsTable.todayRightActiveCount} + 1`;
+          }
+          if (options.bv && options.bv > 0) {
+            updateSet.rightBv = sql`${userStatsTable.rightBv} + ${options.bv}`;
+            updateSet.todayRightBv = sql`${userStatsTable.todayRightBv} + ${options.bv}`;
+          }
         }
+
+        // Update the user stats
+        await db
+          .update(userStatsTable)
+          .set(updateSet)
+          .where(eq(userStatsTable.id, currentNodeId))
+          .execute();
 
         // If current node is the admin (parent is self), we're done
         if (currentNode.parentUser === currentNode.id) {
@@ -203,99 +232,33 @@ export default class TreeService {
 
         // Move up the tree to the parent node
         currentNodeId = currentNode.parentUser;
-
-        // Now we need to check which side of the parent this node is on
-        const parentNode = await databaseService.minimalTreeData(currentNodeId);
-        if (!parentNode) break;
         side = currentNode.position;
       }
-      console.log(`Synced count for parent chain starting from ${parentId}`);
+
+      console.log(`Synced parent chain starting from ${parentId}`);
     } catch (error) {
-      console.error("Error syncing parent chain count:", error);
+      console.error("Error syncing parent chain:", error);
       throw error;
     }
   }
 
-  async syncBvAndActiveCount(
-    parentId: TreeUser["id"],
-    side: TreeUser["position"],
-    bv: number = 50,
-  ): Promise<void> {
-    let currentNodeId = parentId;
-    let updatedCount = 0;
-    let updatedBv = 0;
+  async verifyChildNode(childId: UserId, parentId: UserId) {
+    const queue = [parentId];
+    const visited = new Set();
 
-    try {
-      // Start from the immediate parent and traverse up to the admin
-      while (true) {
-        const currentNode =
-          await databaseService.syncBvAndActiveCountTreeData(currentNodeId);
-        if (!currentNode) break;
+    while (queue.length > 0) {
+      const nodeId = queue.shift();
+      if (!nodeId || visited.has(nodeId)) continue;
 
-        // Increment the appropriate count based on the side
-        if (side === "LEFT") {
-          updatedCount = currentNode.leftActiveCount + 1;
-          updatedBv = currentNode.leftBv + bv;
-          await db
-            .update(treeTable)
-            .set({ leftActiveCount: updatedCount, leftBv: updatedBv })
-            .where(eq(treeTable.id, currentNodeId));
-        } else {
-          updatedCount = currentNode.rightActiveCount + 1;
-          updatedBv = currentNode.rightBv + bv;
-          await db
-            .update(treeTable)
-            .set({ rightActiveCount: updatedCount, rightBv: updatedBv })
-            .where(eq(treeTable.id, currentNodeId));
-        }
+      if (nodeId === childId) return true;
+      visited.add(nodeId);
 
-        // If current node is the admin (parent is self), we're done
-        if (currentNode.parentUser === currentNode.id) {
-          break;
-        }
-
-        // Move up the tree to the parent node
-        currentNodeId = currentNode.parentUser;
-
-        // Now we need to check which side of the parent this node is on
-        const parentNode = await databaseService.minimalTreeData(currentNodeId);
-        if (!parentNode) break;
-        side = currentNode.position;
+      const nodeData = await databaseService.getMinimalTreeData(nodeId);
+      if (nodeData) {
+        if (nodeData.leftUser) queue.push(nodeData.leftUser);
+        if (nodeData.rightUser) queue.push(nodeData.rightUser);
       }
-      console.log(`Synced count for parent chain starting from ${parentId}`);
-    } catch (error) {
-      console.error("Error syncing parent chain count:", error);
-      throw error;
     }
-  }
-
-  async verifyChildNode(
-    childId: TreeUser["id"],
-    parentId: TreeUser["id"],
-  ): Promise<boolean> {
-    const parentNode = await databaseService.minimalTreeData(parentId);
-    if (!parentNode) return false;
-
-    if (parentNode.leftUser === childId || parentNode.rightUser === childId)
-      return true;
-
-    // Recursively check both children if they exist
-    if (parentNode.leftUser) {
-      const foundInLeft = await this.verifyChildNode(
-        parentNode.leftUser,
-        parentNode.id,
-      );
-      if (foundInLeft) return true;
-    }
-
-    if (parentNode.rightUser) {
-      const foundInRight = await this.verifyChildNode(
-        parentNode.rightUser,
-        parentNode.id,
-      );
-      if (foundInRight) return true;
-    }
-
     return false;
   }
 }

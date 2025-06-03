@@ -21,8 +21,8 @@ type EmailOptions = {
 };
 
 export default class EmailService {
-  #host = process.env.EMAIL_HOST || "http://email-alias:7979";
-  #expireTimeInMinutes = Number(process.env.OTP_EXPIRE_TIME_IN_MINUTES) || 5;
+  #host = Bun.env.EMAIL_HOST || "http://email-alias:7979";
+  #expireTimeInMinutes = Number(Bun.env.OTP_EXPIRE_TIME_IN_MINUTES) || 5;
 
   /**
    * Internal utility to send email through centralized email API
