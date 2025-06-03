@@ -2,13 +2,13 @@ import { relations } from "drizzle-orm";
 import {
   pgTable,
   serial,
-  real,
   timestamp,
   pgEnum,
   integer,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { addressesTable } from "./addresses";
+import { real } from "drizzle-orm/pg-core";
 
 export const orderStatusEnum = pgEnum("order_status", [
   "PENDING",
@@ -35,7 +35,7 @@ export const ordersTable = pgTable("orders", {
   deliveryMethod: deliveryMethodEnum("delivery_method").default("self_collect"),
   totalAmount: real("total_amount").notNull(),
 
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
     .defaultNow()
     .notNull()

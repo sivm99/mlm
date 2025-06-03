@@ -14,12 +14,10 @@ export const orderItemsTable = pgTable(
         onUpdate: "cascade",
       })
       .notNull(),
-    productId: integer("product_id")
-      .references(() => productsTable.id, {
-        onDelete: "restrict",
-        onUpdate: "cascade",
-      })
-      .notNull(),
+    productId: integer("product_id").references(() => productsTable.id, {
+      onDelete: "restrict",
+      onUpdate: "cascade",
+    }),
     quantity: integer("quantity").notNull(),
     price: real("price").notNull(),
   },
@@ -41,3 +39,6 @@ export const orderItemsRelations = relations(orderItemsTable, ({ one }) => ({
     references: [productsTable.id],
   }),
 }));
+
+export type InsertOrderItems = typeof orderItemsTable.$inferInsert;
+export type SelectOrderItems = typeof orderItemsTable.$inferSelect;

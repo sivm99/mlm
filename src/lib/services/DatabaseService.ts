@@ -101,18 +101,18 @@ export default class DatabaseService {
    * Fetches user data from the database
    */
   async fetchUserData(userId: User["id"]): Promise<SafeUserReturn | null> {
-    const userData = await db
+    const [userData] = await db
       .select(safeUserReturn)
       .from(usersTable)
       .where(eq(usersTable.id, userId))
       .limit(1);
 
-    if (!userData[0]) return null;
-    return userData[0];
+    if (!userData) return null;
+    return userData;
   }
 
   async doesSponsorExists(sponsor: TreeUser["sponsor"]) {
-    const user = await db
+    const [user] = await db
       .select({
         direct: usersTable.directUsersCount,
         directActive: usersTable.activeDirectUsersCount,
@@ -120,8 +120,8 @@ export default class DatabaseService {
       .from(usersTable)
       .where(eq(usersTable.id, sponsor)) // Fixed: changed treeTable.id to usersTable.id
       .limit(1);
-    if (!user[0]) return false;
-    return user[0];
+    if (!user) return false;
+    return user;
   }
 
   async fetchTreeUserData(userId: User["id"]): Promise<TreeUser | null> {

@@ -19,6 +19,8 @@ export const trasactionType = [
   "matching_income_earned",
   "fund_addition",
   "admin_adjustment",
+  "increase_wallet_limit",
+  "order_partial_payment", // the partial payment for the order itself
 ] as const;
 export const transactionTypeEnum = pgEnum("transaction_type", trasactionType);
 

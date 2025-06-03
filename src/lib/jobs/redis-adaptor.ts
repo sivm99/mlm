@@ -1,5 +1,5 @@
 import IORedis from "ioredis";
-import { Job } from "./types";
+import { Job } from "@/types";
 import { Queue, QueueOptions } from "./queue";
 
 export class RedisQueue<T> extends Queue<T> {

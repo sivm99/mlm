@@ -13,7 +13,6 @@ import {
   User,
   UserId,
 } from "@/types";
-import { password as bunPassword } from "bun";
 import { eq } from "drizzle-orm";
 import { sign } from "hono/jwt";
 import { setCookie } from "hono/cookie";
@@ -88,7 +87,7 @@ export default class UserService {
         }
 
         const id = await this.#getNewId();
-        const passwordHash = await bunPassword.hash(user.password);
+        const passwordHash = await Bun.password.hash(user.password);
         const { password, side, sponsor, ...userWithoutPassword } = user;
 
         if (this.#isDev)
@@ -168,7 +167,7 @@ export default class UserService {
       const user = loggedInUser[0];
       const hash = user.passwordHash;
       if (!hash) throw new Error("INVALID ID OR PASSWORD");
-      const isMatch = await bunPassword.verify(password, hash);
+      const isMatch = await Bun.password.verify(password, hash);
       if (!isMatch) throw new Error("INVALID ID OR PASSWORD");
       if (user.isBlocked) throw new Error("YOU HAVE BEEN BLOCKED BY THE ADMIN");
       const { passwordHash, ...userWithoutPassword } = user;
@@ -206,7 +205,7 @@ export default class UserService {
     await db
       .update(usersTable)
       .set({
-        passwordHash: await bunPassword.hash(password),
+        passwordHash: await Bun.password.hash(password),
       })
       .where(eq(usersTable.id, id));
   }

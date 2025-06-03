@@ -30,7 +30,10 @@ export default class WalletService {
   }
 
   /**
-   * Get user's wallet details
+   * Get user's wallet details including wallet balances and limits
+   * @param userId - The ID of the user
+   * @returns The wallet details of the user
+   * @throws Error if the wallet is not found
    */
   async getUserWallet(userId: number) {
     const wallet = await db.query.walletsTable.findFirst({
@@ -46,7 +49,13 @@ export default class WalletService {
 
   /**
    * Transfer AL Points between users (no charges for downline/upline)
-   * @param params.amount Amount in real value
+   * @param params.fromUserId - Source user ID
+   * @param params.toUserId - Destination user ID
+   * @param params.amount - Amount in real value to transfer
+   * @param params.otp - OTP code for verification
+   * @param params.description - Optional description for the transaction
+   * @returns The transaction details
+   * @throws Error if OTP verification fails or insufficient balance
    */
   async transferAlPoints(params: TransferParams) {
     const { fromUserId, toUserId, amount, otp, description } = params;
@@ -83,7 +92,11 @@ export default class WalletService {
 
   /**
    * Convert income wallet to AL Points (10% deduction)
-   * @param params.amount Amount in real value
+   * @param params.userId - User ID for the conversion
+   * @param params.amount - Amount in real value to convert
+   * @param params.otp - OTP code for verification
+   * @returns The transaction details
+   * @throws Error if OTP verification fails, insufficient balance, or exceeds limit
    */
   async convertIncomeToAlpoints(params: ConvertIncomeParams) {
     const { userId, amount, otp } = params;
@@ -118,7 +131,11 @@ export default class WalletService {
 
   /**
    * Payout from income wallet (10% deduction)
-   * @param params.amount Amount in real value
+   * @param params.userId - User ID for the payout
+   * @param params.amount - Amount in real value to withdraw
+   * @param params.otp - OTP code for verification
+   * @returns The transaction details
+   * @throws Error if OTP verification fails or insufficient balance
    */
   async payoutFromIncome(params: ConvertIncomeParams) {
     const { userId, amount, otp } = params;
@@ -153,7 +170,12 @@ export default class WalletService {
 
   /**
    * Add income to user's income wallet (from cron jobs)
-   * @param amount Amount in real value
+   * This will also reduce the user's income wallet limit by the amount added
+   * @param userId - User ID to add income to
+   * @param amount - Amount in real value to add
+   * @param type - Type of income (weekly_payout_earned or matching_income_earned)
+   * @param description - Optional description for the transaction
+   * @returns The transaction details
    */
   async addIncome(
     userId: User["id"],
@@ -177,8 +199,13 @@ export default class WalletService {
   }
 
   /**
-   * Activate ID using AL Points (no charges)
-   * @param activationAmount Amount in real value for activation (default: 68 = $68)
+   * Activate ID using AL Points (with deduction percentage)
+   * @param fromUserId - User ID to deduct AL Points from
+   * @param toUserId - User ID to add BV to
+   * @param activationAmount - Amount in real value for activation (default: 68 = $68)
+   * @param deductionPercentage - Percentage to deduct from activation amount (default: 26.471%)
+   * @returns The transaction details
+   * @throws Error if insufficient balance
    */
   async activateId(
     fromUserId: User["id"],
@@ -186,6 +213,15 @@ export default class WalletService {
     activationAmount: number = 68,
     deductionPercentage: number = 26.471,
   ) {
+    // Increase the destination user's income wallet limit during activation
+    await db
+      .update(walletsTable)
+      .set({
+        incomeWalletLimit: 5000,
+      })
+      .where(eq(walletsTable.id, toUserId))
+      .execute();
+
     return await this.executeTransaction({
       type: "id_activation",
       fromUserId,
@@ -202,8 +238,99 @@ export default class WalletService {
   }
 
   /**
+   * Increase income wallet limit by using AL Points
+   * This uses 68 AL Points to increase the income wallet limit by 5000
+   * @param userId - User ID to increase income wallet limit for
+   * @returns The transaction details
+   * @throws Error if insufficient AL Points balance
+   */
+  async increaseIncomeWalletLimit(userId: User["id"]) {
+    const COST_IN_ALPOINTS = 68;
+    const LIMIT_INCREASE = 5000;
+
+    return await db.transaction(async (tx) => {
+      try {
+        // Check if user has enough AL Points
+        const wallet = await tx.query.walletsTable.findFirst({
+          where: eq(walletsTable.id, userId),
+        });
+
+        if (!wallet) {
+          throw new Error("Wallet not found");
+        }
+
+        if (wallet.alpoints < COST_IN_ALPOINTS) {
+          throw new Error("Insufficient AL Points balance");
+        }
+
+        // Deduct AL Points
+        await tx
+          .update(walletsTable)
+          .set({
+            alpoints: sql`${walletsTable.alpoints} - ${COST_IN_ALPOINTS}`,
+            incomeWalletLimit: sql`${walletsTable.incomeWalletLimit} + ${LIMIT_INCREASE}`,
+          })
+          .where(eq(walletsTable.id, userId));
+
+        // Create transaction record
+        const transaction = await tx
+          .insert(transactionsTable)
+          .values({
+            type: "increase_wallet_limit",
+            status: "completed",
+            fromUserId: userId,
+            toUserId: userId,
+            fromWalletType: "alpoints",
+            toWalletType: null,
+            amount: COST_IN_ALPOINTS,
+            deductionAmount: 0,
+            netAmount: COST_IN_ALPOINTS,
+            deductionPercentage: 0,
+            description: `Increased income wallet limit by ${LIMIT_INCREASE}`,
+            requiresOtp: false,
+            otpVerified: true,
+          })
+          .returning();
+
+        // Emit log event
+        this.#eventEmitter.emit("transaction", {
+          action: "transaction_completed",
+          userId: userId,
+          transactionId: transaction[0].id,
+          message: `Income wallet limit increased by ${LIMIT_INCREASE}`,
+          metadata: {
+            amount: COST_IN_ALPOINTS,
+            limitIncrease: LIMIT_INCREASE,
+            type: "increase_wallet_limit",
+          },
+        });
+
+        return transaction[0];
+      } catch (error) {
+        await tx.insert(transactionsTable).values({
+          type: "increase_wallet_limit",
+          status: "failed",
+          fromUserId: userId,
+          toUserId: userId,
+          fromWalletType: "alpoints",
+          toWalletType: null,
+          amount: COST_IN_ALPOINTS,
+          netAmount: 0,
+          description: `Failed: ${String(error)}`,
+          requiresOtp: false,
+        });
+
+        throw error;
+      }
+    });
+  }
+
+  /**
    * Core transaction execution with proper validation and logging
-   * All amounts are in real value
+   * All amounts are in real value. Handles income wallet limit constraints.
+   * @param params - Transaction parameters
+   * @returns The completed transaction details
+   * @throws Error for various validation failures
    */
   private async executeTransaction(params: WalletTransaction) {
     return await db.transaction(async (tx) => {
@@ -248,12 +375,41 @@ export default class WalletService {
           const creditAmount = params.type === "income_payout" ? 0 : netAmount;
 
           if (creditAmount > 0) {
-            await tx
-              .update(walletsTable)
-              .set({
-                [params.toWalletType]: sql`${walletsTable[this.mapWalletTypeToKeyOfWallet(params.toWalletType)]} + ${creditAmount}`,
-              })
-              .where(eq(walletsTable.id, params.toUserId));
+            if (params.toWalletType === "income_wallet") {
+              // Check income wallet limit
+              const toWallet = await tx.query.walletsTable.findFirst({
+                where: eq(walletsTable.id, params.toUserId),
+              });
+
+              if (!toWallet) {
+                throw new Error("Destination wallet not found");
+              }
+
+              // For adding to income wallet, check income wallet limit
+              if (
+                toWallet.incomeWallet + creditAmount >
+                toWallet.incomeWalletLimit
+              ) {
+                throw new Error("Exceeds income wallet limit");
+              }
+
+              // Update wallet and reduce limit by the amount added
+              await tx
+                .update(walletsTable)
+                .set({
+                  incomeWallet: sql`${walletsTable.incomeWallet} + ${creditAmount}`,
+                  incomeWalletLimit: sql`${walletsTable.incomeWalletLimit} - ${creditAmount}`,
+                })
+                .where(eq(walletsTable.id, params.toUserId));
+            } else {
+              // For other wallet types, just add amount
+              await tx
+                .update(walletsTable)
+                .set({
+                  [params.toWalletType]: sql`${walletsTable[this.mapWalletTypeToKeyOfWallet(params.toWalletType)]} + ${creditAmount}`,
+                })
+                .where(eq(walletsTable.id, params.toUserId));
+            }
           }
         }
 
@@ -313,13 +469,21 @@ export default class WalletService {
     });
   }
 
-  // just an alias for the admin
+  /**
+   * Directly execute a transaction (admin function)
+   * @param params - Transaction parameters
+   * @returns The completed transaction details
+   */
   async adminExecute(params: WalletTransaction) {
     return await this.executeTransaction(params);
   }
 
   /**
    * Get user transaction history
+   * @param userId - User ID to fetch transactions for
+   * @param limit - Number of transactions to return (default: 50)
+   * @param offset - Pagination offset (default: 0)
+   * @returns Array of transaction records
    */
   async getUserTransactions(
     userId: User["id"],
@@ -339,6 +503,10 @@ export default class WalletService {
 
   /**
    * Generate OTP for wallet operations
+   * @param userId - User ID to generate OTP for
+   * @param type - Type of wallet operation
+   * @returns OTP generation result
+   * @throws Error if user not found
    */
   async generateWalletOtp(userId: User["id"], type: WalletOperations[number]) {
     const user = await databaseService.fetchUserData(userId);
@@ -353,6 +521,11 @@ export default class WalletService {
     });
   }
 
+  /**
+   * Maps wallet operation types to OTP types
+   * @param operation - Wallet operation type
+   * @returns Corresponding OTP type
+   */
   private mapWalletOperationToOtpType(
     operation: WalletOperations[number],
   ): OTP["type"] {
@@ -364,6 +537,12 @@ export default class WalletService {
     return mapping[operation] || "fund_transfer";
   }
 
+  /**
+   * Maps wallet type strings to wallet schema property names
+   * @param w - Wallet type string
+   * @returns Corresponding wallet schema property name
+   * @throws Error if wallet type is invalid
+   */
   private mapWalletTypeToKeyOfWallet(
     w: Exclude<SelectTransaction["fromWalletType"], null | undefined>,
   ): "alpoints" | "bv" | "incomeWallet" {

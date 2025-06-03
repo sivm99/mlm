@@ -1,4 +1,11 @@
-import { pgTable, integer, real, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  integer,
+  real,
+  timestamp,
+  pgEnum,
+  boolean,
+} from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
@@ -45,8 +52,8 @@ export const treeTable = pgTable(
     leftBv: real("left_bv").notNull().default(0),
     rightBv: real("right_bv").notNull().default(0),
 
-    // leftActiveBv: real("left_active_bv").notNull().default(0),
-    // rightActiveBv: real("right_active_bv").notNull().default(0),
+    // if its a complementory id then matching income of this id wont be counted in the parent
+    isComplementoryId: boolean("is_complementory_id").notNull().default(false),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })

@@ -1,5 +1,5 @@
 import { treeTable } from "@/db/schema";
-import { TreeUser } from "@/types";
+import { TreeUser, UserId } from "@/types";
 import { eq } from "drizzle-orm";
 import { databaseService } from "./DatabaseService";
 import db from "@/db";
@@ -100,28 +100,32 @@ export default class TreeService {
   }
 
   async getLeftTeam(userId: TreeUser["id"], maxDepth: number = 5) {
-    return this.getTeam(userId, "LEFT", maxDepth);
+    const userIds = await this.getTeam(userId, "LEFT", maxDepth);
+    return this.populateIds(userIds);
   }
-
+  async getTeamIds(userId: UserId, side: TreeUser["position"]) {
+    return this.getTeam(userId, side, Infinity);
+  }
   async getRightTeam(userId: TreeUser["id"], maxDepth: number = 5) {
-    return this.getTeam(userId, "RIGHT", maxDepth);
+    const userIds = await this.getTeam(userId, "RIGHT", maxDepth);
+    return this.populateIds(userIds);
   }
 
   async getFullTeam(userId: TreeUser["id"], maxDepth: number = 4) {
-    const leftTeam = await this.getTeam(userId, "LEFT", maxDepth);
-    const rightTeam = await this.getTeam(userId, "RIGHT", maxDepth);
+    const leftTeam = await this.getLeftTeam(userId, maxDepth);
+    const rightTeam = await this.getRightTeam(userId, maxDepth);
     return [...leftTeam, ...rightTeam];
   }
 
   private async getTeam(
     userId: TreeUser["id"],
-    side: "LEFT" | "RIGHT",
-    maxDepth: number = 5,
+    side: TreeUser["position"],
+    maxDepth: number,
   ) {
     const rootNode = await databaseService.minimalTreeData(userId);
     if (!rootNode) return [];
 
-    const userIds: number[] = [];
+    const userIds: UserId[] = [];
     const queue: { nodeId: TreeUser["id"]; depth: number }[] = [];
 
     // Start with the appropriate side
@@ -149,13 +153,14 @@ export default class TreeService {
         queue.push({ nodeId: node.rightUser, depth: depth + 1 });
       }
     }
+    return userIds;
+  }
 
-    // Fetch detailed data for all collected IDs
-    const detailedData = await Promise.all(
+  async populateIds(userIds: UserId[]) {
+    const populatedData = await Promise.all(
       userIds.map((id) => databaseService.fetchTreeUserData(id)),
     );
-
-    return detailedData.filter((data) => data !== null);
+    return populatedData.filter((d) => d !== null);
   }
 
   /**

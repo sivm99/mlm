@@ -34,3 +34,6 @@ export const productsTable = pgTable(
 export const productsRelations = relations(productsTable, ({ many }) => ({
   orderItems: many(orderItemsTable),
 }));
+
+export type InsertProduct = typeof productsTable.$inferInsert;
+export type SelectProduct = typeof productsTable.$inferSelect;

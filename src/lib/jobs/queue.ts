@@ -1,4 +1,4 @@
-import { Job, JobOptions } from "./types";
+import { Job, JobOptions } from "@/types";
 
 export type QueueOptions = {
   retryAttempts: number;

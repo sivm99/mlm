@@ -1,5 +1,5 @@
 import { Queue } from "./queue";
-import { Job } from "./types";
+import { Job } from "@/types";
 
 export class Worker<T> {
   private queue: Queue<T>;

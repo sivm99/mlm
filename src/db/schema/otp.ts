@@ -8,7 +8,6 @@ import {
   integer,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
-import { createSelectSchema } from "drizzle-zod";
 
 // Define an enum for OTP types to ensure type safety
 export const otpTypeEnum = pgEnum("otp_type", [
@@ -38,6 +37,6 @@ export const otpTable = pgTable("otp", {
   // When an OTP is verified, isVerified becomes true and isValid should become false
 });
 
-export const otpSchema = createSelectSchema(otpTable);
-
-export type OTPTYPE = typeof otpSchema._type;
+export type InsertOTP = typeof otpTable.$inferInsert;
+export type SelectOTP = typeof otpTable.$inferSelect;
+export type OTPTYPE = SelectOTP;

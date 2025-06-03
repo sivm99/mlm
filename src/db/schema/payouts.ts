@@ -15,6 +15,7 @@ export const payoutStatusEnum = pgEnum("payoutStatus", [
 ]);
 
 import { relations } from "drizzle-orm";
+import { rewardsTable } from "./rewards";
 
 export const payoutsTable = pgTable(
   "payouts",
@@ -26,6 +27,11 @@ export const payoutsTable = pgTable(
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
+
+    rewardId: integer("reward_id")
+      .notNull()
+      .references(() => rewardsTable.id),
+
     amount: real("amount").notNull(),
     status: payoutStatusEnum("status").default("PENDING"),
     payoutDate: timestamp("payout_date").notNull(),

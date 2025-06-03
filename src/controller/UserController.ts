@@ -141,12 +141,12 @@ export default class UserController {
 
       const newOrder: InsertOrder = {
         userId,
-        totalAmount: 50,
+        totalAmount: 68,
         deliveryMethod,
         deliveryAddress: address,
       };
 
-      const data = await orderService.placeOrder(newOrder);
+      const data = await orderService.placeActiveOrder(newOrder);
 
       return c.json({
         success: true,
