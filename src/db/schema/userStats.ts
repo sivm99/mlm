@@ -11,8 +11,15 @@ export const userStatsTable = pgTable("user_stats", {
     .primaryKey(),
 
   redeemedCount: integer("redeemed_count").notNull().default(0),
-  directUsersCount: integer("direct_users_count").notNull().default(0),
-  activeDirectUsersCount: integer("active_direct_users_count")
+
+  leftDirectUsersCount: integer("left_direct_users_count").notNull().default(0),
+  rightDirectUsersCount: integer("right_direct_users_count")
+    .notNull()
+    .default(0),
+  leftActiveDirectUsersCount: integer("left_active_direct_users_count")
+    .notNull()
+    .default(0),
+  rightActiveDirectUsersCount: integer("right_active_direct_users_count")
     .notNull()
     .default(0),
 

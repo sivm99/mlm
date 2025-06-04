@@ -89,10 +89,7 @@ export class WalletController {
   static async transferAlPoints(c: MyContext) {
     try {
       const body = c.get("transferAlPoints");
-      const transaction = await walletService.transferAlPoints({
-        ...body,
-        type: "alpoints_transfer",
-      });
+      const transaction = await walletService.transferAlPoints(body);
 
       return c.json({
         success: true,
@@ -216,20 +213,14 @@ export class WalletController {
       const limit = Number(c.req.query("limit")) || 50;
       const offset = Number(c.req.query("offset")) || 0;
 
-      const transactions = await walletService.getUserTransactions(
-        userId,
+      const transactions = await walletService.getUserTransactions(userId, {
         limit,
         offset,
-      );
+      });
 
       return c.json({
         success: true,
         data: transactions,
-        pagination: {
-          limit,
-          offset,
-          count: transactions.length,
-        },
       });
     } catch (error) {
       return c.json(

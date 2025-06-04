@@ -1,6 +1,7 @@
 import { ReferralSelect, SelectUser } from "@/db/schema";
 import { SafeUserReturn } from "@/lib/services";
 import { UpdateUser, UpdateUserByAdmin } from "@/validation";
+import { TreeUser } from "./tree";
 
 export type User = SelectUser;
 
@@ -29,6 +30,7 @@ export type SponsorIncrementArgs = {
   id: User["id"];
   directCount: 1 | 0;
   activeDirectCount: 1 | 0;
+  side: TreeUser["position"];
 };
 
 export type ToggleAccountArgs = {

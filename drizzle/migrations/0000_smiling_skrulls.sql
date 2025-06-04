@@ -46,12 +46,6 @@ CREATE TABLE "config" (
 	CONSTRAINT "config_key_unique" UNIQUE("key")
 );
 --> statement-breakpoint
-CREATE TABLE "first_eligible" (
-	"id" integer PRIMARY KEY NOT NULL,
-	"reward_id" integer NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "users" (
 	"id" integer PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
@@ -217,6 +211,7 @@ CREATE TABLE "rewards" (
 	"next_payment_date" timestamp (3) DEFAULT '2020-01-01T00:00:00.000Z' NOT NULL,
 	"order_id" integer,
 	"user_id" integer NOT NULL,
+	"completed_at" timestamp (3),
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
@@ -224,8 +219,10 @@ CREATE TABLE "rewards" (
 CREATE TABLE "user_stats" (
 	"id" integer PRIMARY KEY NOT NULL,
 	"redeemed_count" integer DEFAULT 0 NOT NULL,
-	"direct_users_count" integer DEFAULT 0 NOT NULL,
-	"active_direct_users_count" integer DEFAULT 0 NOT NULL,
+	"left_direct_users_count" integer DEFAULT 0 NOT NULL,
+	"right_direct_users_count" integer DEFAULT 0 NOT NULL,
+	"left_active_direct_users_count" integer DEFAULT 0 NOT NULL,
+	"right_active_direct_users_count" integer DEFAULT 0 NOT NULL,
 	"left_count" integer DEFAULT 0 NOT NULL,
 	"right_count" integer DEFAULT 0 NOT NULL,
 	"left_active_count" integer DEFAULT 0 NOT NULL,
@@ -248,8 +245,6 @@ ALTER TABLE "addresses" ADD CONSTRAINT "addresses_user_id_users_id_fk" FOREIGN K
 ALTER TABLE "addresses" ADD CONSTRAINT "addresses_added_by_users_id_fk" FOREIGN KEY ("added_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE set null;--> statement-breakpoint
 ALTER TABLE "ar_history" ADD CONSTRAINT "ar_history_from_user_id_users_id_fk" FOREIGN KEY ("from_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "ar_history" ADD CONSTRAINT "ar_history_to_user_id_users_id_fk" FOREIGN KEY ("to_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "first_eligible" ADD CONSTRAINT "first_eligible_id_users_id_fk" FOREIGN KEY ("id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "first_eligible" ADD CONSTRAINT "first_eligible_reward_id_rewards_id_fk" FOREIGN KEY ("reward_id") REFERENCES "public"."rewards"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "wallets" ADD CONSTRAINT "wallets_id_users_id_fk" FOREIGN KEY ("id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint

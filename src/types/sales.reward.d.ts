@@ -38,8 +38,3 @@ export type ClaimOrderResult = {
   orderId: number;
   message: string;
 };
-
-export type EligiblePayoutRecord = Pick<
-  Reward,
-  "id" | "userId" | "amountPaid" | "nextPaymentDate"
->;

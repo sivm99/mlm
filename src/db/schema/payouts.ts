@@ -54,3 +54,6 @@ export const payoutsRelations = relations(payoutsTable, ({ one }) => ({
     references: [usersTable.id],
   }),
 }));
+
+export type InsertPayout = typeof payoutsTable.$inferInsert;
+export type SelectPayout = typeof payoutsTable.$inferSelect;

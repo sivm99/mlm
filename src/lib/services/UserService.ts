@@ -34,6 +34,7 @@ import { walletService } from "./WalletService";
 import { arHistoryService } from "./ArHistoryService";
 import { RegisterUser } from "@/validation";
 import { sql } from "drizzle-orm";
+import { salesRewardService } from "./SalesRewardService";
 
 const jwtSecret = Bun.env.JWT_SECRET!;
 
@@ -135,13 +136,14 @@ export default class UserService {
               await databaseService.doesSponsorExists(sponsorId);
             if (!sponsorData) throw new Error("Sponsor not found");
 
+            const position = positionMap[user.id];
             await this.sponsorCountIncrement({
               id: sponsorId,
               directCount: 1,
               activeDirectCount: 0,
+              side: position,
             });
 
-            const position = positionMap[user.id];
             await treeService.insertIntoTree(user.id, position, sponsorId);
           });
         }),
@@ -227,14 +229,37 @@ export default class UserService {
     id,
     directCount = 1,
     activeDirectCount = 0,
+    side,
   }: SponsorIncrementArgs) {
-    await db
+    const updates: Record<string, unknown> = {};
+
+    if (side === "LEFT") {
+      updates.leftDirectUsersCount = sql`${userStatsTable.leftDirectUsersCount} + ${directCount}`;
+      updates.leftActiveDirectUsersCount = sql`${userStatsTable.leftActiveDirectUsersCount} + ${activeDirectCount}`;
+    } else if (side === "RIGHT") {
+      updates.rightDirectUsersCount = sql`${userStatsTable.rightDirectUsersCount} + ${directCount}`;
+      updates.rightActiveDirectUsersCount = sql`${userStatsTable.rightActiveDirectUsersCount} + ${activeDirectCount}`;
+    }
+
+    const [stats] = await db
       .update(userStatsTable)
-      .set({
-        directUsersCount: sql` ${userStatsTable.directUsersCount} + ${directCount}`,
-        activeDirectUsersCount: sql`${userStatsTable.activeDirectUsersCount} + ${activeDirectCount}`,
-      })
-      .where(eq(userStatsTable.id, id));
+      .set(updates)
+      .where(eq(userStatsTable.id, id))
+      .returning({
+        left: userStatsTable.leftActiveDirectUsersCount,
+        right: userStatsTable.rightActiveDirectUsersCount,
+      });
+
+    // Only proceed if we added active directs and both sides are non-zero
+    if (activeDirectCount && stats.left && stats.right) {
+      const eligibleRewardCount = Math.floor((stats.left + stats.right) / 2);
+      const currentRewardCount =
+        await salesRewardService.getRewardsCountByUserId(id);
+      const rewardsToInsert = eligibleRewardCount - currentRewardCount;
+      if (rewardsToInsert > 0) {
+        await salesRewardService.insertPendingRewards(id, rewardsToInsert);
+      }
+    }
   }
 
   async toggleAccountStatus({ id, isActive = true }: ToggleAccountArgs) {
@@ -319,6 +344,7 @@ export default class UserService {
             id: toUser.sponsor,
             directCount: 0,
             activeDirectCount: 1,
+            side: toUser.position,
           });
 
           await this.toggleAccountStatus({

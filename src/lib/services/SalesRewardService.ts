@@ -1,28 +1,24 @@
-import db from "@/db";
+import db, { adminId } from "@/db";
 import {
-  firstEligibleTable,
   rewardsTable,
   SelectReward,
-  treeTable,
   ordersTable,
-  payoutsTable,
   InsertOrder,
   userStatsTable,
 } from "@/db/schema";
 import {
+  AddIncomeArgs,
   ClaimOrderResult,
-  EligiblePayoutRecord,
   PayoutProcessResult,
-  RewardEligibilityCheck,
+  Reward,
   UserId,
 } from "@/types";
-import { eq, and, lte } from "drizzle-orm";
-import { databaseService } from "./DatabaseService";
-import { treeService } from "./TreeService";
+import { eq, and, lte, count } from "drizzle-orm";
 import { walletService } from "./WalletService";
 import { ClaimPayoutResult } from "@/types";
 import { orderService } from "./OrderService";
 import { sql } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
 /**
  * SalesRewardService handles the complete sales reward system including
@@ -32,6 +28,7 @@ export default class SalesRewardService {
   /**
    * Configuration constants for the sales reward system
    */
+
   #REWARD_CONFIG = {
     WEEKLY_PAYOUT_AMOUNT: 3, // $3 per week
     MAX_WEEKS: 104, // 104 weeks maximum
@@ -40,74 +37,21 @@ export default class SalesRewardService {
     ADMIN_FEE: 0,
   } as const;
 
-  /**
-   * Find existing or create new first eligible record for a user
-   * This checks if user meets the eligibility criteria:
-   * - Must have at least 2 active direct users
-   * - Must have direct users in both LEFT and RIGHT legs
-   */
-  async findOrCreateFirstEligibleRecord(userId: UserId) {
-    try {
-      // Check if record already exists
-      const [existing] = await db
-        .select()
-        .from(firstEligibleTable)
-        .where(eq(firstEligibleTable.id, userId));
+  async insertPendingRewards(userId: UserId, rewardCount = 1) {
+    const rewards = Array.from({ length: rewardCount }, () => ({
+      userId,
+      type: "na" as const,
+      status: "pending" as const,
+    }));
+    await db.insert(rewardsTable).values(rewards).execute();
+  }
 
-      if (existing) return existing;
-
-      const self = await databaseService.getUserStats(userId);
-      if (!self || self.activeDirectUsersCount < 2) {
-        return false;
-      }
-
-      // Get direct users
-      const directUsers = await db
-        .select({ id: treeTable.id })
-        .from(treeTable)
-        .where(eq(treeTable.sponsor, self.id));
-
-      if (directUsers.length < 2) return false;
-
-      // Check if user has direct users in both legs
-      const leftSet = new Set(await treeService.getTeamIds(userId, "LEFT"));
-      const rightSet = new Set(await treeService.getTeamIds(userId, "RIGHT"));
-
-      let hasLeft = false;
-      let hasRight = false;
-
-      for (const { id } of directUsers) {
-        if (!hasLeft && leftSet.has(id)) hasLeft = true;
-        if (!hasRight && rightSet.has(id)) hasRight = true;
-        if (hasLeft && hasRight) break;
-      }
-
-      if (!hasLeft || !hasRight) return false;
-
-      // Create reward record with default payout type
-      const [insertedReward] = await db
-        .insert(rewardsTable)
-        .values({
-          userId: self.id,
-        })
-        .returning({ id: rewardsTable.id });
-
-      if (!insertedReward) return false;
-
-      // Create eligible record
-      const [insertedEligible] = await db
-        .insert(firstEligibleTable)
-        .values({
-          id: self.id,
-          rewardId: insertedReward.id,
-        })
-        .returning();
-
-      return insertedEligible || false;
-    } catch (err) {
-      console.error("Error creating first eligible record:", err);
-      return false;
-    }
+  async getRewardsCountByUserId(userId: UserId) {
+    const [rewardCount] = await db
+      .select({ count: count() })
+      .from(rewardsTable)
+      .where(eq(rewardsTable.userId, userId));
+    return rewardCount.count;
   }
 
   /**
@@ -132,10 +76,8 @@ export default class SalesRewardService {
         };
       }
 
-      const rewardRecord = reward;
-
       // Check if reward is eligible for payout claim
-      if (rewardRecord.status !== "pending") {
+      if (reward.status !== "pending") {
         return {
           success: false,
           rewardId,
@@ -218,7 +160,7 @@ export default class SalesRewardService {
       );
 
       // Create order
-      const insertedOrder = await db
+      const [insertedOrder] = await db
         .insert(ordersTable)
         .values({
           userId: rewardRecord.userId,
@@ -228,7 +170,7 @@ export default class SalesRewardService {
         })
         .returning({ id: ordersTable.id });
 
-      if (!insertedOrder.length) {
+      if (!insertedOrder) {
         return {
           success: false,
           rewardId,
@@ -237,19 +179,19 @@ export default class SalesRewardService {
         };
       }
 
-      const orderId = insertedOrder[0].id;
+      const orderId = insertedOrder.id;
 
-      // Update reward record to closed with order reference
       await db
         .update(rewardsTable)
         .set({
           type: "order",
           status: "closed",
+          compoletedAt: new Date(),
           orderId: orderId,
         })
         .where(eq(rewardsTable.id, rewardId));
 
-      await orderService.placeSalesRewardOrder(orderId); // this will add the 6 package quantity
+      await orderService.placeSalesRewardOrder(orderId);
 
       await db.update(userStatsTable).set({
         redeemedCount: sql`${userStatsTable.redeemedCount} + 1`,
@@ -280,13 +222,13 @@ export default class SalesRewardService {
     orderDetails: Omit<InsertOrder, "userId" | "totalAmount">,
   ): Promise<ClaimOrderResult> {
     try {
-      const reward = await db
+      const [reward] = await db
         .select()
         .from(rewardsTable)
         .where(eq(rewardsTable.id, rewardId))
         .limit(1);
 
-      if (!reward.length) {
+      if (!reward) {
         return {
           success: false,
           rewardId,
@@ -295,7 +237,7 @@ export default class SalesRewardService {
         };
       }
 
-      const rewardRecord = reward[0];
+      const rewardRecord = reward;
 
       if (rewardRecord.type !== "payout" || rewardRecord.status !== "active") {
         return {
@@ -307,23 +249,23 @@ export default class SalesRewardService {
       }
 
       // Use the amount already paid for the order
-      const orderAmount = rewardRecord.amountPaid;
+      const withdrawnAmount = rewardRecord.amountPaid;
+      // first of all we will cut this amount from the users wallet for the order
 
-      if (orderAmount <= 0) {
-        return {
-          success: false,
-          rewardId,
-          orderId: 0,
-          message: "No amount available for order conversion",
-        };
-      }
+      await walletService.transferAlPoints({
+        fromUserId: reward.userId,
+        toUserId: adminId,
+        amount: withdrawnAmount,
+        otp: undefined,
+        description: `Balance amount paid for the product`,
+      });
 
       // Create order
       const [insertedOrder] = await db
         .insert(ordersTable)
         .values({
           userId: rewardRecord.userId,
-          totalAmount: orderAmount,
+          totalAmount: this.#REWARD_CONFIG.TOTAL_PAYOUT_AMOUNT,
           status: "PENDING",
           ...orderDetails,
         })
@@ -331,14 +273,13 @@ export default class SalesRewardService {
 
       const orderId = insertedOrder.id;
 
-      // Update reward to closed with order reference
       await db
         .update(rewardsTable)
         .set({
           type: "order",
           status: "closed",
+          compoletedAt: new Date(),
           orderId: orderId,
-          updatedAt: new Date(),
         })
         .where(eq(rewardsTable.id, rewardId));
 
@@ -348,7 +289,7 @@ export default class SalesRewardService {
         success: true,
         rewardId,
         orderId,
-        message: `Payout converted to order successfully. Order amount: $${orderAmount}`,
+        message: `Payout converted to order successfully. Order amount: $${this.#REWARD_CONFIG.TOTAL_PAYOUT_AMOUNT}`,
       };
     } catch (err) {
       console.error("Error converting payout to order:", err);
@@ -369,7 +310,7 @@ export default class SalesRewardService {
     try {
       const currentDate = new Date();
 
-      // Get all eligible payout records
+      // Step 1: Get all eligible payout records
       const eligibleRewards = await db
         .select({
           id: rewardsTable.id,
@@ -400,25 +341,28 @@ export default class SalesRewardService {
         };
       }
 
-      // Process payouts in parallel
-      const payoutPromises = eligibleRewards.map((reward) =>
-        this.processSinglePayout(reward),
-      );
+      // Step 2: Map rewards to AddIncomeArgs
+      const incomeData: AddIncomeArgs[] = eligibleRewards.map((reward) => ({
+        userId: reward.userId,
+        amount: this.#REWARD_CONFIG.WEEKLY_PAYOUT_AMOUNT,
+        type: "weekly_payout_earned",
+        description: "Weekly payout credited",
+        rewardId: reward.id,
+      }));
 
-      const results = await Promise.allSettled(payoutPromises);
+      // Step 3: Use bulk income processor
+      const bulkResults = await walletService.addIncomeBulk(incomeData);
 
       let processedCount = 0;
       let failedCount = 0;
       const errors: string[] = [];
 
-      results.forEach((result, index) => {
-        if (result.status === "fulfilled" && result.value.success) {
+      bulkResults.forEach((result, index) => {
+        if (result.status === "fulfilled") {
           processedCount++;
         } else {
           failedCount++;
-          const error =
-            result.status === "rejected" ? result.reason : result.value.error;
-          errors.push(`User ${eligibleRewards[index].userId}: ${error}`);
+          errors.push(`User ${incomeData[index].userId}: ${result.reason}`);
         }
       });
 
@@ -440,124 +384,21 @@ export default class SalesRewardService {
   }
 
   /**
-   * Process a single payout reward
+   * Get user's reward history with pagination
    */
-  private async processSinglePayout(
-    reward: EligiblePayoutRecord,
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      const newAmountPaid =
-        reward.amountPaid + this.#REWARD_CONFIG.WEEKLY_PAYOUT_AMOUNT;
-      const isCompleted =
-        newAmountPaid >= this.#REWARD_CONFIG.TOTAL_PAYOUT_AMOUNT;
-
-      // Add money to user's wallet
-      await walletService.addIncome(
-        reward.userId,
-        this.#REWARD_CONFIG.WEEKLY_PAYOUT_AMOUNT,
-        "weekly_payout_earned",
-      );
-
-      // Create payout record
-      await db.insert(payoutsTable).values({
-        userId: reward.userId,
-        rewardId: reward.id,
-        amount: this.#REWARD_CONFIG.WEEKLY_PAYOUT_AMOUNT,
-        status: "PROCESSED",
-        payoutDate: new Date(),
-        adminFee: this.#REWARD_CONFIG.ADMIN_FEE, // Assuming no admin fee for rewards
-      });
-
-      // Update reward record
-      await db
-        .update(rewardsTable)
-        .set({
-          amountPaid: newAmountPaid,
-          status: isCompleted ? "closed" : "active",
-          nextPaymentDate: isCompleted
-            ? new Date("2020-01-01")
-            : this.calculateNextPaymentDate(),
-          updatedAt: new Date(),
-        })
-        .where(eq(rewardsTable.id, reward.id));
-
-      return { success: true };
-    } catch (err) {
-      console.error(`Error processing payout for reward ${reward.id}:`, err);
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : "Unknown error",
-      };
-    }
-  }
-
-  /**
-   * Check reward eligibility for a user
-   */
-  async checkRewardEligibility(
+  async getUserRewardHistory(
     userId: UserId,
-  ): Promise<RewardEligibilityCheck> {
-    try {
-      const rewards = await db
-        .select()
-        .from(rewardsTable)
-        .where(eq(rewardsTable.userId, userId));
-
-      if (rewards.length === 0) {
-        return {
-          isEligible: true,
-          reason: "No existing rewards found",
-        };
-      }
-
-      const activeReward = rewards.find((r) => r.status === "active");
-
-      if (!activeReward) {
-        return {
-          isEligible: true,
-          reason: "No active rewards found",
-        };
-      }
-
-      const currentWeek = Math.floor(
-        activeReward.amountPaid / this.#REWARD_CONFIG.WEEKLY_PAYOUT_AMOUNT,
-      );
-      const remainingAmount =
-        this.#REWARD_CONFIG.TOTAL_PAYOUT_AMOUNT - activeReward.amountPaid;
-
-      if (activeReward.status === "closed") {
-        return {
-          isEligible: false,
-          reason: "Reward already completed",
-          currentWeek,
-          amountPaid: activeReward.amountPaid,
-        };
-      }
-
-      return {
-        isEligible: true,
-        currentWeek,
-        amountPaid: activeReward.amountPaid,
-        remainingAmount,
-      };
-    } catch (err) {
-      console.error("Error checking reward eligibility:", err);
-      return {
-        isEligible: false,
-        reason: "Error checking eligibility",
-      };
-    }
-  }
-
-  /**
-   * Get user's reward history
-   */
-  async getUserRewardHistory(userId: UserId): Promise<SelectReward[]> {
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<Reward[]> {
     try {
       return await db
         .select()
         .from(rewardsTable)
-        .where(eq(rewardsTable.userId, userId));
+        .where(eq(rewardsTable.userId, userId))
+        .orderBy(sql`${rewardsTable.createdAt} DESC`)
+        .limit(limit)
+        .offset(offset);
     } catch (err) {
       console.error("Error fetching user reward history:", err);
       return [];
@@ -565,9 +406,12 @@ export default class SalesRewardService {
   }
 
   /**
-   * Get all active payout rewards (for admin dashboard)
+   * Get all active payout rewards with pagination
    */
-  async getActivePayoutRewards(): Promise<SelectReward[]> {
+  async getActivePayoutRewards(
+    limit: number = 100,
+    offset: number = 0,
+  ): Promise<Reward[]> {
     try {
       return await db
         .select()
@@ -577,7 +421,10 @@ export default class SalesRewardService {
             eq(rewardsTable.type, "payout"),
             eq(rewardsTable.status, "active"),
           ),
-        );
+        )
+        .orderBy(sql`${rewardsTable.nextPaymentDate} ASC`)
+        .limit(limit)
+        .offset(offset);
     } catch (err) {
       console.error("Error fetching active payout rewards:", err);
       return [];
@@ -588,19 +435,17 @@ export default class SalesRewardService {
    * Pause/Resume reward payouts (admin function)
    */
   async toggleRewardStatus(
-    rewardId: SelectReward["id"],
+    rewardId: Reward["id"],
     newStatus: "active" | "paused",
   ): Promise<boolean> {
     try {
-      await db
+      const [updated] = await db
         .update(rewardsTable)
-        .set({
-          status: newStatus,
-          updatedAt: new Date(),
-        })
-        .where(eq(rewardsTable.id, rewardId));
+        .set({ status: newStatus })
+        .where(eq(rewardsTable.id, rewardId))
+        .returning({ id: rewardsTable.id });
 
-      return true;
+      return !!updated;
     } catch (err) {
       console.error("Error toggling reward status:", err);
       return false;
@@ -617,23 +462,116 @@ export default class SalesRewardService {
   }
 
   /**
-   * Get rewards summary for dashboard
+   * Get comprehensive rewards summary for dashboard
    */
   async getRewardsSummary() {
     try {
-      const summary = await db
-        .select({
-          type: rewardsTable.type,
-          status: rewardsTable.status,
-          count: db.$count(rewardsTable),
-        })
-        .from(rewardsTable)
-        .groupBy(rewardsTable.type, rewardsTable.status);
+      const [summary, totalStats] = await Promise.all([
+        // Group by type and status
+        db
+          .select({
+            type: rewardsTable.type,
+            status: rewardsTable.status,
+            count: sql<number>`count(*)`.as("count"),
+            totalAmount: sql<number>`sum(${rewardsTable.amountPaid})`.as(
+              "totalAmount",
+            ),
+          })
+          .from(rewardsTable)
+          .groupBy(rewardsTable.type, rewardsTable.status),
 
-      return summary;
+        // Overall statistics
+        db
+          .select({
+            totalRewards: sql<number>`count(*)`.as("totalRewards"),
+            totalPaidAmount: sql<number>`sum(${rewardsTable.amountPaid})`.as(
+              "totalPaidAmount",
+            ),
+            activePayouts:
+              sql<number>`count(*) filter (where ${rewardsTable.type} = 'payout' and ${rewardsTable.status} = 'active')`.as(
+                "activePayouts",
+              ),
+          })
+          .from(rewardsTable),
+      ]);
+
+      return {
+        summary,
+        totalStats: totalStats[0] || {
+          totalRewards: 0,
+          totalPaidAmount: 0,
+          activePayouts: 0,
+        },
+      };
     } catch (err) {
       console.error("Error fetching rewards summary:", err);
+      return {
+        summary: [],
+        totalStats: { totalRewards: 0, totalPaidAmount: 0, activePayouts: 0 },
+      };
+    }
+  }
+
+  /**
+   * Get rewards that are due for completion (reached max payout)
+   */
+  async getCompletableRewards(): Promise<SelectReward[]> {
+    try {
+      return await db
+        .select()
+        .from(rewardsTable)
+        .where(
+          and(
+            eq(rewardsTable.type, "payout"),
+            eq(rewardsTable.status, "active"),
+            eq(
+              rewardsTable.amountPaid,
+              this.#REWARD_CONFIG.TOTAL_PAYOUT_AMOUNT,
+            ),
+          ),
+        );
+    } catch (err) {
+      console.error("Error fetching completable rewards:", err);
       return [];
     }
   }
+  /**
+   * Auto-complete rewards that have reached maximum payout
+   */
+  async autoCompleteMaxedOutRewards(): Promise<{
+    completed: number;
+    errors: string[];
+  }> {
+    try {
+      const completableRewards = await this.getCompletableRewards();
+
+      if (completableRewards.length === 0) {
+        return { completed: 0, errors: [] };
+      }
+
+      const rewardIds = completableRewards.map((r) => r.id);
+
+      const updatedRewards = await db
+        .update(rewardsTable)
+        .set({
+          status: "closed",
+          compoletedAt: new Date(),
+        })
+        .where(inArray(rewardsTable.id, rewardIds))
+        .returning({ id: rewardsTable.id });
+
+      return {
+        completed: updatedRewards.length,
+        errors: [],
+      };
+    } catch (err) {
+      console.error("Error auto-completing maxed out rewards:", err);
+      return {
+        completed: 0,
+        errors: [err instanceof Error ? err.message : "Unknown error"],
+      };
+    }
+  }
 }
+
+export const salesRewardService = new SalesRewardService();

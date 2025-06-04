@@ -76,8 +76,11 @@ export type TreeReturn = {
 export const userStatsReturn = {
   id: userStatsTable.id,
   redeemedCount: userStatsTable.redeemedCount,
-  directUsersCount: userStatsTable.directUsersCount,
-  activeDirectUsersCount: userStatsTable.activeDirectUsersCount,
+
+  leftDirectUsersCount: userStatsTable.leftDirectUsersCount,
+  rightDirectUsersCount: userStatsTable.rightDirectUsersCount,
+  leftActiveDirectUsersCount: userStatsTable.leftActiveDirectUsersCount,
+  rightActiveDirectUsersCount: userStatsTable.rightActiveDirectUsersCount,
 
   leftCount: userStatsTable.leftCount,
   rightCount: userStatsTable.rightCount,

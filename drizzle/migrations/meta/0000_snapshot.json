@@ -1,5 +1,5 @@
 {
-  "id": "756a0a83-2c93-47d1-89cc-575dcf0fff50",
+  "id": "26d506cd-c7df-4232-a15e-4f37613aecab",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -281,65 +281,6 @@
           ]
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.first_eligible": {
-      "name": "first_eligible",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "reward_id": {
-          "name": "reward_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "first_eligible_id_users_id_fk": {
-          "name": "first_eligible_id_users_id_fk",
-          "tableFrom": "first_eligible",
-          "tableTo": "users",
-          "columnsFrom": [
-            "id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        },
-        "first_eligible_reward_id_rewards_id_fk": {
-          "name": "first_eligible_reward_id_rewards_id_fk",
-          "tableFrom": "first_eligible",
-          "tableTo": "rewards",
-          "columnsFrom": [
-            "reward_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1799,6 +1740,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -1866,15 +1813,29 @@
           "notNull": true,
           "default": 0
         },
-        "direct_users_count": {
-          "name": "direct_users_count",
+        "left_direct_users_count": {
+          "name": "left_direct_users_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
         },
-        "active_direct_users_count": {
-          "name": "active_direct_users_count",
+        "right_direct_users_count": {
+          "name": "right_direct_users_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "left_active_direct_users_count": {
+          "name": "left_active_direct_users_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "right_active_direct_users_count": {
+          "name": "right_active_direct_users_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,

@@ -42,6 +42,8 @@ export const rewardsTable = pgTable("rewards", {
       onUpdate: "cascade",
     }),
 
+  compoletedAt: timestamp("completed_at", { mode: "date", precision: 3 }),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
     .defaultNow()

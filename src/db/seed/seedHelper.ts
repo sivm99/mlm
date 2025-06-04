@@ -25,6 +25,7 @@ interface TreeNode {
   dialCode: string;
   isActive: boolean;
   sponsor: number;
+  image?: string;
   parentUser: number;
   position: "LEFT" | "RIGHT";
   left?: TreeNode;
@@ -57,6 +58,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
   const tree: TreeNode = {
     id: adminId,
     name: "Master Admin",
+    image: "https://cool.s3.n3y.in/admin.jpeg",
     email: adminEmail,
     mobile: "9999999999",
     country: "Global",

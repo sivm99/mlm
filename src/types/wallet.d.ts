@@ -1,19 +1,20 @@
 import { SelectTransaction, SelectWallet } from "@/db/schema";
-import { User } from "./user";
+import { UserId } from "./user";
+import { Reward } from "./sales.reward";
 
 export type TransferParams = {
-  fromUserId: User["id"];
-  toUserId: User["id"];
+  fromUserId: UserId;
+  toUserId: UserId;
   amount: number;
-  type: "alpoints_transfer";
+  // type: "alpoints_transfer";
   description: string | undefined;
   otp: string | undefined;
 };
 
 export type Wallet = SelectWallet;
-
+export type Transaction = SelectTransaction;
 export type ConvertIncomeParams = {
-  userId: User["id"];
+  userId: UserId;
   amount: number;
   type: "income_to_alpoints" | "income_payout";
   otp: string;
@@ -21,8 +22,8 @@ export type ConvertIncomeParams = {
 
 export type WalletTransaction = {
   type: SelectTransaction["type"];
-  fromUserId: User["id"] | undefined;
-  toUserId: User["id"] | undefined;
+  fromUserId: UserId | undefined;
+  toUserId: UserId | undefined;
   fromWalletType: SelectTransaction["fromWalletType"] | undefined;
   toWalletType: SelectTransaction["toWalletType"] | undefined;
   amount: number;
@@ -31,4 +32,12 @@ export type WalletTransaction = {
   reference: string | undefined;
   metadata: Record<string, unknown> | undefined;
   requiresOtp: boolean | undefined;
+};
+
+export type AddIncomeArgs = {
+  userId: UserId;
+  amount: number;
+  type: "weekly_payout_earned" | "matching_income_earned";
+  description?: string;
+  rewardId?: Reward["id"];
 };
