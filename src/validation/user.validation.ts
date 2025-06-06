@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 import { zValidator } from "@hono/zod-validator";
 import { MyContext } from "@/types";
 import { emailField, idField, validationError } from "./_common";

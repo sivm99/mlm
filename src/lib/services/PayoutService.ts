@@ -1,6 +1,6 @@
 import db from "@/db";
 import { InsertPayout, payoutsTable } from "@/db/schema";
-import { IncomePayoutArgs } from "@/types/income";
+import { IncomePayoutArgs } from "@/types";
 
 export default class PayoutService {
   #REWARD_CONFIG = {
@@ -15,11 +15,17 @@ export default class PayoutService {
     await db.insert(payoutsTable).values(record).execute();
   }
 
-  async insertRewardPayout({ userId, rewardId, status }: IncomePayoutArgs) {
+  async insertRewardPayout({
+    userId,
+    saleRewardId,
+    matchingIncomeId,
+    status,
+  }: IncomePayoutArgs) {
     // Create payout record
     await db.insert(payoutsTable).values({
       userId,
-      rewardId,
+      saleRewardId,
+      matchingIncomeId,
       amount: this.#REWARD_CONFIG.WEEKLY_PAYOUT_AMOUNT,
       status,
       payoutDate: new Date(),

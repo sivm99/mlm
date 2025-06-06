@@ -1,15 +1,25 @@
 import { CronJob } from "cron";
-import { salesRewardService } from "./SalesRewardService";
 import db from "@/db";
-import { usersTable, rewardsTable } from "@/db/schema";
+import { usersTable, saleRewardsTable } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
+import { matchingIncomeService, salesRewardService } from "../services";
+import { CronJobName } from "@/types";
+
+export const cronJobName = [
+  "weekly-payouts",
+  "auto-complete-rewards",
+  "system-health-check",
+  "weekly-report",
+  "monthly-cleanup",
+  "matching-income",
+] as const;
 
 /**
  * RewardCronService manages all scheduled tasks for the reward system
  * Handles daily payouts, eligibility checks, and system maintenance
  */
 export class RewardCronService {
-  private jobs: Map<string, CronJob> = new Map();
+  private jobs: Map<CronJobName, CronJob> = new Map();
   private isRunning: boolean = false;
 
   /**
@@ -52,12 +62,10 @@ export class RewardCronService {
    * Setup all cron jobs with their schedules
    */
   private setupJobs(): void {
-    // Daily payout processing - Every day at 12:00 AM
-    // Note: Name kept as weekly-payouts for backward compatibility
     this.jobs.set(
       "weekly-payouts",
       new CronJob(
-        "0 0 * * *", // Every day at midnight
+        "0 21 * * *", // Every day 9 pm
         () => this.handleWeeklyPayouts(),
         null,
         false,
@@ -65,7 +73,6 @@ export class RewardCronService {
       ),
     );
 
-    // Auto-complete maxed out rewards - Every day at 3:00 AM
     this.jobs.set(
       "auto-complete-rewards",
       new CronJob(
@@ -77,7 +84,17 @@ export class RewardCronService {
       ),
     );
 
-    // System health check - Every hour
+    this.jobs.set(
+      "matching-income",
+      new CronJob(
+        "45 11 * * *", // every day at 11 45 pm
+        () => this.handleMatchingIncomePayout(),
+        null,
+        false,
+        "UTC",
+      ),
+    );
+
     this.jobs.set(
       "system-health-check",
       new CronJob(
@@ -89,7 +106,6 @@ export class RewardCronService {
       ),
     );
 
-    // Weekly system report - Every Monday at 9:00 AM
     this.jobs.set(
       "weekly-report",
       new CronJob(
@@ -101,7 +117,6 @@ export class RewardCronService {
       ),
     );
 
-    // Monthly cleanup - First day of every month at 1:00 AM
     this.jobs.set(
       "monthly-cleanup",
       new CronJob(
@@ -180,23 +195,18 @@ export class RewardCronService {
   /**
    * Handle auto-completion of rewards that have reached maximum payout
    */
-  private async handleAutoCompleteRewards(): Promise<void> {
+  private async handleAutoCompleteRewards() {
     const startTime = Date.now();
     console.log("🔄 Starting auto-complete rewards...");
-
     try {
       const result = await salesRewardService.autoCompleteMaxedOutRewards();
-
       const duration = Date.now() - startTime;
-
       console.log(`✅ Auto-complete rewards completed in ${duration}ms:`);
       console.log(`   - Completed: ${result.completed} rewards`);
-
       if (result.errors.length > 0) {
         console.log("   - Errors:");
         result.errors.forEach((error) => console.log(`     • ${error}`));
       }
-
       await this.logCronExecution("auto-complete-rewards", true, duration, {
         completed: result.completed,
         errors: result.errors,
@@ -204,7 +214,38 @@ export class RewardCronService {
     } catch (error) {
       const duration = Date.now() - startTime;
       console.error("❌ Auto-complete rewards error:", error);
+      await this.logCronExecution("auto-complete-rewards", false, duration, {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
 
+  /**
+   * Handle Mathcing incoe payout and reset all the couters
+   */
+  private async handleMatchingIncomePayout() {
+    const startTime = Date.now();
+    console.log("🔄 Starting matching income rewards...");
+
+    try {
+      const result = await matchingIncomeService.processDailyMatchingIncome();
+      const duration = Date.now() - startTime;
+      console.log(`✅ Auto-complete rewards completed in ${duration}ms:`);
+      console.log(`   - Completed: ${result.processedCount} rewards`);
+      console.log(
+        `   - Total Reward Payment: ${result.totalRewardAmount} rewards`,
+      );
+      if (result.errors.length > 0) {
+        console.log("   - Errors:");
+        result.errors.forEach((error) => console.log(`     • ${error}`));
+      }
+      await this.logCronExecution("auto-complete-rewards", true, duration, {
+        completed: result.processedCount,
+        errors: result.errors,
+      });
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error("❌ Auto-complete rewards error:", error);
       await this.logCronExecution("auto-complete-rewards", false, duration, {
         error: error instanceof Error ? error.message : "Unknown error",
       });
@@ -226,23 +267,23 @@ export class RewardCronService {
       // Check for stuck payouts (payments that should have been processed)
       const stuckPayouts = await db
         .select({ count: sql`count(*)` })
-        .from(rewardsTable)
+        .from(saleRewardsTable)
         .where(
           and(
-            eq(rewardsTable.type, "payout"),
-            eq(rewardsTable.status, "active"),
-            sql`${rewardsTable.nextPaymentDate} < NOW() - INTERVAL '7 days'`,
+            eq(saleRewardsTable.type, "payout"),
+            eq(saleRewardsTable.status, "active"),
+            sql`${saleRewardsTable.nextPaymentDate} < NOW() - INTERVAL '7 days'`,
           ),
         );
 
       // Check for pending rewards older than 30 days
       const oldPendingRewards = await db
         .select({ count: sql`count(*)` })
-        .from(rewardsTable)
+        .from(saleRewardsTable)
         .where(
           and(
-            eq(rewardsTable.status, "pending"),
-            sql`${rewardsTable.createdAt} < NOW() - INTERVAL '30 days'`,
+            eq(saleRewardsTable.status, "pending"),
+            sql`${saleRewardsTable.createdAt} < NOW() - INTERVAL '30 days'`,
           ),
         );
 
@@ -388,8 +429,6 @@ export class RewardCronService {
    * Clean up old log entries
    */
   private async cleanupOldLogs(): Promise<{ cleaned: number }> {
-    // This would depend on your logging table structure
-    // For now, return a placeholder
     return { cleaned: 0 };
   }
 
@@ -397,8 +436,6 @@ export class RewardCronService {
    * Archive old completed rewards
    */
   private async archiveOldRewards(): Promise<{ archived: number }> {
-    // Archive rewards completed more than 6 months ago
-    // This could involve moving to an archive table or marking as archived
     return { archived: 0 };
   }
 
@@ -412,8 +449,6 @@ export class RewardCronService {
     metadata: Record<string, unknown>,
   ): Promise<void> {
     try {
-      // You can implement this based on your logging requirements
-      // Could be a database table, external logging service, or file system
       const logEntry = {
         jobName,
         success,
@@ -447,7 +482,7 @@ export class RewardCronService {
   /**
    * Manually trigger a specific job (useful for testing)
    */
-  public async triggerJob(jobName: string): Promise<boolean> {
+  public async triggerJob(jobName: CronJobName): Promise<boolean> {
     const job = this.jobs.get(jobName);
     if (!job) {
       console.error(`Job '${jobName}' not found`);
@@ -461,6 +496,10 @@ export class RewardCronService {
         case "weekly-payouts":
           await this.handleWeeklyPayouts();
           break;
+        case "matching-income":
+          await this.handleMatchingIncomePayout();
+          break;
+
         case "auto-complete-rewards":
           await this.handleAutoCompleteRewards();
           break;

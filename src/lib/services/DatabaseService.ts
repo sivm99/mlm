@@ -7,7 +7,7 @@ import {
   usersTable,
   userStatsTable,
 } from "@/db/schema";
-import { TreeUser, User, UserId } from "@/types";
+import { TreeUser, UserId } from "@/types";
 import { eq } from "drizzle-orm";
 
 export const safeUserReturn = {
@@ -108,7 +108,7 @@ export default class DatabaseService {
   /**
    * Fetches user data from the database
    */
-  async fetchUserData(userId: User["id"]): Promise<SafeUserReturn | null> {
+  async fetchUserData(userId: UserId): Promise<SafeUserReturn | null> {
     const [userData] = await db
       .select(safeUserReturn)
       .from(usersTable)
@@ -130,7 +130,7 @@ export default class DatabaseService {
     return true;
   }
 
-  async fetchTreeUserData(userId: User["id"]): Promise<TreeUser | null> {
+  async fetchTreeUserData(userId: UserId): Promise<TreeUser | null> {
     // Get user data
     const userData = await this.fetchUserData(userId);
     if (!userData) return null;
@@ -141,11 +141,18 @@ export default class DatabaseService {
       .where(eq(treeTable.id, userId))
       .limit(1);
 
+    const [stats] = await db
+      .select(userStatsReturn)
+      .from(userStatsTable)
+      .where(eq(userStatsTable.id, userId))
+      .limit(1);
+    if (!stats) return null;
     if (!treeData) return null;
 
     return {
       ...userData,
       ...treeData,
+      ...stats,
     };
   }
 

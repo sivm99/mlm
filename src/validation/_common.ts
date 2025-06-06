@@ -1,6 +1,6 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 import { MyContext } from "@/types";
-import { ZodError } from "zod";
+import { $ZodError } from "zod/v4/core";
 
 export const otpField = z.string().length(6).regex(/\d/);
 
@@ -29,27 +29,28 @@ export const idFieldString = z
     { message: "ID must be an integer between 1,000,000 and 9,999,999" },
   );
 
-export const emailField = z
-  .string()
-  .email()
-  .transform((e) => e.toLowerCase());
+export const emailField = z.email().transform((e) => e.toLowerCase());
 
 export const limitField = (n: number = 50) =>
   z
-    .number()
-    .lte(n, `Max limit is set to ${n}`)
+    .union([
+      z.number().lte(n, `Max limit is set to ${n}`),
+      z.string().regex(/^\d+$/).transform(Number),
+    ])
+    .transform(Number)
     .default(30)
-    .refine((r) => Math.floor(r));
+    .transform((r) => Math.floor(r));
+
 export const offsetField = z
-  .number()
-  .gte(0)
+  .union([z.number().gte(0), z.string().regex(/^\d+$/).transform(Number)])
+  .transform(Number)
   .default(0)
-  .refine((r) => Math.floor(r)); // r could be real number
+  .transform((r: number) => Math.floor(r)); // r could be real number
 
 export const amountField = z.number().gt(0);
 export const descriptionFiled = z.string().min(10);
 
-export const validationError = (error: ZodError, c: MyContext) =>
+export const validationError = (error: $ZodError, c: MyContext) =>
   c.json(
     {
       success: false,
@@ -57,9 +58,16 @@ export const validationError = (error: ZodError, c: MyContext) =>
         error.issues.length > 0
           ? error.issues[0].message
           : "Validation error occurred",
-      errors: error.flatten().fieldErrors,
+      errors: z.prettifyError(error),
     },
     400,
   );
 
 export const pageField = z.coerce.number().int().positive().default(1);
+
+export const baseListing = z.object({
+  limit: limitField(50).optional(),
+  offset: offsetField.optional(),
+  page: pageField,
+  sortDirection: z.enum(["asc", "desc"]).optional(),
+});

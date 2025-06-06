@@ -1,5 +1,5 @@
 import db from "@/db";
-import { eq, and, sql, desc, asc, gte, lte, inArray } from "drizzle-orm";
+import { eq, and, sql, desc, asc, gte, lte, inArray, or } from "drizzle-orm";
 import OtpService, { otpService } from "./OtpService";
 import { EventEmitter } from "events";
 import {
@@ -335,7 +335,8 @@ export default class WalletService {
     amount,
     type,
     description,
-    rewardId,
+    saleRewardId,
+    matchingIncomeId,
   }: AddIncomeArgs) {
     return await this.#transactionQueue.execute(userId, async () => {
       const result = await this.executeTransaction({
@@ -352,10 +353,17 @@ export default class WalletService {
         requiresOtp: false,
       });
 
-      if (rewardId)
+      if (saleRewardId)
         await payoutService.insertRewardPayout({
           userId,
-          rewardId,
+          saleRewardId,
+          status: "PROCESSED",
+        });
+
+      if (matchingIncomeId)
+        await payoutService.insertRewardPayout({
+          userId,
+          matchingIncomeId,
           status: "PROCESSED",
         });
 
@@ -791,7 +799,7 @@ export default class WalletService {
     } = options;
 
     const conditions = [
-      and(
+      or(
         eq(transactionsTable.fromUserId, userId),
         eq(transactionsTable.toUserId, userId),
       ),
@@ -824,7 +832,7 @@ export default class WalletService {
     });
 
     return {
-      transactions,
+      list: transactions,
       pagination: {
         total: totalCount.length,
         limit,
@@ -1375,7 +1383,6 @@ export default class WalletService {
   async performMaintenance() {
     // Clear old cache entries
     this.#walletCache.clear();
-
     // Could add more maintenance tasks like:
     // - Archive old transactions
     // - Clean up failed transactions older than X days

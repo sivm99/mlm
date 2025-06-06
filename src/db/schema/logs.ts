@@ -12,7 +12,7 @@ export const logsTable = pgTable("logs", {
     () => transactionsTable.id,
   ),
   message: text("message").notNull(),
-  metadata: text("metadata"), // JSON string
+  metadata: text("metadata"),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

@@ -27,8 +27,11 @@ export const userStatsTable = pgTable("user_stats", {
   rightCount: integer("right_count").notNull().default(0),
   leftActiveCount: integer("left_active_count").notNull().default(0),
   rightActiveCount: integer("right_active_count").notNull().default(0),
+
   leftBv: integer("left_bv").notNull().default(0),
   rightBv: integer("right_bv").notNull().default(0),
+  cfLeftBv: integer("cf_left_bv").notNull().default(0),
+  cfRightBv: integer("cf_right_bv").notNull().default(0),
 
   todayLeftCount: integer("today_left_count").notNull().default(0),
   todayRightCount: integer("today_right_count").notNull().default(0),
@@ -36,11 +39,9 @@ export const userStatsTable = pgTable("user_stats", {
   todayRightActiveCount: integer("today_right_active_count")
     .notNull()
     .default(0),
+
   todayLeftBv: integer("today_left_bv").notNull().default(0),
   todayRightBv: integer("today_right_bv").notNull().default(0),
-
-  cfLeftBv: integer("cf_left_bv").notNull().default(0),
-  cfRightBv: integer("cf_right_bv").notNull().default(0),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })

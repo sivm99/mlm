@@ -11,7 +11,7 @@ import { usersTable } from "./users";
 import { relations } from "drizzle-orm";
 
 export const rewardTypeValues = ["payout", "order", "na"] as const;
-export const rewadTypeEnum = pgEnum("reward_type", rewardTypeValues);
+export const rewadTypeEnum = pgEnum("sale_reward_type", rewardTypeValues);
 
 export const rewardStatusValues = [
   "active",
@@ -19,9 +19,12 @@ export const rewardStatusValues = [
   "closed",
   "paused",
 ] as const;
-export const rewardStatusEnum = pgEnum("reward_status", rewardStatusValues);
+export const rewardStatusEnum = pgEnum(
+  "sale_reward_status",
+  rewardStatusValues,
+);
 
-export const rewardsTable = pgTable("rewards", {
+export const saleRewardsTable = pgTable("sale_rewards", {
   id: serial("id").notNull().primaryKey(),
   type: rewadTypeEnum("type").notNull().default("na"),
   status: rewardStatusEnum("status").notNull().default("pending"),
@@ -35,10 +38,11 @@ export const rewardsTable = pgTable("rewards", {
     .default(new Date("2020-01-01")), // by default they wont have any next payment date
 
   orderId: integer("order_id").references(() => ordersTable.id),
+
   userId: integer("user_id")
     .notNull()
     .references(() => usersTable.id, {
-      onDelete: "cascade",
+      onDelete: "set null",
       onUpdate: "cascade",
     }),
 
@@ -51,16 +55,16 @@ export const rewardsTable = pgTable("rewards", {
     .$onUpdate(() => new Date()),
 });
 
-export const rewardsRelations = relations(rewardsTable, ({ one }) => ({
+export const rewardsRelations = relations(saleRewardsTable, ({ one }) => ({
   order: one(ordersTable, {
-    fields: [rewardsTable.orderId],
+    fields: [saleRewardsTable.orderId],
     references: [ordersTable.id],
   }),
   user: one(usersTable, {
-    fields: [rewardsTable.userId],
+    fields: [saleRewardsTable.userId],
     references: [usersTable.id],
   }),
 }));
 
-export type InsertReward = typeof rewardsTable.$inferInsert;
-export type SelectReward = typeof rewardsTable.$inferSelect;
+export type InsertReward = typeof saleRewardsTable.$inferInsert;
+export type SelectReward = typeof saleRewardsTable.$inferSelect;

@@ -1,10 +1,10 @@
 import db, { adminId } from "@/db";
 import {
-  rewardsTable,
   SelectReward,
   ordersTable,
   InsertOrder,
   userStatsTable,
+  saleRewardsTable,
 } from "@/db/schema";
 import {
   AddIncomeArgs,
@@ -30,27 +30,61 @@ export default class SalesRewardService {
    */
 
   #REWARD_CONFIG = {
-    WEEKLY_PAYOUT_AMOUNT: 3, // $3 per week
-    MAX_WEEKS: 104, // 104 weeks maximum
-    TOTAL_PAYOUT_AMOUNT: 312, // $3 * 104 weeks = $312
+    WEEKLY_PAYOUT_AMOUNT: 3,
+    MAX_WEEKS: 104,
+    TOTAL_PAYOUT_AMOUNT: 312,
     ORDER_IMMEDIATE_CLOSE: true,
     ADMIN_FEE: 0,
   } as const;
 
-  async insertPendingRewards(userId: UserId, rewardCount = 1) {
-    const rewards = Array.from({ length: rewardCount }, () => ({
-      userId,
-      type: "na" as const,
-      status: "pending" as const,
-    }));
-    await db.insert(rewardsTable).values(rewards).execute();
+  /**
+   * Inserts pending rewards in the salesReward table for a user based on their active direct counts.
+   * Determines eligibility and calculates the number of rewards to insert automatically.
+   */
+  async insertPendingRewards(userId: UserId) {
+    // Fetch user's active direct counts from userStatsTable
+    const [stats] = await db
+      .select({
+        left: userStatsTable.leftActiveDirectUsersCount,
+        right: userStatsTable.rightActiveDirectUsersCount,
+      })
+      .from(userStatsTable)
+      .where(eq(userStatsTable.id, userId))
+      .limit(1);
+
+    // If no stats or both sides are zero, no rewards are eligible
+    if (!stats || !stats.left || !stats.right) {
+      return;
+    }
+
+    // Calculate eligible rewards: floor((left + right) / 2)
+    const eligibleRewardCount = Math.floor((stats.left + stats.right) / 2);
+
+    // Fetch current number of rewards for the user
+    const currentRewardCount = await this.getRewardsCountByUserId(userId);
+
+    // Calculate how many new rewards to insert
+    const rewardsToInsert = eligibleRewardCount - currentRewardCount;
+
+    // Insert pending rewards if any
+    if (rewardsToInsert > 0) {
+      const rewards = Array.from({ length: rewardsToInsert }, () => ({
+        userId,
+        type: "na" as const,
+        status: "pending" as const,
+      }));
+      await db.insert(saleRewardsTable).values(rewards).execute();
+    }
   }
 
+  /**
+   *Get all the reward count entries by a specific user
+   */
   async getRewardsCountByUserId(userId: UserId) {
     const [rewardCount] = await db
       .select({ count: count() })
-      .from(rewardsTable)
-      .where(eq(rewardsTable.userId, userId));
+      .from(saleRewardsTable)
+      .where(eq(saleRewardsTable.userId, userId));
     return rewardCount.count;
   }
 
@@ -61,11 +95,10 @@ export default class SalesRewardService {
     rewardId: SelectReward["id"],
   ): Promise<ClaimPayoutResult> {
     try {
-      // Fetch reward record
       const [reward] = await db
         .select()
-        .from(rewardsTable)
-        .where(eq(rewardsTable.id, rewardId))
+        .from(saleRewardsTable)
+        .where(eq(saleRewardsTable.id, rewardId))
         .limit(1);
 
       if (!reward) {
@@ -88,13 +121,13 @@ export default class SalesRewardService {
       // Update reward to payout type and active status
       const nextPaymentDate = this.calculateNextPaymentDate();
       await db
-        .update(rewardsTable)
+        .update(saleRewardsTable)
         .set({
           type: "payout",
           status: "active",
           nextPaymentDate: nextPaymentDate,
         })
-        .where(eq(rewardsTable.id, rewardId));
+        .where(eq(saleRewardsTable.id, rewardId));
 
       await db.update(userStatsTable).set({
         redeemedCount: sql`${userStatsTable.redeemedCount} + 1`,
@@ -128,8 +161,8 @@ export default class SalesRewardService {
       // Fetch reward record
       const [reward] = await db
         .select()
-        .from(rewardsTable)
-        .where(eq(rewardsTable.id, rewardId))
+        .from(saleRewardsTable)
+        .where(eq(saleRewardsTable.id, rewardId))
         .limit(1);
 
       if (!reward) {
@@ -182,14 +215,14 @@ export default class SalesRewardService {
       const orderId = insertedOrder.id;
 
       await db
-        .update(rewardsTable)
+        .update(saleRewardsTable)
         .set({
           type: "order",
           status: "closed",
           compoletedAt: new Date(),
           orderId: orderId,
         })
-        .where(eq(rewardsTable.id, rewardId));
+        .where(eq(saleRewardsTable.id, rewardId));
 
       await orderService.placeSalesRewardOrder(orderId);
 
@@ -224,8 +257,8 @@ export default class SalesRewardService {
     try {
       const [reward] = await db
         .select()
-        .from(rewardsTable)
-        .where(eq(rewardsTable.id, rewardId))
+        .from(saleRewardsTable)
+        .where(eq(saleRewardsTable.id, rewardId))
         .limit(1);
 
       if (!reward) {
@@ -274,14 +307,14 @@ export default class SalesRewardService {
       const orderId = insertedOrder.id;
 
       await db
-        .update(rewardsTable)
+        .update(saleRewardsTable)
         .set({
           type: "order",
           status: "closed",
           compoletedAt: new Date(),
           orderId: orderId,
         })
-        .where(eq(rewardsTable.id, rewardId));
+        .where(eq(saleRewardsTable.id, rewardId));
 
       await orderService.placeSalesRewardOrder(orderId); // this will populatd the orderitems with 6 packat
 
@@ -313,19 +346,19 @@ export default class SalesRewardService {
       // Step 1: Get all eligible payout records
       const eligibleRewards = await db
         .select({
-          id: rewardsTable.id,
-          userId: rewardsTable.userId,
-          amountPaid: rewardsTable.amountPaid,
-          nextPaymentDate: rewardsTable.nextPaymentDate,
+          id: saleRewardsTable.id,
+          userId: saleRewardsTable.userId,
+          amountPaid: saleRewardsTable.amountPaid,
+          nextPaymentDate: saleRewardsTable.nextPaymentDate,
         })
-        .from(rewardsTable)
+        .from(saleRewardsTable)
         .where(
           and(
-            eq(rewardsTable.type, "payout"),
-            eq(rewardsTable.status, "active"),
-            lte(rewardsTable.nextPaymentDate, currentDate),
+            eq(saleRewardsTable.type, "payout"),
+            eq(saleRewardsTable.status, "active"),
+            lte(saleRewardsTable.nextPaymentDate, currentDate),
             lte(
-              rewardsTable.amountPaid,
+              saleRewardsTable.amountPaid,
               this.#REWARD_CONFIG.TOTAL_PAYOUT_AMOUNT -
                 this.#REWARD_CONFIG.WEEKLY_PAYOUT_AMOUNT,
             ),
@@ -357,14 +390,33 @@ export default class SalesRewardService {
       let failedCount = 0;
       const errors: string[] = [];
 
-      bulkResults.forEach((result, index) => {
+      // Step 4: Update each reward with new payment date and amount paid
+      for (let i = 0; i < bulkResults.length; i++) {
+        const result = bulkResults[i];
+        const reward = eligibleRewards[i];
+
         if (result.status === "fulfilled") {
           processedCount++;
+
+          // Calculate next payment date
+          const nextPaymentDate = this.calculateNextPaymentDate();
+
+          // Update reward record with new payment date and increased amount paid
+          await db
+            .update(saleRewardsTable)
+            .set({
+              amountPaid: sql`${saleRewardsTable.amountPaid} + ${this.#REWARD_CONFIG.WEEKLY_PAYOUT_AMOUNT}`,
+              nextPaymentDate: nextPaymentDate,
+            })
+            .where(eq(saleRewardsTable.id, reward.id));
         } else {
           failedCount++;
-          errors.push(`User ${incomeData[index].userId}: ${result.reason}`);
+          console.log(
+            `Failed payout for user ${reward.userId}: ${result.reason}`,
+          );
+          errors.push(`User ${reward.userId}: ${result.reason}`);
         }
-      });
+      }
 
       return {
         success: true,
@@ -394,9 +446,9 @@ export default class SalesRewardService {
     try {
       return await db
         .select()
-        .from(rewardsTable)
-        .where(eq(rewardsTable.userId, userId))
-        .orderBy(sql`${rewardsTable.createdAt} DESC`)
+        .from(saleRewardsTable)
+        .where(eq(saleRewardsTable.userId, userId))
+        .orderBy(sql`${saleRewardsTable.createdAt} DESC`)
         .limit(limit)
         .offset(offset);
     } catch (err) {
@@ -415,14 +467,14 @@ export default class SalesRewardService {
     try {
       return await db
         .select()
-        .from(rewardsTable)
+        .from(saleRewardsTable)
         .where(
           and(
-            eq(rewardsTable.type, "payout"),
-            eq(rewardsTable.status, "active"),
+            eq(saleRewardsTable.type, "payout"),
+            eq(saleRewardsTable.status, "active"),
           ),
         )
-        .orderBy(sql`${rewardsTable.nextPaymentDate} ASC`)
+        .orderBy(sql`${saleRewardsTable.nextPaymentDate} ASC`)
         .limit(limit)
         .offset(offset);
     } catch (err) {
@@ -440,10 +492,10 @@ export default class SalesRewardService {
   ): Promise<boolean> {
     try {
       const [updated] = await db
-        .update(rewardsTable)
+        .update(saleRewardsTable)
         .set({ status: newStatus })
-        .where(eq(rewardsTable.id, rewardId))
-        .returning({ id: rewardsTable.id });
+        .where(eq(saleRewardsTable.id, rewardId))
+        .returning({ id: saleRewardsTable.id });
 
       return !!updated;
     } catch (err) {
@@ -470,29 +522,30 @@ export default class SalesRewardService {
         // Group by type and status
         db
           .select({
-            type: rewardsTable.type,
-            status: rewardsTable.status,
+            type: saleRewardsTable.type,
+            status: saleRewardsTable.status,
             count: sql<number>`count(*)`.as("count"),
-            totalAmount: sql<number>`sum(${rewardsTable.amountPaid})`.as(
+            totalAmount: sql<number>`sum(${saleRewardsTable.amountPaid})`.as(
               "totalAmount",
             ),
           })
-          .from(rewardsTable)
-          .groupBy(rewardsTable.type, rewardsTable.status),
+          .from(saleRewardsTable)
+          .groupBy(saleRewardsTable.type, saleRewardsTable.status),
 
         // Overall statistics
         db
           .select({
             totalRewards: sql<number>`count(*)`.as("totalRewards"),
-            totalPaidAmount: sql<number>`sum(${rewardsTable.amountPaid})`.as(
-              "totalPaidAmount",
-            ),
+            totalPaidAmount:
+              sql<number>`sum(${saleRewardsTable.amountPaid})`.as(
+                "totalPaidAmount",
+              ),
             activePayouts:
-              sql<number>`count(*) filter (where ${rewardsTable.type} = 'payout' and ${rewardsTable.status} = 'active')`.as(
+              sql<number>`count(*) filter (where ${saleRewardsTable.type} = 'payout' and ${saleRewardsTable.status} = 'active')`.as(
                 "activePayouts",
               ),
           })
-          .from(rewardsTable),
+          .from(saleRewardsTable),
       ]);
 
       return {
@@ -519,13 +572,13 @@ export default class SalesRewardService {
     try {
       return await db
         .select()
-        .from(rewardsTable)
+        .from(saleRewardsTable)
         .where(
           and(
-            eq(rewardsTable.type, "payout"),
-            eq(rewardsTable.status, "active"),
+            eq(saleRewardsTable.type, "payout"),
+            eq(saleRewardsTable.status, "active"),
             eq(
-              rewardsTable.amountPaid,
+              saleRewardsTable.amountPaid,
               this.#REWARD_CONFIG.TOTAL_PAYOUT_AMOUNT,
             ),
           ),
@@ -552,13 +605,13 @@ export default class SalesRewardService {
       const rewardIds = completableRewards.map((r) => r.id);
 
       const updatedRewards = await db
-        .update(rewardsTable)
+        .update(saleRewardsTable)
         .set({
           status: "closed",
           compoletedAt: new Date(),
         })
-        .where(inArray(rewardsTable.id, rewardIds))
-        .returning({ id: rewardsTable.id });
+        .where(inArray(saleRewardsTable.id, rewardIds))
+        .returning({ id: saleRewardsTable.id });
 
       return {
         completed: updatedRewards.length,

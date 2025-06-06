@@ -8,8 +8,8 @@ CREATE TYPE "public"."transaction_status" AS ENUM('pending', 'completed', 'faile
 CREATE TYPE "public"."transaction_type" AS ENUM('income_payout', 'income_to_alpoints', 'alpoints_transfer', 'id_activation', 'weekly_payout_earned', 'matching_income_earned', 'fund_addition', 'admin_adjustment', 'increase_wallet_limit', 'order_partial_payment');--> statement-breakpoint
 CREATE TYPE "public"."wallet_type" AS ENUM('alpoints', 'income_wallet', 'bv');--> statement-breakpoint
 CREATE TYPE "public"."userPosition" AS ENUM('LEFT', 'RIGHT');--> statement-breakpoint
-CREATE TYPE "public"."reward_type" AS ENUM('payout', 'order', 'na');--> statement-breakpoint
-CREATE TYPE "public"."reward_status" AS ENUM('active', 'pending', 'closed', 'paused');--> statement-breakpoint
+CREATE TYPE "public"."sale_reward_type" AS ENUM('payout', 'order', 'na');--> statement-breakpoint
+CREATE TYPE "public"."sale_reward_status" AS ENUM('active', 'pending', 'closed', 'paused');--> statement-breakpoint
 CREATE TABLE "addresses" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
@@ -115,7 +115,8 @@ CREATE TABLE "payments" (
 CREATE TABLE "payouts" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
-	"reward_id" integer,
+	"sale_reward_id" integer,
+	"matching_income_id" integer,
 	"amount" real NOT NULL,
 	"status" "payoutStatus" DEFAULT 'PENDING',
 	"payout_date" timestamp NOT NULL,
@@ -203,10 +204,10 @@ CREATE TABLE "user_trees" (
 	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "rewards" (
+CREATE TABLE "sale_rewards" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"type" "reward_type" DEFAULT 'na' NOT NULL,
-	"status" "reward_status" DEFAULT 'pending' NOT NULL,
+	"type" "sale_reward_type" DEFAULT 'na' NOT NULL,
+	"status" "sale_reward_status" DEFAULT 'pending' NOT NULL,
 	"amount_paid" real DEFAULT 0 NOT NULL,
 	"next_payment_date" timestamp (3) DEFAULT '2020-01-01T00:00:00.000Z' NOT NULL,
 	"order_id" integer,
@@ -229,16 +230,24 @@ CREATE TABLE "user_stats" (
 	"right_active_count" integer DEFAULT 0 NOT NULL,
 	"left_bv" integer DEFAULT 0 NOT NULL,
 	"right_bv" integer DEFAULT 0 NOT NULL,
+	"cf_left_bv" integer DEFAULT 0 NOT NULL,
+	"cf_right_bv" integer DEFAULT 0 NOT NULL,
 	"today_left_count" integer DEFAULT 0 NOT NULL,
 	"today_right_count" integer DEFAULT 0 NOT NULL,
 	"today_left_active_count" integer DEFAULT 0 NOT NULL,
 	"today_right_active_count" integer DEFAULT 0 NOT NULL,
 	"today_left_bv" integer DEFAULT 0 NOT NULL,
 	"today_right_bv" integer DEFAULT 0 NOT NULL,
-	"cf_left_bv" integer DEFAULT 0 NOT NULL,
-	"cf_right_bv" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp (3) DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "matching_income" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"amount_paid" real NOT NULL,
+	"matching_bv" integer NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "addresses" ADD CONSTRAINT "addresses_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
@@ -252,8 +261,9 @@ ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_users_id_fk" FOREIGN KEY ("u
 ALTER TABLE "orders" ADD CONSTRAINT "orders_delivery_address_addresses_id_fk" FOREIGN KEY ("delivery_address") REFERENCES "public"."addresses"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "payments" ADD CONSTRAINT "payments_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "payments" ADD CONSTRAINT "payments_package_id_packages_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."packages"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "payouts" ADD CONSTRAINT "payouts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "payouts" ADD CONSTRAINT "payouts_reward_id_rewards_id_fk" FOREIGN KEY ("reward_id") REFERENCES "public"."rewards"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "payouts" ADD CONSTRAINT "payouts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "payouts" ADD CONSTRAINT "payouts_sale_reward_id_sale_rewards_id_fk" FOREIGN KEY ("sale_reward_id") REFERENCES "public"."sale_rewards"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "payouts" ADD CONSTRAINT "payouts_matching_income_id_matching_income_id_fk" FOREIGN KEY ("matching_income_id") REFERENCES "public"."matching_income"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "referrals" ADD CONSTRAINT "referrals_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "referrals" ADD CONSTRAINT "referrals_sponsor_users_id_fk" FOREIGN KEY ("sponsor") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "otp" ADD CONSTRAINT "otp_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
@@ -266,9 +276,10 @@ ALTER TABLE "user_trees" ADD CONSTRAINT "user_trees_left_user_users_id_fk" FOREI
 ALTER TABLE "user_trees" ADD CONSTRAINT "user_trees_right_user_users_id_fk" FOREIGN KEY ("right_user") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "user_trees" ADD CONSTRAINT "user_trees_parent_user_users_id_fk" FOREIGN KEY ("parent_user") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "user_trees" ADD CONSTRAINT "user_trees_sponsor_users_id_fk" FOREIGN KEY ("sponsor") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "rewards" ADD CONSTRAINT "rewards_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "rewards" ADD CONSTRAINT "rewards_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "sale_rewards" ADD CONSTRAINT "sale_rewards_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sale_rewards" ADD CONSTRAINT "sale_rewards_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "user_stats" ADD CONSTRAINT "user_stats_id_users_id_fk" FOREIGN KEY ("id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "matching_income" ADD CONSTRAINT "matching_income_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 CREATE INDEX "idx_config_key" ON "config" USING btree ("key");--> statement-breakpoint
 CREATE INDEX "idx_users_email" ON "users" USING btree ("email");--> statement-breakpoint
 CREATE INDEX "idx_orderItems_orderId" ON "order_items" USING btree ("order_id");--> statement-breakpoint

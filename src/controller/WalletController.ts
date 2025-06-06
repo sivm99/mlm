@@ -277,11 +277,9 @@ export class AdminWalletController {
    * Get all transactions (admin only)
    */
   static async getAllTransactions(c: MyContext) {
-    const a = c.get("transactionListing");
+    const listingParams = c.get("transactionListing");
     try {
-      const data = await transactionService.getTransactions(undefined, {
-        cursorId: Number(a.cursor),
-      });
+      const data = await transactionService.getTransactions(listingParams);
       return c.json({
         success: true,
         data,

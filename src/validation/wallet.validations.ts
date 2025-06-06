@@ -1,16 +1,16 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 import { zValidator } from "@hono/zod-validator";
 import { MyContext } from "@/types";
 import {
   transactionStatus,
-  trasactionType,
+  transactionType,
   walletOperation,
+  walletType,
 } from "@/db/schema";
 import {
   amountField,
+  baseListing,
   idField,
-  limitField,
-  offsetField,
   otpField,
   validationError,
 } from "./_common";
@@ -113,12 +113,23 @@ export const adminAddAlpValidate = zValidator(
   },
 );
 
-const ListingSchema = z.object({
-  limit: limitField(100).optional(),
-  offset: offsetField.optional(),
-  type: z.enum(trasactionType).default("alpoints_transfer"),
-  status: z.enum(transactionStatus).default("completed"),
-  cursor: z.string(), // cursor for the id
+const walletTypeEnum = z.enum(walletType);
+const transactionStatusEnum = z.enum(transactionStatus);
+const transactionTypeEnum = z.enum(transactionType);
+const ListingSchema = baseListing.extend({
+  userId: idField.optional(),
+  toUserId: idField.optional(),
+  fromUserId: idField.optional(),
+
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+  minAmount: z.number().int().optional(),
+  maxAmount: z.number().int().optional(),
+
+  fromWalletType: walletTypeEnum.optional(),
+  toWalletType: walletTypeEnum.optional(),
+  status: transactionStatusEnum.optional(),
+  type: transactionTypeEnum.optional(),
 });
 
 export type TransactionListing = z.infer<typeof ListingSchema>;

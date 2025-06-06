@@ -10,7 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
-export const trasactionType = [
+export const transactionType = [
   "income_payout",
   "income_to_alpoints",
   "alpoints_transfer",
@@ -22,7 +22,7 @@ export const trasactionType = [
   "increase_wallet_limit",
   "order_partial_payment", // the partial payment for the order itself
 ] as const;
-export const transactionTypeEnum = pgEnum("transaction_type", trasactionType);
+export const transactionTypeEnum = pgEnum("transaction_type", transactionType);
 
 export const walletType = ["alpoints", "income_wallet", "bv"] as const;
 export const walletTypeEnum = pgEnum("wallet_type", walletType);

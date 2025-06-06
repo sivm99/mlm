@@ -14,5 +14,6 @@ export * from "./transactions";
 export * from "./trees";
 export * from "./addresses";
 export * from "./arHistory";
-export * from "./rewards";
+export * from "./saleRewards";
 export * from "./userStats";
+export * from "./matchingIncomes";

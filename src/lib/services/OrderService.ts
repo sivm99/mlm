@@ -8,8 +8,8 @@ export default class OrderService {
     price: orderItemsTable.price,
     quantity: orderItemsTable.quantity,
   };
-  async placeOrder(order: InsertOrder) {
-    return await db.insert(ordersTable).values(order).returning();
+  async placeOrder(orders: InsertOrder[]) {
+    return await db.insert(ordersTable).values(orders).returning();
   }
   async placeActiveOrder(order: InsertOrder) {
     // we will get the orderId and then make a orderItem entry

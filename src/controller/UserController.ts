@@ -165,4 +165,23 @@ export default class UserController {
       );
     }
   }
+  static async bulkActivateIds(c: MyContext) {
+    const self = c.get("user");
+    const ids = c.get("ids");
+
+    const result = await userService.activateUserIds(self.id, ids);
+    const orders = ids.map((id) => ({
+      userId: id,
+      totalAmount: 68,
+    }));
+    const placedOrders = await orderService.placeOrder(orders);
+    return c.json({
+      success: true,
+      message: "Ids were activated",
+      data: {
+        result,
+        placedOrders,
+      },
+    });
+  }
 }

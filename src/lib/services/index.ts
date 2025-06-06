@@ -10,7 +10,6 @@ export * from "./WalletService";
 export * from "./OrderService";
 export * from "./AddressService";
 export * from "./ArHistoryService";
-export * from "./SalesRewardService";
-export * from "./CronJobService";
+export * from "./SaleRewardsService";
 export * from "./MatchingIncomeService";
 export * from "./PayoutService";

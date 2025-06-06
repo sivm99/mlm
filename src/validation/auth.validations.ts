@@ -1,6 +1,6 @@
 import { MyContext } from "@/types";
 import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { otpField, validationError, idField, emailField } from "./_common";
 
 export const RegisterSchema = z
@@ -17,9 +17,7 @@ export const RegisterSchema = z
     sponsor: idField,
     side: z
       .enum(["LEFT", "RIGHT"], {
-        errorMap: () => ({
-          message: "Position must be either LEFT or RIGHT",
-        }),
+        error: () => "Position must be either LEFT or RIGHT",
       })
       .default("LEFT"),
   })

@@ -74,7 +74,7 @@ export const usersRelations = relations(usersTable, ({ one, many }) => ({
   addresses: many(addressesTable, {
     relationName: "userAddresses",
   }),
-  addedByAddress: many(addressesTable, { relationName: "addedByAddresses" }),
+
   arHistories: many(arHistoryTable, {
     relationName: "userArHistoryRelation",
   }),

@@ -1,3 +1,5 @@
+import { TriggerJobSchema } from "@/validation";
+
 export type JobOptions = {
   delay: number;
   priority: number;
@@ -14,3 +16,5 @@ export type Job<T> = {
   data: T;
   options: JobOptions;
 };
+
+export type CronJobName = TriggerJobSchema["job"];

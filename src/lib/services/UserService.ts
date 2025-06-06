@@ -34,7 +34,7 @@ import { walletService } from "./WalletService";
 import { arHistoryService } from "./ArHistoryService";
 import { RegisterUser } from "@/validation";
 import { sql } from "drizzle-orm";
-import { salesRewardService } from "./SalesRewardService";
+import { salesRewardService } from "./SaleRewardsService";
 
 const jwtSecret = Bun.env.JWT_SECRET!;
 
@@ -241,24 +241,13 @@ export default class UserService {
       updates.rightActiveDirectUsersCount = sql`${userStatsTable.rightActiveDirectUsersCount} + ${activeDirectCount}`;
     }
 
-    const [stats] = await db
+    await db
       .update(userStatsTable)
       .set(updates)
-      .where(eq(userStatsTable.id, id))
-      .returning({
-        left: userStatsTable.leftActiveDirectUsersCount,
-        right: userStatsTable.rightActiveDirectUsersCount,
-      });
+      .where(eq(userStatsTable.id, id));
 
-    // Only proceed if we added active directs and both sides are non-zero
-    if (activeDirectCount && stats.left && stats.right) {
-      const eligibleRewardCount = Math.floor((stats.left + stats.right) / 2);
-      const currentRewardCount =
-        await salesRewardService.getRewardsCountByUserId(id);
-      const rewardsToInsert = eligibleRewardCount - currentRewardCount;
-      if (rewardsToInsert > 0) {
-        await salesRewardService.insertPendingRewards(id, rewardsToInsert);
-      }
+    if (activeDirectCount) {
+      await salesRewardService.insertPendingRewards(id);
     }
   }
 

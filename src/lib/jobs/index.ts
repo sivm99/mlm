@@ -1,71 +1,46 @@
-import { RedisQueue } from "./redis-adaptor";
-import { Worker } from "./worker";
+import { cronJobName, rewardCronService } from "./CronJobService";
 
-const redisUrl = Bun.env.REDIS_URL || "redis://localhost:6379";
-const queue = new RedisQueue<{ email: string; body: string }>(
-  redisUrl,
-  "test-queue",
-  {
-    retryAttempts: 3,
-    retryDelay: 1000,
-  },
-);
+// CLI for triggering specific cron jobs
+export async function triggerCronJobCLI() {
+  try {
+    rewardCronService.start();
+    while (true) {
+      // Loop to allow multiple selections or exit
+      console.log("\nSelect a cron job to trigger (or type 'exit' to quit):");
+      cronJobName.forEach((job, index) => {
+        console.log(`${index + 1}. ${job}`);
+      });
+      console.log("0. Exit");
 
-queue.addJob({
-  data: { email: "test@test.com", body: "Hi" },
-  name: "1",
-  options: {
-    priority: 1,
-  },
-});
+      // Using console as an AsyncIterable for stdin in Bun
+      for await (const line of console) {
+        const input = line.trim().toLowerCase();
 
-queue.addJob({
-  data: { email: "test@test.com", body: "Bye" },
-  name: "2",
-  options: {
-    priority: 3,
-    delay: 1000,
-  },
-});
+        if (input === "exit" || input === "0") {
+          console.log("Exiting CLI...");
+          rewardCronService.stop();
+          process.exit(0);
+        }
 
-queue.addJob({
-  data: { email: "test2@test.com", body: "Hello World" },
-  name: "3",
-  options: {
-    priority: 2,
-  },
-});
+        const choice = parseInt(input);
 
-queue.addJob({
-  data: { email: "test2@test.com", body: "Error" },
-  name: "4",
-});
+        if (isNaN(choice) || choice < 1 || choice > cronJobName.length) {
+          console.log(
+            `Invalid choice. Please enter a number between 1 and ${cronJobName.length} or 'exit':`,
+          );
+          continue;
+        }
 
-setTimeout(() => {
-  queue.addJob({
-    data: { email: "test@test.com", body: "High Priority" },
-    name: "5",
-    options: {
-      priority: 5,
-    },
-  });
-}, 2000);
-
-const worker = new Worker(
-  queue,
-  async (job) => {
-    console.log(`Start: W1 ${job.name}`);
-    await sendEmail(job.data.email, job.data.body);
-  },
-  { concurrency: 3 },
-);
-
-worker.start();
-
-function sendEmail(email: string, body: string) {
-  if (body === "Error") {
-    console.log(`Error sending email to ${email}`);
-    throw new Error("Simulated error");
+        const selectedJob = cronJobName[choice - 1];
+        console.log(`Triggering job: ${selectedJob}`);
+        rewardCronService.triggerJob(selectedJob);
+        break; // Break from input loop but continue main while loop
+      }
+    }
+  } catch (error) {
+    console.error("Error running cron job:", error);
+    process.exit(1);
   }
-  return new Promise((resolve) => setTimeout(resolve, 1000));
 }
+
+triggerCronJobCLI();

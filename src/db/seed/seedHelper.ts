@@ -12,7 +12,7 @@ import {
 import { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import { adminId } from "..";
 
-const generateId = () => Math.floor(1000000 + Math.random() * 9000000);
+const generateId = () => Math.floor(1_000_000 + Math.random() * 9_000_000);
 const adminEmail = Bun.env.ADMIN_EMAIL || "admin@example.com";
 
 // Tree structure definition - much cleaner!
@@ -248,6 +248,7 @@ async function extractUsers(node: TreeNode): Promise<InsertUser[]> {
     const user: InsertUser = {
       id: currentNode.id,
       name: currentNode.name,
+      image: currentNode.image,
       email: currentNode.email,
       mobile: currentNode.mobile,
       country: currentNode.country,

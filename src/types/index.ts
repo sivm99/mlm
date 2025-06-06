@@ -5,6 +5,7 @@ export * from "./wallet";
 export * from "./queue";
 export * from "./tree";
 export * from "./arHistory";
-export * from "./sales.reward";
+export * from "./sale.rewards";
 export * from "./orders";
 export * from "./jobs";
+export * from "./income";

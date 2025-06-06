@@ -1,60 +1,35 @@
 import db from "@/db";
-import { eq, and, desc, asc, SQL, or, gte, lte } from "drizzle-orm";
-import { withCursorPagination } from "drizzle-pagination";
-import {
-  transactionsTable,
-  SelectTransaction,
-  walletTypeEnum,
-  transactionTypeEnum,
-  transactionStatusEnum,
-} from "@/db/schema";
+import { eq, and, desc, asc, SQL, or, gte, lte, sql } from "drizzle-orm";
+import { transactionsTable, SelectTransaction } from "@/db/schema";
 import { usersTable } from "@/db/schema";
 import { inArray } from "drizzle-orm";
-import { User } from "@/types";
-
-export type TransactionFilterParams = {
-  userId?: User["id"];
-  fromUserId?: User["id"];
-  toUserId?: User["id"];
-  type?: (typeof transactionTypeEnum.enumValues)[number];
-  status?: (typeof transactionStatusEnum.enumValues)[number];
-  fromWalletType?: (typeof walletTypeEnum.enumValues)[number];
-  toWalletType?: (typeof walletTypeEnum.enumValues)[number];
-  startDate?: Date;
-  endDate?: Date;
-  minAmount?: number;
-  maxAmount?: number;
-};
-
-export type TransactionPaginationParams = {
-  limit?: number;
-  cursorId?: number;
-  sortDirection?: "asc" | "desc";
-};
+import { UserId } from "@/types";
+import { TransactionListing } from "@/validation";
 
 export default class TransactionService {
   /**
-   * Get transactions with cursor-based pagination and filtering
+   * Get transactions with page-limit based pagination and filtering
    */
-  async getTransactions(
-    filters: TransactionFilterParams = {},
-    pagination: TransactionPaginationParams = {},
-  ): Promise<{ data: SelectTransaction[]; nextCursor: number | null }> {
-    const { limit = 50, cursorId, sortDirection = "desc" } = pagination;
-    const {
-      userId,
-      fromUserId,
-      toUserId,
-      type,
-      status,
-      fromWalletType,
-      toWalletType,
-      startDate,
-      endDate,
-      minAmount,
-      maxAmount,
-    } = filters;
-
+  async getTransactions({
+    limit = 50,
+    page = 1,
+    sortDirection = "desc",
+    userId,
+    fromUserId,
+    toUserId,
+    type,
+    status,
+    fromWalletType,
+    toWalletType,
+    startDate,
+    endDate,
+    minAmount,
+    maxAmount,
+  }: TransactionListing): Promise<{
+    data: SelectTransaction[];
+    total: number;
+    hasMore: boolean;
+  }> {
     // Build where conditions
     const whereConditions: SQL[] = [];
 
@@ -114,41 +89,40 @@ export default class TransactionService {
 
     const sortOrder = sortDirection === "desc" ? desc : asc;
 
-    const data = await db.query.transactionsTable.findMany(
-      withCursorPagination({
-        where: whereClause,
-        limit: limit,
-        // @ts-expect-error: The Types couldn't match
-        cursors: cursorId
-          ? [[transactionsTable.id, sortDirection, cursorId]]
-          : undefined,
-        orderBy: [sortOrder(transactionsTable.id)],
-      }),
-    );
+    // Calculate offset from page and limit
+    const offset = (page - 1) * limit;
 
-    // Calculate next cursor based on the last item
-    const nextCursor = data.length === limit ? data[data.length - 1]?.id : null;
+    // Get total count for pagination info
+    const countResult = await db
+      .select({ count: sql`count(*)` })
+      .from(transactionsTable)
+      .where(whereClause || sql`1=1`);
+
+    const total = Number(countResult[0]?.count || 0);
+
+    // Get data with limit and offset
+    const data = await db.query.transactionsTable.findMany({
+      where: whereClause,
+      limit: limit,
+      offset: offset,
+      orderBy: [sortOrder(transactionsTable.id)],
+    });
 
     return {
       data,
-      nextCursor,
+      total,
+      hasMore: offset + data.length < total,
     };
   }
 
   /**
    * Get admin transaction list with relations included
    */
-  async getAdminTransactionsList(
-    filters: TransactionFilterParams = {},
-    pagination: TransactionPaginationParams = {},
-  ) {
-    const { data, nextCursor } = await this.getTransactions(
-      filters,
-      pagination,
-    );
+  async getAdminTransactionsList(params: TransactionListing) {
+    const { data, total, hasMore } = await this.getTransactions(params);
 
     // Get user details for related users
-    const userIds = new Set<User["id"]>();
+    const userIds = new Set<UserId>();
     data.forEach((transaction) => {
       if (transaction.fromUserId) userIds.add(transaction.fromUserId);
       if (transaction.toUserId) userIds.add(transaction.toUserId);
@@ -182,7 +156,8 @@ export default class TransactionService {
 
     return {
       data: enrichedData,
-      nextCursor,
+      total,
+      hasMore,
     };
   }
 
@@ -190,10 +165,10 @@ export default class TransactionService {
    * Get transactions for a specific user
    */
   async getUserTransactions(
-    userId: User["id"],
-    pagination: TransactionPaginationParams = {},
+    userId: UserId,
+    params: Omit<TransactionListing, "userId">,
   ) {
-    return this.getTransactions({ userId }, pagination);
+    return this.getTransactions({ ...params, userId });
   }
 }
 
