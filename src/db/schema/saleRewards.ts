@@ -46,7 +46,8 @@ export const saleRewardsTable = pgTable("sale_rewards", {
       onUpdate: "cascade",
     }),
 
-  compoletedAt: timestamp("completed_at", { mode: "date", precision: 3 }),
+  claimedAt: timestamp("claimed_at", { mode: "date", precision: 3 }),
+  completedAt: timestamp("completed_at", { mode: "date", precision: 3 }),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })

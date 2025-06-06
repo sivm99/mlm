@@ -233,10 +233,10 @@ export default class UserService {
   }: SponsorIncrementArgs) {
     const updates: Record<string, unknown> = {};
 
-    if (side === "LEFT") {
+    if (side === "left") {
       updates.leftDirectUsersCount = sql`${userStatsTable.leftDirectUsersCount} + ${directCount}`;
       updates.leftActiveDirectUsersCount = sql`${userStatsTable.leftActiveDirectUsersCount} + ${activeDirectCount}`;
-    } else if (side === "RIGHT") {
+    } else if (side === "right") {
       updates.rightDirectUsersCount = sql`${userStatsTable.rightDirectUsersCount} + ${directCount}`;
       updates.rightActiveDirectUsersCount = sql`${userStatsTable.rightActiveDirectUsersCount} + ${activeDirectCount}`;
     }

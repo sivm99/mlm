@@ -9,8 +9,6 @@ export type LogData = {
   transactionId?: number;
   message: string;
   metadata?: Record<string, JSON>;
-  ipAddress?: string;
-  userAgent?: string;
 };
 export class LoggingService {
   static async log(params: LogData) {
@@ -21,8 +19,6 @@ export class LoggingService {
       transactionId: params.transactionId,
       message: params.message,
       metadata: params.metadata ? JSON.stringify(params.metadata) : null,
-      ipAddress: params.ipAddress,
-      userAgent: params.userAgent,
     });
   }
 }

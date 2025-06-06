@@ -1,13 +1,14 @@
 CREATE TYPE "public"."ar_enum" AS ENUM('activate', 'reactivate');--> statement-breakpoint
-CREATE TYPE "public"."userRole" AS ENUM('ADMIN', 'SUB_ADMIN', 'USER');--> statement-breakpoint
+CREATE TYPE "public"."user_role" AS ENUM('admin', 'sub_admin', 'user');--> statement-breakpoint
 CREATE TYPE "public"."delivery_method" AS ENUM('self_collect', 'shipping');--> statement-breakpoint
-CREATE TYPE "public"."order_status" AS ENUM('PENDING', 'PROCESSING', 'DELIVERED', 'CANCELLED');--> statement-breakpoint
-CREATE TYPE "public"."payoutStatus" AS ENUM('PENDING', 'PROCESSED', 'FAILED');--> statement-breakpoint
+CREATE TYPE "public"."order_status" AS ENUM('pending', 'processing', 'delivered', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."payout_status" AS ENUM('pending', 'processed', 'failed');--> statement-breakpoint
+CREATE TYPE "public"."payout_type" AS ENUM('sale_reward', 'matching_income', 'income_withdrawl');--> statement-breakpoint
 CREATE TYPE "public"."otp_type" AS ENUM('email_verify', 'forget_password', 'profile_edit', 'fund_transfer', 'usdt_withdrawal', 'convert_income_wallet', 'add_wallet_address', 'ticket_raise_for_wallet');--> statement-breakpoint
 CREATE TYPE "public"."transaction_status" AS ENUM('pending', 'completed', 'failed', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."transaction_type" AS ENUM('income_payout', 'income_to_alpoints', 'alpoints_transfer', 'id_activation', 'weekly_payout_earned', 'matching_income_earned', 'fund_addition', 'admin_adjustment', 'increase_wallet_limit', 'order_partial_payment');--> statement-breakpoint
 CREATE TYPE "public"."wallet_type" AS ENUM('alpoints', 'income_wallet', 'bv');--> statement-breakpoint
-CREATE TYPE "public"."userPosition" AS ENUM('LEFT', 'RIGHT');--> statement-breakpoint
+CREATE TYPE "public"."userPosition" AS ENUM('left', 'right');--> statement-breakpoint
 CREATE TYPE "public"."sale_reward_type" AS ENUM('payout', 'order', 'na');--> statement-breakpoint
 CREATE TYPE "public"."sale_reward_status" AS ENUM('active', 'pending', 'closed', 'paused');--> statement-breakpoint
 CREATE TABLE "addresses" (
@@ -58,7 +59,7 @@ CREATE TABLE "users" (
 	"is_blocked" boolean DEFAULT false NOT NULL,
 	"is_complementory_id" boolean DEFAULT false NOT NULL,
 	"password_hash" text NOT NULL,
-	"role" "userRole" DEFAULT 'USER' NOT NULL,
+	"role" "user_role" DEFAULT 'user' NOT NULL,
 	"permissions" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp (3) DEFAULT now() NOT NULL
@@ -85,7 +86,7 @@ CREATE TABLE "order_items" (
 CREATE TABLE "orders" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
-	"status" "order_status" DEFAULT 'PENDING',
+	"status" "order_status" DEFAULT 'pending',
 	"delivery_address" integer,
 	"delivery_method" "delivery_method" DEFAULT 'self_collect',
 	"total_amount" real NOT NULL,
@@ -93,32 +94,14 @@ CREATE TABLE "orders" (
 	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "packages" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"price" real NOT NULL,
-	"description" text,
-	"created_at" timestamp DEFAULT now(),
-	"updated_at" timestamp (3) DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "payments" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" integer NOT NULL,
-	"amount" real NOT NULL,
-	"package_id" integer,
-	"status" text NOT NULL,
-	"transaction_id" text,
-	"created_at" timestamp DEFAULT now()
-);
---> statement-breakpoint
 CREATE TABLE "payouts" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
+	"type" "payout_type" NOT NULL,
 	"sale_reward_id" integer,
 	"matching_income_id" integer,
 	"amount" real NOT NULL,
-	"status" "payoutStatus" DEFAULT 'PENDING',
+	"status" "payout_status" DEFAULT 'pending',
 	"payout_date" timestamp NOT NULL,
 	"admin_fee" real NOT NULL,
 	"created_at" timestamp DEFAULT now()
@@ -131,19 +114,6 @@ CREATE TABLE "products" (
 	"price" real NOT NULL,
 	"stock" integer DEFAULT 0,
 	"created_at" timestamp DEFAULT now(),
-	"updated_at" timestamp (3) DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "referrals" (
-	"slug" text PRIMARY KEY NOT NULL,
-	"user_id" integer NOT NULL,
-	"position" "userPosition" NOT NULL,
-	"sponsor" integer NOT NULL,
-	"impressions" integer DEFAULT 0 NOT NULL,
-	"registered" integer DEFAULT 0 NOT NULL,
-	"activated" integer DEFAULT 0 NOT NULL,
-	"is_deleted" boolean DEFAULT false NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -166,9 +136,7 @@ CREATE TABLE "logs" (
 	"user_id" integer,
 	"transaction_id" integer,
 	"message" text NOT NULL,
-	"metadata" text,
-	"ip_address" text,
-	"user_agent" text,
+	"metadata" json,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -199,7 +167,7 @@ CREATE TABLE "user_trees" (
 	"right_user" integer,
 	"parent_user" integer NOT NULL,
 	"sponsor" integer NOT NULL,
-	"position" "userPosition" DEFAULT 'LEFT' NOT NULL,
+	"position" "userPosition" DEFAULT 'left' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
@@ -212,6 +180,7 @@ CREATE TABLE "sale_rewards" (
 	"next_payment_date" timestamp (3) DEFAULT '2020-01-01T00:00:00.000Z' NOT NULL,
 	"order_id" integer,
 	"user_id" integer NOT NULL,
+	"claimed_at" timestamp (3),
 	"completed_at" timestamp (3),
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp (3) DEFAULT now() NOT NULL
@@ -259,13 +228,9 @@ ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_orders_id_fk" FOR
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "orders" ADD CONSTRAINT "orders_delivery_address_addresses_id_fk" FOREIGN KEY ("delivery_address") REFERENCES "public"."addresses"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "payments" ADD CONSTRAINT "payments_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "payments" ADD CONSTRAINT "payments_package_id_packages_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."packages"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "payouts" ADD CONSTRAINT "payouts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "payouts" ADD CONSTRAINT "payouts_sale_reward_id_sale_rewards_id_fk" FOREIGN KEY ("sale_reward_id") REFERENCES "public"."sale_rewards"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "payouts" ADD CONSTRAINT "payouts_matching_income_id_matching_income_id_fk" FOREIGN KEY ("matching_income_id") REFERENCES "public"."matching_income"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "referrals" ADD CONSTRAINT "referrals_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "referrals" ADD CONSTRAINT "referrals_sponsor_users_id_fk" FOREIGN KEY ("sponsor") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "otp" ADD CONSTRAINT "otp_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "logs" ADD CONSTRAINT "logs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "logs" ADD CONSTRAINT "logs_transaction_id_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -284,9 +249,6 @@ CREATE INDEX "idx_config_key" ON "config" USING btree ("key");--> statement-brea
 CREATE INDEX "idx_users_email" ON "users" USING btree ("email");--> statement-breakpoint
 CREATE INDEX "idx_orderItems_orderId" ON "order_items" USING btree ("order_id");--> statement-breakpoint
 CREATE INDEX "idx_orderItems_productId" ON "order_items" USING btree ("product_id");--> statement-breakpoint
-CREATE INDEX "idx_payments_userId" ON "payments" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX "idx_payments_packageId" ON "payments" USING btree ("package_id");--> statement-breakpoint
-CREATE INDEX "idx_payments_createdAt" ON "payments" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "idx_payouts_userId" ON "payouts" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_payouts_status" ON "payouts" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "idx_payouts_createdAt" ON "payouts" USING btree ("created_at");--> statement-breakpoint

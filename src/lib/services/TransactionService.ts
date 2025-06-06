@@ -3,7 +3,7 @@ import { eq, and, desc, asc, SQL, or, gte, lte, sql } from "drizzle-orm";
 import { transactionsTable, SelectTransaction } from "@/db/schema";
 import { usersTable } from "@/db/schema";
 import { inArray } from "drizzle-orm";
-import { UserId } from "@/types";
+import { Listing, UserId } from "@/types";
 import { TransactionListing } from "@/validation";
 
 export default class TransactionService {
@@ -12,7 +12,7 @@ export default class TransactionService {
    */
   async getTransactions({
     limit = 50,
-    page = 1,
+    offset = 0,
     sortDirection = "desc",
     userId,
     fromUserId,
@@ -25,11 +25,7 @@ export default class TransactionService {
     endDate,
     minAmount,
     maxAmount,
-  }: TransactionListing): Promise<{
-    data: SelectTransaction[];
-    total: number;
-    hasMore: boolean;
-  }> {
+  }: TransactionListing): Promise<Listing<SelectTransaction>> {
     // Build where conditions
     const whereConditions: SQL[] = [];
 
@@ -41,56 +37,41 @@ export default class TransactionService {
         ) as SQL,
       );
     }
-
     if (fromUserId) {
       whereConditions.push(eq(transactionsTable.fromUserId, fromUserId));
     }
-
     if (toUserId) {
       whereConditions.push(eq(transactionsTable.toUserId, toUserId));
     }
-
     if (type) {
       whereConditions.push(eq(transactionsTable.type, type));
     }
-
     if (status) {
       whereConditions.push(eq(transactionsTable.status, status));
     }
-
     if (fromWalletType) {
       whereConditions.push(
         eq(transactionsTable.fromWalletType, fromWalletType),
       );
     }
-
     if (toWalletType) {
       whereConditions.push(eq(transactionsTable.toWalletType, toWalletType));
     }
-
     if (startDate) {
       whereConditions.push(gte(transactionsTable.createdAt, startDate));
     }
-
     if (endDate) {
       whereConditions.push(lte(transactionsTable.createdAt, endDate));
     }
-
     if (minAmount) {
       whereConditions.push(gte(transactionsTable.amount, minAmount));
     }
-
     if (maxAmount) {
       whereConditions.push(lte(transactionsTable.amount, maxAmount));
     }
-
     const whereClause =
       whereConditions.length > 0 ? and(...whereConditions) : undefined;
-
     const sortOrder = sortDirection === "desc" ? desc : asc;
-
-    // Calculate offset from page and limit
-    const offset = (page - 1) * limit;
 
     // Get total count for pagination info
     const countResult = await db
@@ -101,7 +82,7 @@ export default class TransactionService {
     const total = Number(countResult[0]?.count || 0);
 
     // Get data with limit and offset
-    const data = await db.query.transactionsTable.findMany({
+    const transactions = await db.query.transactionsTable.findMany({
       where: whereClause,
       limit: limit,
       offset: offset,
@@ -109,9 +90,14 @@ export default class TransactionService {
     });
 
     return {
-      data,
-      total,
-      hasMore: offset + data.length < total,
+      list: transactions,
+      pagination: {
+        limit,
+        offset,
+        total,
+        hasNext: offset + transactions.length < total,
+        hasPrevious: offset > 0,
+      },
     };
   }
 
@@ -119,11 +105,12 @@ export default class TransactionService {
    * Get admin transaction list with relations included
    */
   async getAdminTransactionsList(params: TransactionListing) {
-    const { data, total, hasMore } = await this.getTransactions(params);
+    const result = await this.getTransactions(params);
+    const { list: transactions, pagination } = result;
 
     // Get user details for related users
     const userIds = new Set<UserId>();
-    data.forEach((transaction) => {
+    transactions.forEach((transaction: SelectTransaction) => {
       if (transaction.fromUserId) userIds.add(transaction.fromUserId);
       if (transaction.toUserId) userIds.add(transaction.toUserId);
     });
@@ -144,7 +131,7 @@ export default class TransactionService {
     const userMap = new Map(users.map((user) => [user.id, user]));
 
     // Enrich transaction data with user information
-    const enrichedData = data.map((transaction) => ({
+    const enrichedData = transactions.map((transaction: SelectTransaction) => ({
       ...transaction,
       fromUser: transaction.fromUserId
         ? userMap.get(transaction.fromUserId) || null
@@ -156,8 +143,8 @@ export default class TransactionService {
 
     return {
       data: enrichedData,
-      total,
-      hasMore,
+      total: Number(pagination.limit + pagination.offset),
+      hasMore: pagination.hasNext,
     };
   }
 

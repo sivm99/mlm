@@ -26,7 +26,7 @@ export default class AddressController {
     }
   }
 
-  static async getAddress(c: MyContext) {
+  static async getAddressById(c: MyContext) {
     try {
       const id = c.get("id");
       const address = await addressService.getAddressById(id);
@@ -51,7 +51,7 @@ export default class AddressController {
     }
   }
 
-  static async updateAddress(c: MyContext) {
+  static async updateAddressById(c: MyContext) {
     try {
       const id = c.get("id");
       const address = await addressService.getAddressById(id);
@@ -60,7 +60,7 @@ export default class AddressController {
       }
 
       const user = c.get("user");
-      if (user.role !== "ADMIN" && address.userId !== user.id) {
+      if (user.role !== "admin" && address.userId !== user.id) {
         return c.json({ success: false, message: "Unauthorized" }, 403);
       }
 
@@ -84,7 +84,7 @@ export default class AddressController {
     }
   }
 
-  static async deleteAddress(c: MyContext) {
+  static async deleteAddressById(c: MyContext) {
     try {
       const id = c.get("id");
       const address = await addressService.getAddressById(id);
@@ -93,13 +93,13 @@ export default class AddressController {
       }
 
       const user = c.get("user");
-      if (user.role !== "ADMIN" && address.userId !== user.id) {
+      if (user.role !== "admin" && address.userId !== user.id) {
         return c.json({ success: false, message: "Unauthorized" }, 403);
       }
 
       // Get the hardDelete flag from query if admin, otherwise default to false
       const hardDelete =
-        user.role === "ADMIN" && c.req.query("hardDelete") === "true";
+        user.role === "admin" && c.req.query("hardDelete") === "true";
 
       const result = await addressService.deleteAddress(id, hardDelete);
 
@@ -120,7 +120,7 @@ export default class AddressController {
     }
   }
 
-  static async restoreAddress(c: MyContext) {
+  static async restoreAddressById(c: MyContext) {
     try {
       const id = c.get("id");
       const result = await addressService.restoreAddress(id);
@@ -144,28 +144,35 @@ export default class AddressController {
 
   static async listAddresses(c: MyContext) {
     try {
-      const { page, limit, ...filters } = c.get("listAddresses");
+      const {
+        offset,
+        sortDirection = "desc",
+        limit,
+        toDate,
+        fromDate,
+        ...filters
+      } = c.get("listAddresses");
       const user = c.get("user");
 
       // If not admin, only show user's own addresses
       const filterWithUser =
-        user.role !== "ADMIN" ? { ...filters, userId: user.id } : filters;
+        user.role !== "admin" ? { ...filters, userId: user.id } : filters;
 
-      const { data, total } = await addressService.listAddresses(
-        { page, limit },
-        filterWithUser,
-      );
+      const data = await addressService.listAddresses({
+        pagination: {
+          limit,
+          toDate,
+          fromDate,
+          offset,
+          sortDirection,
+        },
+        filter: filterWithUser,
+      });
 
       return c.json({
         success: true,
         message: "Addresses retrieved successfully",
         data,
-        meta: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit),
-        },
       });
     } catch (error) {
       return c.json(
@@ -181,7 +188,7 @@ export default class AddressController {
 
   static async getUserAddresses(c: MyContext) {
     try {
-      const userId = c.get("id");
+      const { id: userId } = c.get("user");
       const addresses = await addressService.getAddressesByUserId(userId);
 
       return c.json({

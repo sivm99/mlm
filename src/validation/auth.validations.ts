@@ -2,6 +2,7 @@ import { MyContext } from "@/types";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod/v4";
 import { otpField, validationError, idField, emailField } from "./_common";
+import { databaseService } from "@/lib/services";
 
 export const RegisterSchema = z
   .object({
@@ -9,17 +10,16 @@ export const RegisterSchema = z
     mobile: z.string(),
     email: emailField,
     otp: otpField,
-    referralCode: z.string().optional(),
     password: z.string().min(6),
     passwordConfirm: z.string().min(6).optional(),
     country: z.string().default("global"),
     dialCode: z.string().max(4).default("+91"),
     sponsor: idField,
     side: z
-      .enum(["LEFT", "RIGHT"], {
+      .enum(["left", "right"], {
         error: () => "Position must be either LEFT or RIGHT",
       })
-      .default("LEFT"),
+      .default("left"),
   })
   .strict()
   .refine((data) => data.password === data.passwordConfirm, {
@@ -60,9 +60,21 @@ const idFieldValidateSchema = z.object({
 export const forgotPasswordValidate = zValidator(
   "json",
   idFieldValidateSchema,
-  (r, c: MyContext) => {
+  async (r, c: MyContext) => {
     if (!r.success) return validationError(r.error, c);
-    c.set("id", r.data.id);
+    const userId = r.data.id;
+    const user = await databaseService.fetchUserData(userId);
+    if (!user) {
+      return c.json(
+        {
+          success: false,
+          message: `There exists no such user with the ID ${userId}`,
+        },
+        404,
+      );
+    }
+
+    c.set("user", user);
   },
 );
 
@@ -107,8 +119,20 @@ export type ResetPassword = z.infer<typeof resetPasswordSchema>;
 export const resetPasswordValidate = zValidator(
   "json",
   resetPasswordSchema,
-  (r, c: MyContext) => {
+  async (r, c: MyContext) => {
     if (!r.success) return validationError(r.error, c);
+    const id = r.data.id;
+    const user = await databaseService.fetchUserData(id);
+    if (!user)
+      return c.json(
+        {
+          success: false,
+          message: `There exists no such user with the ID ${id}`,
+        },
+        404,
+      );
+
+    c.set("user", user);
     c.set("resetPassword", {
       ...r.data,
     });

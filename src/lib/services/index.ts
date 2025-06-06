@@ -3,7 +3,6 @@ export * from "./EmailService";
 export * from "./LoggingService";
 export * from "./TreeQueueService";
 export * from "./OtpService";
-export * from "./ReferralService";
 export * from "./TreeService";
 export * from "./UserService";
 export * from "./WalletService";

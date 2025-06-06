@@ -3,7 +3,7 @@ import { usersTable } from "./users";
 import { index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-export const userPosition = pgEnum("userPosition", ["LEFT", "RIGHT"]);
+export const userPosition = pgEnum("userPosition", ["left", "right"]);
 
 export const treeTable = pgTable(
   "user_trees",
@@ -36,7 +36,7 @@ export const treeTable = pgTable(
       })
       .notNull(),
 
-    position: userPosition("position").notNull().default("LEFT"),
+    position: userPosition("position").notNull().default("left"),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })

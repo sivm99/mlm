@@ -1,6 +1,6 @@
 import db from "@/db";
 import { arHistoryTable, InsertArHistory, SelectArHistory } from "@/db/schema";
-import { ListArHistoryArgs } from "@/types";
+import { ListArHistoryArgs, Listing } from "@/types";
 import { sql } from "drizzle-orm";
 import { and, desc, eq } from "drizzle-orm";
 
@@ -93,30 +93,32 @@ export default class ArHistoryService {
 
   async listArHistory(
     args: ListArHistoryArgs,
-  ): Promise<{ data: SelectArHistory[]; total: number }> {
+  ): Promise<Listing<SelectArHistory>> {
     try {
-      const { pagination = { page: 1, limit: 10 }, filter = {} } = args;
-      const { page = 1, limit = 10 } = pagination;
-      const offset = (page - 1) * limit;
-
+      const { offset = 0, limit = 10 } = args.pagination;
+      const { filter } = args;
       const conditions = [];
-
+      if (filter.id) {
+        conditions.push(eq(arHistoryTable.id, filter.id));
+      }
+      if (filter.createdAt) {
+        conditions.push(eq(arHistoryTable.createdAt, filter.createdAt));
+      }
       if (filter.fromUserId) {
         conditions.push(eq(arHistoryTable.fromUserId, filter.fromUserId));
       }
-
       if (filter.toUserId) {
         conditions.push(eq(arHistoryTable.toUserId, filter.toUserId));
       }
-
       if (filter.activityType) {
         conditions.push(eq(arHistoryTable.activityType, filter.activityType));
       }
-
+      if (filter.investment) {
+        conditions.push(eq(arHistoryTable.investment, filter.investment));
+      }
       const whereClause =
         conditions.length > 0 ? and(...conditions) : undefined;
-
-      const data = await db.query.arHistoryTable.findMany({
+      const list = await db.query.arHistoryTable.findMany({
         where: whereClause,
         with: {
           fromUser: {
@@ -136,15 +138,22 @@ export default class ArHistoryService {
         offset,
         orderBy: [desc(arHistoryTable.createdAt)],
       });
-
       const totalResult = await db
         .select({ count: sql<number>`count(*)` })
         .from(arHistoryTable)
         .where(whereClause);
-
       const total = totalResult[0]?.count || 0;
 
-      return { data, total };
+      return {
+        list,
+        pagination: {
+          limit,
+          offset,
+          total,
+          hasNext: offset + list.length < total,
+          hasPrevious: offset > 0,
+        },
+      };
     } catch (err) {
       throw new Error(
         `Failed to list AR history: ${err instanceof Error ? err.message : String(err)}`,

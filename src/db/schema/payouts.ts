@@ -8,15 +8,22 @@ import {
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { index } from "drizzle-orm/pg-core";
-export const payoutStatusEnum = pgEnum("payoutStatus", [
-  "PENDING",
-  "PROCESSED",
-  "FAILED",
-]);
 
 import { relations } from "drizzle-orm";
 import { saleRewardsTable } from "./saleRewards";
 import { matchingIncomesTable } from "./matchingIncomes";
+
+export const payoutStatusEnum = pgEnum("payout_status", [
+  "pending",
+  "processed",
+  "failed",
+]);
+export const payoutType = [
+  "sale_reward",
+  "matching_income",
+  "income_withdrawl",
+] as const;
+export const payoutTypeEnum = pgEnum("payout_type", payoutType);
 
 export const payoutsTable = pgTable(
   "payouts",
@@ -28,7 +35,7 @@ export const payoutsTable = pgTable(
         onDelete: "set null",
         onUpdate: "cascade",
       }),
-
+    type: payoutTypeEnum("type").notNull(),
     saleRewardId: integer("sale_reward_id").references(
       () => saleRewardsTable.id,
       {
@@ -46,7 +53,7 @@ export const payoutsTable = pgTable(
     ),
 
     amount: real("amount").notNull(),
-    status: payoutStatusEnum("status").default("PENDING"),
+    status: payoutStatusEnum("status").default("pending"),
     payoutDate: timestamp("payout_date").notNull(),
     adminFee: real("admin_fee").notNull(),
     createdAt: timestamp("created_at").defaultNow(),

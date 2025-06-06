@@ -3,6 +3,7 @@ import { eq, and, sql, desc, asc, gte, lte, inArray, or } from "drizzle-orm";
 import OtpService, { otpService } from "./OtpService";
 import { EventEmitter } from "events";
 import {
+  OTP,
   SelectTransaction,
   transactionsTable,
   WalletOperations,
@@ -11,7 +12,6 @@ import {
 import {
   AddIncomeArgs,
   ConvertIncomeParams,
-  OTP,
   Transaction,
   TransferParams,
   UserId,
@@ -357,14 +357,16 @@ export default class WalletService {
         await payoutService.insertRewardPayout({
           userId,
           saleRewardId,
-          status: "PROCESSED",
+          status: "processed",
+          type: "sale_reward",
         });
 
       if (matchingIncomeId)
         await payoutService.insertRewardPayout({
           userId,
           matchingIncomeId,
-          status: "PROCESSED",
+          status: "processed",
+          type: "matching_income",
         });
 
       this.#walletCache.invalidate(userId);

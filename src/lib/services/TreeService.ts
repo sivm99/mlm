@@ -1,5 +1,5 @@
 import { treeTable, userStatsTable } from "@/db/schema";
-import { TreeStatsUpdate, TreeUser, UserId } from "@/types";
+import { Side, TreeStatsUpdate, UserId } from "@/types";
 import { eq } from "drizzle-orm";
 import { databaseService } from "./DatabaseService";
 import db from "@/db";
@@ -7,9 +7,9 @@ import { sql } from "drizzle-orm";
 
 export default class TreeService {
   async insertIntoTree(
-    userId: TreeUser["id"],
-    side: TreeUser["position"],
-    sponsorId: TreeUser["id"],
+    userId: UserId,
+    side: Side,
+    sponsorId: UserId,
   ): Promise<void> {
     console.log(`the sponsor come ${sponsorId}\nthe side ${side}`);
     const parentId = await this.findTheParentUser(sponsorId, side);
@@ -33,7 +33,7 @@ export default class TreeService {
     });
 
     // Now update the parent node to point to this new node
-    if (side === "LEFT") {
+    if (side === "left") {
       await db
         .update(treeTable)
         .set({ leftUser: userId })
@@ -49,18 +49,15 @@ export default class TreeService {
     await this.syncParentChain(parentId, side, { updateCount: true });
   }
 
-  async findTheParentUser(
-    startId: TreeUser["id"],
-    side: TreeUser["position"],
-  ): Promise<TreeUser["id"] | null> {
+  async findTheParentUser(startId: UserId, side: Side): Promise<UserId | null> {
     // Start from the sponsor node
     let currentNode = await databaseService.getTreeData(startId);
     if (!currentNode) return null;
 
     // Check if we can directly add under the sponsor on the specified side
-    if (side === "LEFT" && currentNode.leftUser === null) {
+    if (side === "left" && currentNode.leftUser === null) {
       return currentNode.id;
-    } else if (side === "RIGHT" && currentNode.rightUser === null) {
+    } else if (side === "right" && currentNode.rightUser === null) {
       return currentNode.id;
     }
 
@@ -68,9 +65,9 @@ export default class TreeService {
     const queue: number[] = [];
 
     // Add the next node in the specified side to the queue
-    if (side === "LEFT" && currentNode.leftUser !== null) {
+    if (side === "left" && currentNode.leftUser !== null) {
       queue.push(currentNode.leftUser);
-    } else if (side === "RIGHT" && currentNode.rightUser !== null) {
+    } else if (side === "right" && currentNode.rightUser !== null) {
       queue.push(currentNode.rightUser);
     } else {
       return null; // This shouldn't happen based on the checks above
@@ -83,16 +80,16 @@ export default class TreeService {
 
       if (!currentNode) continue;
 
-      if (side === "LEFT" && currentNode.leftUser === null) {
+      if (side === "left" && currentNode.leftUser === null) {
         return currentNode.id;
-      } else if (side === "RIGHT" && currentNode.rightUser === null) {
+      } else if (side === "right" && currentNode.rightUser === null) {
         return currentNode.id;
       }
 
       // Continue down the same side as specified
-      if (side === "LEFT" && currentNode.leftUser !== null) {
+      if (side === "left" && currentNode.leftUser !== null) {
         queue.push(currentNode.leftUser);
-      } else if (side === "RIGHT" && currentNode.rightUser !== null) {
+      } else if (side === "right" && currentNode.rightUser !== null) {
         queue.push(currentNode.rightUser);
       }
     }
@@ -100,38 +97,34 @@ export default class TreeService {
     return null; // Could not find a suitable parent
   }
 
-  async getLeftTeam(userId: TreeUser["id"], maxDepth: number = 5) {
-    const userIds = await this.getTeam(userId, "LEFT", maxDepth);
+  async getLeftTeam(userId: UserId, maxDepth: number = 5) {
+    const userIds = await this.getTeam(userId, "left", maxDepth);
     return this.populateIds(userIds);
   }
-  async getTeamIds(userId: UserId, side: TreeUser["position"]) {
+  async getTeamIds(userId: UserId, side: Side) {
     return this.getTeam(userId, side, Infinity);
   }
-  async getRightTeam(userId: TreeUser["id"], maxDepth: number = 5) {
-    const userIds = await this.getTeam(userId, "RIGHT", maxDepth);
+  async getRightTeam(userId: UserId, maxDepth: number = 5) {
+    const userIds = await this.getTeam(userId, "right", maxDepth);
     return this.populateIds(userIds);
   }
 
-  async getFullTeam(userId: TreeUser["id"], maxDepth: number = 4) {
+  async getFullTeam(userId: UserId, maxDepth: number = 4) {
     const leftTeam = await this.getLeftTeam(userId, maxDepth);
     const rightTeam = await this.getRightTeam(userId, maxDepth);
     return [...leftTeam, ...rightTeam];
   }
 
-  private async getTeam(
-    userId: TreeUser["id"],
-    side: TreeUser["position"],
-    maxDepth: number,
-  ) {
+  private async getTeam(userId: UserId, side: Side, maxDepth: number) {
     const rootNode = await databaseService.getMinimalTreeData(userId);
     if (!rootNode) return [];
 
     const userIds: UserId[] = [];
-    const queue: { nodeId: TreeUser["id"]; depth: number }[] = [];
+    const queue: { nodeId: UserId; depth: number }[] = [];
 
     // Start with the appropriate side
     const startNodeId =
-      side === "LEFT" ? rootNode.leftUser : rootNode.rightUser;
+      side === "left" ? rootNode.leftUser : rootNode.rightUser;
     if (startNodeId !== null) {
       queue.push({ nodeId: startNodeId, depth: 1 });
     }
@@ -172,7 +165,7 @@ export default class TreeService {
    */
   async syncParentChain(
     parentId: UserId,
-    side: TreeUser["position"],
+    side: Side,
     options: {
       updateCount?: boolean;
       updateActiveCount?: boolean;
@@ -190,7 +183,7 @@ export default class TreeService {
         // Prepare update object based on side and options
         const updateSet: TreeStatsUpdate = {};
 
-        if (side === "LEFT") {
+        if (side === "left") {
           if (options.updateCount) {
             updateSet.leftCount = sql`${userStatsTable.leftCount} + 1`;
             updateSet.todayLeftCount = sql`${userStatsTable.todayLeftCount} + 1`;
@@ -222,8 +215,7 @@ export default class TreeService {
         await db
           .update(userStatsTable)
           .set(updateSet)
-          .where(eq(userStatsTable.id, currentNodeId))
-          .execute();
+          .where(eq(userStatsTable.id, currentNodeId));
 
         // If current node is the admin (parent is self), we're done
         if (currentNode.parentUser === currentNode.id) {

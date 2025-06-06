@@ -9,7 +9,6 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
-import { paymentsTable } from "./payments";
 import { payoutsTable } from "./payouts";
 import { treeTable } from "./trees";
 import { walletsTable } from "./wallets";
@@ -17,7 +16,7 @@ import { addressesTable } from "./addresses";
 import { ordersTable } from "./orders";
 import { arHistoryTable } from "./arHistory";
 
-export const userRole = pgEnum("userRole", ["ADMIN", "SUB_ADMIN", "USER"]);
+export const userRole = pgEnum("user_role", ["admin", "sub_admin", "user"]);
 
 export const usersTable = pgTable(
   "users",
@@ -35,7 +34,7 @@ export const usersTable = pgTable(
     isComplementoryId: boolean("is_complementory_id").notNull().default(false),
 
     passwordHash: text("password_hash").notNull(),
-    role: userRole("role").notNull().default("USER"),
+    role: userRole("role").notNull().default("user"),
     permissions: jsonb("permissions").notNull().default({}),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -53,7 +52,6 @@ export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;
 
 export const usersRelations = relations(usersTable, ({ one, many }) => ({
-  payments: many(paymentsTable),
   payouts: many(payoutsTable),
   wallet: one(walletsTable),
   tree: one(treeTable, {

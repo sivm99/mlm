@@ -9,6 +9,8 @@ import {
 import {
   AddIncomeArgs,
   ClaimOrderResult,
+  Listing,
+  ListingQueryWithFilters,
   PayoutProcessResult,
   Reward,
   UserId,
@@ -118,13 +120,13 @@ export default class SalesRewardService {
         };
       }
 
-      // Update reward to payout type and active status
       const nextPaymentDate = this.calculateNextPaymentDate();
       await db
         .update(saleRewardsTable)
         .set({
           type: "payout",
           status: "active",
+          claimedAt: new Date(),
           nextPaymentDate: nextPaymentDate,
         })
         .where(eq(saleRewardsTable.id, rewardId));
@@ -186,19 +188,12 @@ export default class SalesRewardService {
         };
       }
 
-      // Calculate order amount based on paid amount or use available balance
-      const orderAmount = Math.max(
-        rewardRecord.amountPaid,
-        this.#REWARD_CONFIG.TOTAL_PAYOUT_AMOUNT,
-      );
-
-      // Create order
       const [insertedOrder] = await db
         .insert(ordersTable)
         .values({
           userId: rewardRecord.userId,
-          totalAmount: orderAmount,
-          status: "PENDING",
+          totalAmount: this.#REWARD_CONFIG.TOTAL_PAYOUT_AMOUNT,
+          status: "pending",
           ...orderDetails,
         })
         .returning({ id: ordersTable.id });
@@ -219,7 +214,8 @@ export default class SalesRewardService {
         .set({
           type: "order",
           status: "closed",
-          compoletedAt: new Date(),
+          claimedAt: new Date(),
+          completedAt: new Date(),
           orderId: orderId,
         })
         .where(eq(saleRewardsTable.id, rewardId));
@@ -299,7 +295,7 @@ export default class SalesRewardService {
         .values({
           userId: rewardRecord.userId,
           totalAmount: this.#REWARD_CONFIG.TOTAL_PAYOUT_AMOUNT,
-          status: "PENDING",
+          status: "pending",
           ...orderDetails,
         })
         .returning({ id: ordersTable.id });
@@ -311,7 +307,7 @@ export default class SalesRewardService {
         .set({
           type: "order",
           status: "closed",
-          compoletedAt: new Date(),
+          completedAt: new Date(),
           orderId: orderId,
         })
         .where(eq(saleRewardsTable.id, rewardId));
@@ -608,7 +604,7 @@ export default class SalesRewardService {
         .update(saleRewardsTable)
         .set({
           status: "closed",
-          compoletedAt: new Date(),
+          completedAt: new Date(),
         })
         .where(inArray(saleRewardsTable.id, rewardIds))
         .returning({ id: saleRewardsTable.id });
@@ -624,6 +620,88 @@ export default class SalesRewardService {
         errors: [err instanceof Error ? err.message : "Unknown error"],
       };
     }
+  }
+
+  async listRewards(
+    args: ListingQueryWithFilters<Reward>,
+  ): Promise<Listing<Reward>> {
+    try {
+      const { offset, limit, sortDirection } = args.pagination;
+      const { filter } = args;
+      const conditions = [];
+
+      // Build filter conditions
+
+      if (filter.type) {
+        conditions.push(eq(saleRewardsTable.type, filter.type));
+      }
+      if (filter.status) {
+        conditions.push(eq(saleRewardsTable.status, filter.status));
+      }
+      if (filter.userId) {
+        conditions.push(eq(saleRewardsTable.userId, filter.userId));
+      }
+      if (filter.orderId) {
+        conditions.push(eq(saleRewardsTable.orderId, filter.orderId));
+      }
+      if (filter.createdAt) {
+        conditions.push(eq(saleRewardsTable.createdAt, filter.createdAt));
+      }
+
+      const whereClause =
+        conditions.length > 0 ? and(...conditions) : undefined;
+
+      // Query the sale_rewards table
+      const list = await db.query.saleRewardsTable.findMany({
+        where: whereClause,
+        with: {
+          user: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        limit,
+        offset,
+        orderBy: [
+          sortDirection === "asc"
+            ? sql`${saleRewardsTable.createdAt} ASC`
+            : sql`${saleRewardsTable.createdAt} DESC`,
+        ],
+      });
+
+      // Get total count for pagination
+      const totalResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(saleRewardsTable)
+        .where(whereClause);
+      const total = totalResult[0]?.count || 0;
+
+      return {
+        list,
+        pagination: {
+          limit,
+          offset,
+          hasNext: offset + list.length < total,
+          total,
+          hasPrevious: offset > 0,
+        },
+      };
+    } catch (err) {
+      throw new Error(
+        `Failed to list rewards: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
+  async getRewardById(id: Reward["id"]) {
+    const [reward] = await db
+      .select()
+      .from(saleRewardsTable)
+      .where(eq(saleRewardsTable.id, id))
+      .limit(1);
+    return reward;
   }
 }
 

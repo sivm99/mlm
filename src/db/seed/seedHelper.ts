@@ -15,7 +15,6 @@ import { adminId } from "..";
 const generateId = () => Math.floor(1_000_000 + Math.random() * 9_000_000);
 const adminEmail = Bun.env.ADMIN_EMAIL || "admin@example.com";
 
-// Tree structure definition - much cleaner!
 interface TreeNode {
   id: number;
   name: string;
@@ -27,7 +26,7 @@ interface TreeNode {
   sponsor: number;
   image?: string;
   parentUser: number;
-  position: "LEFT" | "RIGHT";
+  position: "left" | "right";
   left?: TreeNode;
   right?: TreeNode;
 }
@@ -58,7 +57,6 @@ export async function generateTreeStructure(): Promise<TreeNode> {
   const tree: TreeNode = {
     id: adminId,
     name: "Master Admin",
-    image: "https://cool.s3.n3y.in/admin.jpeg",
     email: adminEmail,
     mobile: "9999999999",
     country: "Global",
@@ -66,7 +64,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
     isActive: true,
     sponsor: adminId,
     parentUser: adminId,
-    position: "LEFT",
+    position: "left",
     left: {
       id: ids.level1Left,
       name: "User L1-Left",
@@ -77,7 +75,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
       isActive: true,
       sponsor: adminId,
       parentUser: adminId,
-      position: "LEFT",
+      position: "left",
       left: {
         id: ids.level2LL,
         name: "User L2-LeftLeft",
@@ -88,7 +86,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
         isActive: true,
         sponsor: ids.level1Left,
         parentUser: ids.level1Left,
-        position: "LEFT",
+        position: "left",
         left: {
           id: ids.level3LLL,
           name: "User L3-LLL",
@@ -99,7 +97,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           isActive: false,
           sponsor: ids.level2LL,
           parentUser: ids.level2LL,
-          position: "LEFT",
+          position: "left",
         },
         right: {
           id: ids.level3LLR,
@@ -111,7 +109,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           isActive: true,
           sponsor: ids.level2LL,
           parentUser: ids.level2LL,
-          position: "RIGHT",
+          position: "right",
         },
       },
       right: {
@@ -124,7 +122,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
         isActive: false,
         sponsor: ids.level1Left,
         parentUser: ids.level1Left,
-        position: "RIGHT",
+        position: "right",
         left: {
           id: ids.level3LRL,
           name: "User L3-LRL",
@@ -135,7 +133,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           isActive: true,
           sponsor: ids.level2LR,
           parentUser: ids.level2LR,
-          position: "LEFT",
+          position: "left",
         },
         right: {
           id: ids.level3LRR,
@@ -147,7 +145,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           isActive: true,
           sponsor: ids.level2LR,
           parentUser: ids.level2LR,
-          position: "RIGHT",
+          position: "right",
         },
       },
     },
@@ -161,7 +159,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
       isActive: true,
       sponsor: adminId,
       parentUser: adminId,
-      position: "RIGHT",
+      position: "right",
       left: {
         id: ids.level2RL,
         name: "User L2-RightLeft",
@@ -172,7 +170,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
         isActive: false,
         sponsor: ids.level1Right,
         parentUser: ids.level1Right,
-        position: "LEFT",
+        position: "left",
         left: {
           id: ids.level3RLL,
           name: "User L3-RLL",
@@ -183,7 +181,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           isActive: true,
           sponsor: ids.level2RL,
           parentUser: ids.level2RL,
-          position: "LEFT",
+          position: "left",
         },
         right: {
           id: ids.level3RLR,
@@ -195,7 +193,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           isActive: false,
           sponsor: ids.level2RL,
           parentUser: ids.level2RL,
-          position: "RIGHT",
+          position: "right",
         },
       },
       right: {
@@ -208,7 +206,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
         isActive: true,
         sponsor: ids.level1Right,
         parentUser: ids.level1Right,
-        position: "RIGHT",
+        position: "right",
         left: {
           id: ids.level3RRL,
           name: "User L3-RRL",
@@ -219,7 +217,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           isActive: true,
           sponsor: ids.level2RR,
           parentUser: ids.level2RR,
-          position: "LEFT",
+          position: "left",
         },
         right: {
           id: ids.level3RRR,
@@ -231,7 +229,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           isActive: true,
           sponsor: ids.level2RR,
           parentUser: ids.level2RR,
-          position: "RIGHT",
+          position: "right",
         },
       },
     },
@@ -254,7 +252,7 @@ async function extractUsers(node: TreeNode): Promise<InsertUser[]> {
       country: currentNode.country,
       dialCode: currentNode.dialCode,
       isActive: currentNode.isActive,
-      role: currentNode.id === adminId ? "ADMIN" : "USER",
+      role: currentNode.id === adminId ? "admin" : "user",
       passwordHash: await Bun.password.hash(
         currentNode.id === adminId ? Bun.env.ADMIN_PASSWORD! : "password123",
       ),

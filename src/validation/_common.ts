@@ -16,11 +16,11 @@ export const idField = z.union([
 ]);
 
 export const otherIdField = z
-  .union([z.number().int().gt(0), z.string().regex(/^\d+$/).transform(Number)])
+  .union([z.int().gt(0), z.string().regex(/^\d+$/).transform(Number)])
   .transform(Number);
 
 export const idFieldString = z
-  .union([z.number().int().transform(String), z.string().regex(/^\d+$/)])
+  .union([z.int().transform(String), z.string().regex(/^\d+$/)])
   .refine(
     (val) => {
       const num = Number(val);
@@ -34,18 +34,15 @@ export const emailField = z.email().transform((e) => e.toLowerCase());
 export const limitField = (n: number = 50) =>
   z
     .union([
-      z.number().lte(n, `Max limit is set to ${n}`),
+      z.int().lte(n, `Max limit is set to ${n}`),
       z.string().regex(/^\d+$/).transform(Number),
     ])
-    .transform(Number)
-    .default(30)
-    .transform((r) => Math.floor(r));
+    .default(30);
 
 export const offsetField = z
   .union([z.number().gte(0), z.string().regex(/^\d+$/).transform(Number)])
   .transform(Number)
-  .default(0)
-  .transform((r: number) => Math.floor(r)); // r could be real number
+  .default(0);
 
 export const amountField = z.number().gt(0);
 export const descriptionFiled = z.string().min(10);
@@ -66,8 +63,11 @@ export const validationError = (error: $ZodError, c: MyContext) =>
 export const pageField = z.coerce.number().int().positive().default(1);
 
 export const baseListing = z.object({
-  limit: limitField(50).optional(),
-  offset: offsetField.optional(),
-  page: pageField,
+  limit: limitField(50),
+  offset: offsetField,
   sortDirection: z.enum(["asc", "desc"]).optional(),
+  fromDate: z.date().optional(),
+  toDate: z.date().optional(),
 });
+
+export type ListingQuerySchema = z.infer<typeof baseListing>;

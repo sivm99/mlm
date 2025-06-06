@@ -63,7 +63,7 @@ const bulkAdd = z.object({
   user: z.object({
     name: z.string().optional(),
     sponsor: idField,
-    side: z.enum(["LEFT", "RIGHT"]),
+    side: z.enum(["left", "right"]),
     country: z.string().optional().default(""),
     dialCode: z.string().optional().default(""),
     mobile: z.string().optional().default(""),
@@ -85,7 +85,7 @@ export const bulkAddValidate = zValidator(
 );
 
 const treeListSidesSchema = z.object({
-  side: z.enum(["LEFT", "RIGHT", "FULL"]).default("FULL"),
+  side: z.enum(["left", "right", "full"]).default("full"),
   id: idField.optional(),
 });
 

@@ -1,10 +1,4 @@
 import { SelectArHistory } from "@/db/schema";
+import { ListingQueryWithFilters } from "./listing";
 
-export type ListArHistoryArgs = {
-  pagination: { page?: number; limit?: number };
-  filter: {
-    fromUserId?: SelectArHistory["fromUserId"];
-    toUserId?: SelectArHistory["toUserId"];
-    activityType?: SelectArHistory["activityType"];
-  };
-};
+export type ListArHistoryArgs = ListingQueryWithFilters<SelectArHistory>;

@@ -11,10 +11,10 @@ import { addressesTable } from "./addresses";
 import { real } from "drizzle-orm/pg-core";
 
 export const orderStatusEnum = pgEnum("order_status", [
-  "PENDING",
-  "PROCESSING",
-  "DELIVERED",
-  "CANCELLED",
+  "pending",
+  "processing",
+  "delivered",
+  "cancelled",
 ]);
 export const deliveryMethodEnum = pgEnum("delivery_method", [
   "self_collect",
@@ -28,7 +28,7 @@ export const ordersTable = pgTable("orders", {
     .references(() => usersTable.id)
     .notNull(),
 
-  status: orderStatusEnum("status").default("PENDING"),
+  status: orderStatusEnum("status").default("pending"),
   deliveryAddress: integer("delivery_address").references(
     () => addressesTable.id,
   ),

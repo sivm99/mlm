@@ -25,7 +25,7 @@ async function createAdminUser(): Promise<InsertUser> {
     country: "Global",
     dialCode: "+1",
     isActive: true,
-    role: "ADMIN",
+    role: "admin",
     passwordHash: await Bun.password.hash(Bun.env.ADMIN_PASSWORD!),
   };
 
@@ -38,7 +38,7 @@ function createAdminTree(): InsertTree {
     id: adminId,
     sponsor: adminId, // Admin sponsors self
     parentUser: adminId, // Admin is own parent
-    position: "LEFT", // Default position
+    position: "left", // Default position
   };
 
   return adminTree;

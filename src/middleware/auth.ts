@@ -67,7 +67,7 @@ export async function authenticateAdmin(c: MyContext, next: Next) {
     return c.json({ success: false, message: result.error }, result.statusCode);
   }
 
-  if (result.safeUser.role !== "ADMIN") {
+  if (result.safeUser.role !== "admin") {
     return c.json({ success: false, message: "Authentication required" }, 401);
   }
 

@@ -39,4 +39,4 @@ export const otpTable = pgTable("otp", {
 
 export type InsertOTP = typeof otpTable.$inferInsert;
 export type SelectOTP = typeof otpTable.$inferSelect;
-export type OTPTYPE = SelectOTP;
+export type OTP = SelectOTP;

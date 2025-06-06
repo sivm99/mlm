@@ -22,7 +22,7 @@ export default class UserController {
   static async updateUser(c: MyContext) {
     const user = c.get("user");
     const updatedUser = c.get("updatedUser");
-    let id = user.role === "ADMIN" ? updatedUser.id : user.id;
+    let id = user.role === "admin" ? updatedUser.id : user.id;
     if (!id) id = user.id;
     try {
       await userService.updateUser(id, updatedUser);
@@ -65,13 +65,13 @@ export default class UserController {
       let data;
       let self;
       switch (side) {
-        case "FULL":
+        case "full":
           data = await treeService.getFullTeam(userId, 4);
           self = await databaseService.fetchTreeUserData(userId);
           if (!self) return;
           data.push(self);
           break;
-        case "LEFT":
+        case "left":
           data = await treeService.getLeftTeam(userId);
           break;
         default: // Assumes "RIGHT" if not FULL or LEFT

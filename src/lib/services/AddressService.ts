@@ -1,10 +1,7 @@
 import db from "@/db";
 import { addressesTable, InsertAddress, SelectAddress } from "@/db/schema";
-import { and, desc, eq, ilike, sql } from "drizzle-orm";
-interface PaginationParams {
-  page?: number;
-  limit?: number;
-}
+import { AddressListingArgs, Listing } from "@/types";
+import { and, AnyColumn, desc, eq, ilike, sql } from "drizzle-orm";
 
 export type AddressFilter = {
   title?: string;
@@ -134,42 +131,45 @@ export default class AddressService {
   }
 
   async listAddresses(
-    pagination: PaginationParams = { page: 1, limit: 10 },
-    filter: AddressFilter = {},
-  ): Promise<{ data: SelectAddress[]; total: number }> {
+    listingArgs: AddressListingArgs,
+  ): Promise<Listing<SelectAddress>> {
     try {
-      const { page = 1, limit = 10 } = pagination;
-      const offset = (page - 1) * limit;
-
+      const {
+        offset = 0,
+        limit = 10,
+        sortDirection = "desc",
+      } = listingArgs.pagination;
+      const { filter } = listingArgs;
       const conditions = [];
-
-      // Only include non-deleted addresses unless explicitly requested
-      if (!filter.includeDeleted) {
-        conditions.push(eq(addressesTable.isDeleted, false));
-      }
 
       if (filter.title) {
         conditions.push(ilike(addressesTable.title, `%${filter.title}%`));
       }
-
       if (filter.city) {
         conditions.push(ilike(addressesTable.city, `%${filter.city}%`));
       }
-
       if (filter.state) {
         conditions.push(ilike(addressesTable.state, `%${filter.state}%`));
       }
-
       if (filter.country) {
         conditions.push(ilike(addressesTable.country, `%${filter.country}%`));
       }
-
       if (filter.userId) {
         conditions.push(eq(addressesTable.userId, filter.userId));
       }
-
       const whereClause =
         conditions.length > 0 ? and(...conditions) : undefined;
+      // Determine sort field based on filters
+      let orderByField: AnyColumn = addressesTable.updatedAt;
+      if (filter.title) {
+        orderByField = addressesTable.title;
+      } else if (filter.city) {
+        orderByField = addressesTable.city;
+      } else if (filter.state) {
+        orderByField = addressesTable.state;
+      } else if (filter.country) {
+        orderByField = addressesTable.country;
+      }
 
       const data = await db.query.addressesTable.findMany({
         where: whereClause,
@@ -182,7 +182,7 @@ export default class AddressService {
         },
         limit,
         offset,
-        orderBy: [desc(addressesTable.updatedAt)],
+        orderBy: [sortDirection === "desc" ? desc(orderByField) : orderByField],
       });
 
       const totalResult = await db
@@ -192,7 +192,16 @@ export default class AddressService {
 
       const total = totalResult[0]?.count || 0;
 
-      return { data, total };
+      return {
+        list: data,
+        pagination: {
+          limit,
+          offset,
+          total,
+          hasNext: offset + limit < total,
+          hasPrevious: offset > 0,
+        },
+      };
     } catch (err) {
       throw new Error(
         `Failed to list addresses: ${err instanceof Error ? err.message : String(err)}`,

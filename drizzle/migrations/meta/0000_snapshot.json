@@ -1,5 +1,5 @@
 {
-  "id": "73f0eb4d-bbe5-4a6a-a83f-0184ac8cec5e",
+  "id": "4b3dc11c-dd05-45ff-864b-50394e0fc69b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -360,11 +360,11 @@
         },
         "role": {
           "name": "role",
-          "type": "userRole",
+          "type": "user_role",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'USER'"
+          "default": "'user'"
         },
         "permissions": {
           "name": "permissions",
@@ -610,7 +610,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false,
-          "default": "'PENDING'"
+          "default": "'pending'"
         },
         "delivery_address": {
           "name": "delivery_address",
@@ -682,186 +682,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.packages": {
-      "name": "packages",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "price": {
-          "name": "price",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp (3)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.payments": {
-      "name": "payments",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "amount": {
-          "name": "amount",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "package_id": {
-          "name": "package_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "transaction_id": {
-          "name": "transaction_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "idx_payments_userId": {
-          "name": "idx_payments_userId",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_payments_packageId": {
-          "name": "idx_payments_packageId",
-          "columns": [
-            {
-              "expression": "package_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_payments_createdAt": {
-          "name": "idx_payments_createdAt",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "payments_user_id_users_id_fk": {
-          "name": "payments_user_id_users_id_fk",
-          "tableFrom": "payments",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        },
-        "payments_package_id_packages_id_fk": {
-          "name": "payments_package_id_packages_id_fk",
-          "tableFrom": "payments",
-          "tableTo": "packages",
-          "columnsFrom": [
-            "package_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.payouts": {
       "name": "payouts",
       "schema": "",
@@ -875,6 +695,13 @@
         "user_id": {
           "name": "user_id",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "payout_type",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -898,11 +725,11 @@
         },
         "status": {
           "name": "status",
-          "type": "payoutStatus",
+          "type": "payout_status",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false,
-          "default": "'PENDING'"
+          "default": "'pending'"
         },
         "payout_date": {
           "name": "payout_date",
@@ -1092,113 +919,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.referrals": {
-      "name": "referrals",
-      "schema": "",
-      "columns": {
-        "slug": {
-          "name": "slug",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "position": {
-          "name": "position",
-          "type": "userPosition",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sponsor": {
-          "name": "sponsor",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "impressions": {
-          "name": "impressions",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "registered": {
-          "name": "registered",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "activated": {
-          "name": "activated",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "is_deleted": {
-          "name": "is_deleted",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp (3)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "referrals_user_id_users_id_fk": {
-          "name": "referrals_user_id_users_id_fk",
-          "tableFrom": "referrals",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        },
-        "referrals_sponsor_users_id_fk": {
-          "name": "referrals_sponsor_users_id_fk",
-          "tableFrom": "referrals",
-          "tableTo": "users",
-          "columnsFrom": [
-            "sponsor"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.otp": {
       "name": "otp",
       "schema": "",
@@ -1327,19 +1047,7 @@
         },
         "metadata": {
           "name": "metadata",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ip_address": {
-          "name": "ip_address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "user_agent": {
-          "name": "user_agent",
-          "type": "text",
+          "type": "json",
           "primaryKey": false,
           "notNull": false
         },
@@ -1585,7 +1293,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'LEFT'"
+          "default": "'left'"
         },
         "created_at": {
           "name": "created_at",
@@ -1758,6 +1466,12 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "claimed_at": {
+          "name": "claimed_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
         },
         "completed_at": {
           "name": "completed_at",
@@ -2063,13 +1777,13 @@
         "reactivate"
       ]
     },
-    "public.userRole": {
-      "name": "userRole",
+    "public.user_role": {
+      "name": "user_role",
       "schema": "public",
       "values": [
-        "ADMIN",
-        "SUB_ADMIN",
-        "USER"
+        "admin",
+        "sub_admin",
+        "user"
       ]
     },
     "public.delivery_method": {
@@ -2084,19 +1798,28 @@
       "name": "order_status",
       "schema": "public",
       "values": [
-        "PENDING",
-        "PROCESSING",
-        "DELIVERED",
-        "CANCELLED"
+        "pending",
+        "processing",
+        "delivered",
+        "cancelled"
       ]
     },
-    "public.payoutStatus": {
-      "name": "payoutStatus",
+    "public.payout_status": {
+      "name": "payout_status",
       "schema": "public",
       "values": [
-        "PENDING",
-        "PROCESSED",
-        "FAILED"
+        "pending",
+        "processed",
+        "failed"
+      ]
+    },
+    "public.payout_type": {
+      "name": "payout_type",
+      "schema": "public",
+      "values": [
+        "sale_reward",
+        "matching_income",
+        "income_withdrawl"
       ]
     },
     "public.otp_type": {
@@ -2152,8 +1875,8 @@
       "name": "userPosition",
       "schema": "public",
       "values": [
-        "LEFT",
-        "RIGHT"
+        "left",
+        "right"
       ]
     },
     "public.sale_reward_type": {

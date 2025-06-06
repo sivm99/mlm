@@ -7,7 +7,7 @@ const router = new Hono();
 router
   .use("*", authenticate)
   .get("/", RewardController.getRewardsList)
-  .post("/:rewardId/claim-payout")
+  .post("/redeem", RewardController.claimPayout)
   .post("/:rewardId/claim-order")
 
   .basePath("/admin")

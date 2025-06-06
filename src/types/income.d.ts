@@ -9,6 +9,7 @@ export type IncomePayoutArgs = {
   saleRewardId?: Reward["id"];
   matchingIncomeId?: MatchingIncome["id"];
   status: Payout["status"];
+  type: Payout["type"];
 };
 
 export type CalculateMatchingIncomeArgs = {
