@@ -584,12 +584,10 @@ export default class WalletService {
 
   /**
    * Core transaction execution with proper validation and logging
-   * Now includes better error handling and optimizations
+   * Now includes better error handling, optimizations, and incomeWithdrawn tracking
    */
   private async executeTransaction(params: WalletTransaction) {
     return await db.transaction(async (tx) => {
-      // const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
       try {
         // Calculate amounts with proper rounding
         const deductionAmount = params.deductionPercentage
@@ -621,11 +619,20 @@ export default class WalletService {
             );
           }
 
-          // Debit from source wallet with explicit column reference
+          // Prepare update query for source wallet
           const updateQuery = {
             [walletKey]: sql`${walletsTable[walletKey]} - ${params.amount}`,
           };
 
+          // For income_payout, track incomeWithdrawn
+          if (
+            params.type === "income_payout" &&
+            params.fromWalletType === "income_wallet"
+          ) {
+            updateQuery.incomeWithdrawn = sql`${walletsTable.incomeWithdrawn} + ${netAmount}`;
+          }
+
+          // Debit from source wallet
           await tx
             .update(walletsTable)
             .set(updateQuery)
@@ -698,7 +705,15 @@ export default class WalletService {
             deductionPercentage: params.deductionPercentage || 0,
             description: params.description,
             reference: params.reference,
-            metadata: params.metadata ? JSON.stringify(params.metadata) : null,
+            metadata: params.metadata
+              ? JSON.stringify({
+                  ...params.metadata,
+                  // Include incomeWithdrawn in metadata for income_payout
+                  ...(params.type === "income_payout" && {
+                    incomeWithdrawn: netAmount,
+                  }),
+                })
+              : null,
             requiresOtp: params.requiresOtp || false,
             otpVerified: true,
           })
@@ -718,6 +733,10 @@ export default class WalletService {
             reference: transaction.id,
             fromUserId: params.fromUserId,
             toUserId: params.toUserId,
+            // Include incomeWithdrawn in event metadata
+            ...(params.type === "income_payout" && {
+              incomeWithdrawn: netAmount,
+            }),
           },
         });
 

@@ -23,6 +23,7 @@ export const safeUserReturn = {
   permissions: usersTable.permissions,
 
   isActive: usersTable.isActive,
+  activatedAt: usersTable.activatedAt,
   isBlocked: usersTable.isBlocked,
 
   createdAt: usersTable.createdAt,

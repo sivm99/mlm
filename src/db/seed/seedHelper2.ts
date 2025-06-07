@@ -19,12 +19,13 @@ async function createAdminUser(): Promise<InsertUser> {
   const admin: InsertUser = {
     id: adminId,
     name: "Master Admin",
-    image: "https://cool.s3.n3y.in/admin.jpeg",
+    image: null,
     email: adminEmail,
     mobile: "9999999999",
     country: "Global",
     dialCode: "+1",
     isActive: true,
+    activatedAt: new Date(),
     role: "admin",
     passwordHash: await Bun.password.hash(Bun.env.ADMIN_PASSWORD!),
   };

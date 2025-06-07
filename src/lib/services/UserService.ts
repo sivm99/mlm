@@ -250,7 +250,10 @@ export default class UserService {
       await salesRewardService.insertPendingRewards(id);
     }
   }
-
+  /**
+   *
+   * Marks the user as active and records the activation date
+   */
   async toggleAccountStatus({ id, isActive = true }: ToggleAccountArgs) {
     const user = await databaseService.fetchUserData(id);
     if (!user) throw new Error("The user does not exist");
@@ -258,6 +261,7 @@ export default class UserService {
       .update(usersTable)
       .set({
         isActive,
+        activatedAt: new Date(),
       })
       .where(eq(usersTable.id, id));
   }

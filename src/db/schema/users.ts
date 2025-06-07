@@ -30,6 +30,8 @@ export const usersTable = pgTable(
     image: text("image"),
 
     isActive: boolean("is_active").notNull().default(false),
+    activatedAt: timestamp("activated_at"),
+
     isBlocked: boolean("is_blocked").notNull().default(false),
     isComplementoryId: boolean("is_complementory_id").notNull().default(false),
 

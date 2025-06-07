@@ -1,5 +1,5 @@
 {
-  "id": "4b3dc11c-dd05-45ff-864b-50394e0fc69b",
+  "id": "8fa7b977-348a-46f5-a2cf-dffdeceaa933",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -338,6 +338,12 @@
           "notNull": true,
           "default": false
         },
+        "activated_at": {
+          "name": "activated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
         "is_blocked": {
           "name": "is_blocked",
           "type": "boolean",
@@ -445,6 +451,13 @@
         },
         "income_wallet_limit": {
           "name": "income_wallet_limit",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "income_withdrawn": {
+          "name": "income_withdrawn",
           "type": "real",
           "primaryKey": false,
           "notNull": true,
@@ -1289,18 +1302,11 @@
         },
         "position": {
           "name": "position",
-          "type": "userPosition",
+          "type": "user_position",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
           "default": "'left'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1871,8 +1877,8 @@
         "bv"
       ]
     },
-    "public.userPosition": {
-      "name": "userPosition",
+    "public.user_position": {
+      "name": "user_position",
       "schema": "public",
       "values": [
         "left",

@@ -17,6 +17,7 @@ export const walletsTable = pgTable("wallets", {
   incomeWallet: real("income_wallet").notNull().default(0),
   incomeWalletLimit: real("income_wallet_limit").notNull().default(0),
 
+  incomeWithdrawn: real("income_withdrawn").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
     .defaultNow()

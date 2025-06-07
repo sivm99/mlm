@@ -8,7 +8,7 @@ CREATE TYPE "public"."otp_type" AS ENUM('email_verify', 'forget_password', 'prof
 CREATE TYPE "public"."transaction_status" AS ENUM('pending', 'completed', 'failed', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."transaction_type" AS ENUM('income_payout', 'income_to_alpoints', 'alpoints_transfer', 'id_activation', 'weekly_payout_earned', 'matching_income_earned', 'fund_addition', 'admin_adjustment', 'increase_wallet_limit', 'order_partial_payment');--> statement-breakpoint
 CREATE TYPE "public"."wallet_type" AS ENUM('alpoints', 'income_wallet', 'bv');--> statement-breakpoint
-CREATE TYPE "public"."userPosition" AS ENUM('left', 'right');--> statement-breakpoint
+CREATE TYPE "public"."user_position" AS ENUM('left', 'right');--> statement-breakpoint
 CREATE TYPE "public"."sale_reward_type" AS ENUM('payout', 'order', 'na');--> statement-breakpoint
 CREATE TYPE "public"."sale_reward_status" AS ENUM('active', 'pending', 'closed', 'paused');--> statement-breakpoint
 CREATE TABLE "addresses" (
@@ -56,6 +56,7 @@ CREATE TABLE "users" (
 	"dial_code" text NOT NULL,
 	"image" text,
 	"is_active" boolean DEFAULT false NOT NULL,
+	"activated_at" timestamp,
 	"is_blocked" boolean DEFAULT false NOT NULL,
 	"is_complementory_id" boolean DEFAULT false NOT NULL,
 	"password_hash" text NOT NULL,
@@ -71,6 +72,7 @@ CREATE TABLE "wallets" (
 	"bv" real DEFAULT 0 NOT NULL,
 	"income_wallet" real DEFAULT 0 NOT NULL,
 	"income_wallet_limit" real DEFAULT 0 NOT NULL,
+	"income_withdrawn" real DEFAULT 0 NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
@@ -167,8 +169,7 @@ CREATE TABLE "user_trees" (
 	"right_user" integer,
 	"parent_user" integer NOT NULL,
 	"sponsor" integer NOT NULL,
-	"position" "userPosition" DEFAULT 'left' NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
+	"position" "user_position" DEFAULT 'left' NOT NULL,
 	"updated_at" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint

@@ -35,8 +35,8 @@ export async function generateTreeStructure(): Promise<TreeNode> {
   // Generate all IDs first
   const ids = {
     // Level 1
-    level1Left: generateId(),
-    level1Right: generateId(),
+    level1Left: 1234567,
+    level1Right: 1234568,
     // Level 2
     level2LL: generateId(),
     level2LR: generateId(),
