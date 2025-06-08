@@ -7,6 +7,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "bun src/db/migrate",
     "db:seed": "bun src/db/seed",
+    "db:studio": "drizzle-kit studio",
     "job:trigger": "bun src/lib/jobs",
     "typecheck": "tsc src/index.ts",
     "lint": "eslint ."

@@ -1,5 +1,5 @@
-import { cronJobName } from "@/lib/jobs/CronJobService";
-import { MyContext } from "@/types";
+import { cronJobName } from "@/lib/jobs/cron-job-service";
+
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod/v4";
 import { validationError } from "./_common";
@@ -15,7 +15,7 @@ export type TriggerJobSchema = z.infer<typeof triggerJobSchema>;
 export const triggerJobValidate = zValidator(
   "param",
   triggerJobSchema,
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
   },
 );

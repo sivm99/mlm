@@ -6,8 +6,7 @@ export type Payout = SelectPayout;
 
 export type IncomePayoutArgs = {
   userId: UserId;
-  saleRewardId?: Reward["id"];
-  matchingIncomeId?: MatchingIncome["id"];
+  referenceId?: Reward["id"];
   status: Payout["status"];
   type: Payout["type"];
 };

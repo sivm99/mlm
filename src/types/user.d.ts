@@ -1,4 +1,4 @@
-import { ReferralSelect, SelectUser } from "@/db/schema";
+import { SelectTree, SelectUser } from "@/db/schema";
 import { SafeUserReturn } from "@/lib/services";
 import { UpdateUser, UpdateUserByAdmin } from "@/validation";
 import { TreeUser } from "./tree";
@@ -19,7 +19,7 @@ export type EmailData = Record<string, string | number | undefined>;
 export type UpdateFromUser = UpdateUser;
 export type UpdateFromAdmin = UpdateUserByAdmin;
 
-export type Side = ReferralSelect["position"];
+export type Side = SelectTree["position"];
 export type UserWithWallet = SafeUserReturn & {
   bv: number;
   alpoints: number;
@@ -36,7 +36,6 @@ export type SponsorIncrementArgs = {
 export type ToggleAccountArgs = {
   id: User["id"];
   isActive: User["isActive"];
-  // addBv: boolean;
 };
 
 export type UserId = User["id"];

@@ -1,5 +1,6 @@
+import { Context } from "hono";
 import { z } from "zod/v4";
-import { MyContext } from "@/types";
+
 import { $ZodError } from "zod/v4/core";
 
 export const otpField = z.string().length(6).regex(/\d/);
@@ -47,7 +48,7 @@ export const offsetField = z
 export const amountField = z.number().gt(0);
 export const descriptionFiled = z.string().min(10);
 
-export const validationError = (error: $ZodError, c: MyContext) =>
+export const validationError = (error: $ZodError, c: Context) =>
   c.json(
     {
       success: false,

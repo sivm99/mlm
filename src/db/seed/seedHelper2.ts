@@ -8,6 +8,8 @@ import {
   usersTable,
   walletsTable,
   userStatsTable,
+  ranksTable,
+  ranksData,
 } from "../schema";
 import { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import { adminId } from "..";
@@ -37,9 +39,9 @@ async function createAdminUser(): Promise<InsertUser> {
 function createAdminTree(): InsertTree {
   const adminTree: InsertTree = {
     id: adminId,
-    sponsor: adminId, // Admin sponsors self
-    parentUser: adminId, // Admin is own parent
-    position: "left", // Default position
+    sponsor: adminId,
+    parentUser: adminId,
+    position: "left",
   };
 
   return adminTree;
@@ -51,13 +53,23 @@ export async function seedAdminOnly(db: BunSQLDatabase) {
     console.log("🌱 Starting admin-only seeding...");
 
     // 1. Create and insert admin user
+    console.log("Insert Ranks");
+    await db.insert(ranksTable).values(ranksData);
     console.log("👤 Creating admin user...");
     const adminUser = await createAdminUser();
     await db.insert(usersTable).values(adminUser).onConflictDoNothing();
 
     // 2. Insert admin wallet (just ID needed)
     console.log("💰 Creating admin wallet...");
-    await db.insert(walletsTable).values({ id: adminId }).onConflictDoNothing();
+    await db
+      .insert(walletsTable)
+      .values({
+        id: adminId,
+        alpoints: 1_000,
+        bv: 50,
+        incomeWalletLimit: 5_000,
+      })
+      .onConflictDoNothing();
 
     // 3. Insert admin user stats (just ID needed)
     console.log("📊 Creating admin user stats...");

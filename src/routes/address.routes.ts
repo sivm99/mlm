@@ -1,4 +1,4 @@
-import AddressController from "@/controller/AddressController";
+import { addressController } from "@/controller";
 import { authenticate } from "@/middleware/auth";
 import {
   createAddressValidate,
@@ -10,16 +10,20 @@ import { Hono } from "hono";
 
 const router = new Hono()
   .use("*", authenticate)
-  .post("/", createAddressValidate, AddressController.createAddress)
-  .get("/:userId", userIdFromQueryValidate, AddressController.getUserAddresses)
-  .get("/:id", otherIdFromParamsValidate, AddressController.getAddress)
+  .post("/", createAddressValidate, addressController.createAddress)
+  .get("/:userId", userIdFromQueryValidate, addressController.getUserAddresses)
+  .get("/:id", otherIdFromParamsValidate, addressController.getAddressById)
   .patch(
     "/:id",
     otherIdFromParamsValidate,
     updateAddressValidate,
-    AddressController.updateAddress,
+    addressController.updateAddressById,
   )
-  .delete("/:id", otherIdFromParamsValidate, AddressController.deleteAddress);
+  .delete(
+    "/:id",
+    otherIdFromParamsValidate,
+    addressController.deleteAddressById,
+  );
 // .get("/:id", otherIdFromParamsValidate, AddressController.getAddress);
 
 export default router;

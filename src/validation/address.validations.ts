@@ -1,7 +1,6 @@
 import { z } from "zod/v4";
 import { baseListing, idField, otherIdField, validationError } from "./_common";
 import { zValidator } from "@hono/zod-validator";
-import { MyContext } from "@/types";
 
 const addressBaseSchema = z.object({
   title: z.string().min(3).max(100),
@@ -25,7 +24,7 @@ export type CreateAddress = z.infer<typeof createAddressSchema>;
 export const createAddressValidate = zValidator(
   "json",
   createAddressSchema,
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
     const { id: selfId } = c.get("user");
     const validatedData = r.data;
@@ -47,7 +46,7 @@ export const updateAddressValidate = zValidator(
   "json",
   updateAddressSchema,
 
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
     c.set("updateAddress", r.data);
   },
@@ -66,7 +65,7 @@ export type ListAddresses = z.infer<typeof listAddressesSchema>;
 export const listAddressesValidate = zValidator(
   "query",
   listAddressesSchema,
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
     c.set("listAddresses", r.data);
   },
@@ -77,7 +76,7 @@ export const otherIdFromParamsValidate = zValidator(
   z.object({
     id: otherIdField,
   }),
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
     c.set("id", r.data.id);
   },
@@ -88,7 +87,7 @@ export const userIdFromQueryValidate = zValidator(
   z.object({
     userId: idField.optional(),
   }),
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
     c.set("id", r.data.userId || c.get("user").id);
   },

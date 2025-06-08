@@ -1,8 +1,8 @@
-import LogsController from "@/controller/LogsController";
 import {
-  AdminWalletController,
-  WalletController,
-} from "@/controller/WalletController";
+  adminWalletController,
+  logsController,
+  walletController,
+} from "@/controller";
 import { authenticate, authenticateAdmin } from "@/middleware/auth";
 import {
   adminAddAlpValidate,
@@ -19,37 +19,37 @@ const router = new Hono();
 
 router
   .use("*", authenticate)
-  .get("/", WalletController.getWallet)
+  .get("/", walletController.getWallet)
   .get(
     "/generate-otp",
     generateWalletOtpValidate,
-    WalletController.generateWalletOtp,
+    walletController.generateWalletOtp,
   )
   .post(
     "/verify-otp",
     verifyWalletOtpValidate,
-    WalletController.verifyWalletOtp,
+    walletController.verifyWalletOtp,
   )
   .post(
     "/transfer",
     transferAlPointsValidate,
-    WalletController.transferAlPoints,
+    walletController.transferAlPoints,
   )
   .post(
     "/convert",
     convertIncomeToAlpValidate,
-    WalletController.convertIncomeToAlpoints,
+    walletController.convertIncomeToAlpoints,
   )
   .post(
     "/payout",
     convertIncomeToAlpValidate,
-    WalletController.payoutFromIncome,
+    walletController.payoutFromIncome,
   )
-  .post("/activate", multiIdsVaildate, WalletController.activateId)
+  .post("/activate", multiIdsVaildate, walletController.activateId)
   .get(
     "/transactions",
     transactionListingValidate,
-    WalletController.getTransactionHistory,
+    walletController.getTransactionHistory,
   )
 
   // Admin routes
@@ -57,14 +57,14 @@ router
     "/admin/add-funds",
     authenticateAdmin,
     adminAddAlpValidate,
-    AdminWalletController.addFunds,
+    adminWalletController.addFunds,
   )
   .get(
     "/admin/transactions",
     authenticateAdmin,
     transactionListingValidate,
-    AdminWalletController.getAllTransactions,
+    adminWalletController.getAllTransactions,
   )
-  .get("/admin/logs", authenticateAdmin, LogsController.getLogs);
+  .get("/admin/logs", authenticateAdmin, logsController.getLogs);
 
 export default router;

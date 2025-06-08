@@ -1,5 +1,5 @@
 {
-  "id": "8fa7b977-348a-46f5-a2cf-dffdeceaa933",
+  "id": "77f3cc1a-f138-4539-815b-536c6ab419c4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -217,8 +217,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.config": {
-      "name": "config",
+    "public.ranks": {
+      "name": "ranks",
       "schema": "",
       "columns": {
         "id": {
@@ -227,23 +227,74 @@
           "primaryKey": true,
           "notNull": true
         },
-        "key": {
-          "name": "key",
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "value": {
-          "name": "value",
-          "type": "text",
+        "matching_bv": {
+          "name": "matching_bv",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "description": {
-          "name": "description",
-          "type": "text",
+        "reward": {
+          "name": "reward",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_trees": {
+      "name": "user_trees",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "left_user": {
+          "name": "left_user",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
+        },
+        "right_user": {
+          "name": "right_user",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parent_user": {
+          "name": "parent_user",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sponsor": {
+          "name": "sponsor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "user_position",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'left'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -254,11 +305,26 @@
         }
       },
       "indexes": {
-        "idx_config_key": {
-          "name": "idx_config_key",
+        "idx_user_trees_user": {
+          "name": "idx_user_trees_user",
           "columns": [
             {
-              "expression": "key",
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_user_trees_parent": {
+          "name": "idx_user_trees_parent",
+          "columns": [
+            {
+              "expression": "parent_user",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -270,17 +336,75 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "config_key_unique": {
-          "name": "config_key_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "key"
-          ]
+      "foreignKeys": {
+        "user_trees_id_users_id_fk": {
+          "name": "user_trees_id_users_id_fk",
+          "tableFrom": "user_trees",
+          "tableTo": "users",
+          "columnsFrom": [
+            "id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "user_trees_left_user_users_id_fk": {
+          "name": "user_trees_left_user_users_id_fk",
+          "tableFrom": "user_trees",
+          "tableTo": "users",
+          "columnsFrom": [
+            "left_user"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "user_trees_right_user_users_id_fk": {
+          "name": "user_trees_right_user_users_id_fk",
+          "tableFrom": "user_trees",
+          "tableTo": "users",
+          "columnsFrom": [
+            "right_user"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "user_trees_parent_user_users_id_fk": {
+          "name": "user_trees_parent_user_users_id_fk",
+          "tableFrom": "user_trees",
+          "tableTo": "users",
+          "columnsFrom": [
+            "parent_user"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "user_trees_sponsor_users_id_fk": {
+          "name": "user_trees_sponsor_users_id_fk",
+          "tableFrom": "user_trees",
+          "tableTo": "users",
+          "columnsFrom": [
+            "sponsor"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -358,6 +482,13 @@
           "notNull": true,
           "default": false
         },
+        "rank": {
+          "name": "rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
         "password_hash": {
           "name": "password_hash",
           "type": "text",
@@ -418,8 +549,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.wallets": {
-      "name": "wallets",
+    "public.user_stats": {
+      "name": "user_stats",
       "schema": "",
       "columns": {
         "id": {
@@ -428,37 +559,246 @@
           "primaryKey": true,
           "notNull": true
         },
-        "alpoints": {
-          "name": "alpoints",
-          "type": "real",
+        "left_direct_users_count": {
+          "name": "left_direct_users_count",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
         },
-        "bv": {
-          "name": "bv",
-          "type": "real",
+        "right_direct_users_count": {
+          "name": "right_direct_users_count",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
         },
-        "income_wallet": {
-          "name": "income_wallet",
-          "type": "real",
+        "left_active_direct_users_count": {
+          "name": "left_active_direct_users_count",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
         },
-        "income_wallet_limit": {
-          "name": "income_wallet_limit",
-          "type": "real",
+        "right_active_direct_users_count": {
+          "name": "right_active_direct_users_count",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
         },
-        "income_withdrawn": {
-          "name": "income_withdrawn",
-          "type": "real",
+        "left_count": {
+          "name": "left_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "right_count": {
+          "name": "right_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "left_active_count": {
+          "name": "left_active_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "right_active_count": {
+          "name": "right_active_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "left_bv": {
+          "name": "left_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "right_bv": {
+          "name": "right_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cf_left_bv": {
+          "name": "cf_left_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cf_right_bv": {
+          "name": "cf_right_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "today_left_count": {
+          "name": "today_left_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "today_right_count": {
+          "name": "today_right_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "today_left_active_count": {
+          "name": "today_left_active_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "today_right_active_count": {
+          "name": "today_right_active_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "today_left_bv": {
+          "name": "today_left_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "today_right_bv": {
+          "name": "today_right_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_stats_id_users_id_fk": {
+          "name": "user_stats_id_users_id_fk",
+          "tableFrom": "user_stats",
+          "tableTo": "users",
+          "columnsFrom": [
+            "id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lifetime_rewards": {
+      "name": "lifetime_rewards",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rank": {
+          "name": "rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reward_amount": {
+          "name": "reward_amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "lifetime_rewards_user_id_users_id_fk": {
+          "name": "lifetime_rewards_user_id_users_id_fk",
+          "tableFrom": "lifetime_rewards",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "lifetime_rewards_rank_ranks_id_fk": {
+          "name": "lifetime_rewards_rank_ranks_id_fk",
+          "tableFrom": "lifetime_rewards",
+          "tableTo": "ranks",
+          "columnsFrom": [
+            "rank"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lifetime_reward_stats": {
+      "name": "lifetime_reward_stats",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "total_reward": {
+          "name": "total_reward",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
@@ -480,9 +820,708 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "wallets_id_users_id_fk": {
-          "name": "wallets_id_users_id_fk",
-          "tableFrom": "wallets",
+        "lifetime_reward_stats_id_users_id_fk": {
+          "name": "lifetime_reward_stats_id_users_id_fk",
+          "tableFrom": "lifetime_reward_stats",
+          "tableTo": "users",
+          "columnsFrom": [
+            "id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.matching_income": {
+      "name": "matching_income",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_paid": {
+          "name": "amount_paid",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "matching_bv": {
+          "name": "matching_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "matching_income_user_id_users_id_fk": {
+          "name": "matching_income_user_id_users_id_fk",
+          "tableFrom": "matching_income",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.matching_income_stats": {
+      "name": "matching_income_stats",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "amount_paid": {
+          "name": "amount_paid",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_matching_bv": {
+          "name": "total_matching_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "max_bv": {
+          "name": "max_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "matching_income_stats_id_users_id_fk": {
+          "name": "matching_income_stats_id_users_id_fk",
+          "tableFrom": "matching_income_stats",
+          "tableTo": "users",
+          "columnsFrom": [
+            "id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.matching_bonus": {
+      "name": "matching_bonus",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "matching_icome_id": {
+          "name": "matching_icome_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "paid_amount": {
+          "name": "paid_amount",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "matching_bonus_user_id_users_id_fk": {
+          "name": "matching_bonus_user_id_users_id_fk",
+          "tableFrom": "matching_bonus",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "matching_bonus_matching_icome_id_matching_income_id_fk": {
+          "name": "matching_bonus_matching_icome_id_matching_income_id_fk",
+          "tableFrom": "matching_bonus",
+          "tableTo": "matching_income",
+          "columnsFrom": [
+            "matching_icome_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.matching_bonus_stats": {
+      "name": "matching_bonus_stats",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "level1_bonus": {
+          "name": "level1_bonus",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "level2_bonus": {
+          "name": "level2_bonus",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "level3_bonus": {
+          "name": "level3_bonus",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "level4_bonus": {
+          "name": "level4_bonus",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "level5_bonus": {
+          "name": "level5_bonus",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_rewards": {
+          "name": "total_rewards",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "matching_bonus_stats_user_id_users_id_fk": {
+          "name": "matching_bonus_stats_user_id_users_id_fk",
+          "tableFrom": "matching_bonus_stats",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payouts": {
+      "name": "payouts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "payout_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference_id": {
+          "name": "reference_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "payout_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "admin_fee": {
+          "name": "admin_fee",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_payouts_userId": {
+          "name": "idx_payouts_userId",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_payouts_status": {
+          "name": "idx_payouts_status",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_payouts_createdAt": {
+          "name": "idx_payouts_createdAt",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "payouts_user_id_users_id_fk": {
+          "name": "payouts_user_id_users_id_fk",
+          "tableFrom": "payouts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.income_withdrawl": {
+      "name": "income_withdrawl",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_paid": {
+          "name": "amount_paid",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "admin_fee": {
+          "name": "admin_fee",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "matching_bv": {
+          "name": "matching_bv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "payout_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "income_withdrawl_user_id_users_id_fk": {
+          "name": "income_withdrawl_user_id_users_id_fk",
+          "tableFrom": "income_withdrawl",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sale_rewards": {
+      "name": "sale_rewards",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "sale_reward_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'na'"
+        },
+        "status": {
+          "name": "status",
+          "type": "sale_reward_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "amount_paid": {
+          "name": "amount_paid",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_payment_date": {
+          "name": "next_payment_date",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'2020-01-01T00:00:00.000Z'"
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "claimed_at": {
+          "name": "claimed_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "sale_rewards_order_id_orders_id_fk": {
+          "name": "sale_rewards_order_id_orders_id_fk",
+          "tableFrom": "sale_rewards",
+          "tableTo": "orders",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "sale_rewards_user_id_users_id_fk": {
+          "name": "sale_rewards_user_id_users_id_fk",
+          "tableFrom": "sale_rewards",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sale_rewards_stats": {
+      "name": "sale_rewards_stats",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "achieved_count": {
+          "name": "achieved_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "redeemed_count": {
+          "name": "redeemed_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "payout_count": {
+          "name": "payout_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "payout_to_redeem_count": {
+          "name": "payout_to_redeem_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "total_paid_amount": {
+          "name": "total_paid_amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "sale_rewards_stats_id_users_id_fk": {
+          "name": "sale_rewards_stats_id_users_id_fk",
+          "tableFrom": "sale_rewards_stats",
           "tableTo": "users",
           "columnsFrom": [
             "id"
@@ -492,6 +1531,131 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.rank_achievement_income": {
+      "name": "rank_achievement_income",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_paid": {
+          "name": "amount_paid",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activated_user_id": {
+          "name": "activated_user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "rank_achievement_income_user_id_users_id_fk": {
+          "name": "rank_achievement_income_user_id_users_id_fk",
+          "tableFrom": "rank_achievement_income",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "rank_achievement_income_activated_user_id_users_id_fk": {
+          "name": "rank_achievement_income_activated_user_id_users_id_fk",
+          "tableFrom": "rank_achievement_income",
+          "tableTo": "users",
+          "columnsFrom": [
+            "activated_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.rank_achievement_income_stats": {
+      "name": "rank_achievement_income_stats",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "rank_achievement_income_stats_id_users_id_fk": {
+          "name": "rank_achievement_income_stats_id_users_id_fk",
+          "tableFrom": "rank_achievement_income_stats",
+          "tableTo": "users",
+          "columnsFrom": [
+            "id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -695,169 +1859,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.payouts": {
-      "name": "payouts",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "type": {
-          "name": "type",
-          "type": "payout_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sale_reward_id": {
-          "name": "sale_reward_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "matching_income_id": {
-          "name": "matching_income_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "amount": {
-          "name": "amount",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "payout_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'pending'"
-        },
-        "payout_date": {
-          "name": "payout_date",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "admin_fee": {
-          "name": "admin_fee",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "idx_payouts_userId": {
-          "name": "idx_payouts_userId",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_payouts_status": {
-          "name": "idx_payouts_status",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_payouts_createdAt": {
-          "name": "idx_payouts_createdAt",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "payouts_user_id_users_id_fk": {
-          "name": "payouts_user_id_users_id_fk",
-          "tableFrom": "payouts",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        },
-        "payouts_sale_reward_id_sale_rewards_id_fk": {
-          "name": "payouts_sale_reward_id_sale_rewards_id_fk",
-          "tableFrom": "payouts",
-          "tableTo": "sale_rewards",
-          "columnsFrom": [
-            "sale_reward_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        },
-        "payouts_matching_income_id_matching_income_id_fk": {
-          "name": "payouts_matching_income_id_matching_income_id_fk",
-          "tableFrom": "payouts",
-          "tableTo": "matching_income",
-          "columnsFrom": [
-            "matching_income_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.products": {
       "name": "products",
       "schema": "",
@@ -932,173 +1933,80 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.otp": {
-      "name": "otp",
+    "public.wallets": {
+      "name": "wallets",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "integer",
           "primaryKey": true,
           "notNull": true
         },
-        "type": {
-          "name": "type",
-          "type": "otp_type",
-          "typeSchema": "public",
+        "alpoints": {
+          "name": "alpoints",
+          "type": "real",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": 0
         },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
+        "bv": {
+          "name": "bv",
+          "type": "real",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": 0
         },
-        "code": {
-          "name": "code",
-          "type": "text",
+        "income_wallet": {
+          "name": "income_wallet",
+          "type": "real",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": 0
         },
-        "email": {
-          "name": "email",
-          "type": "text",
+        "income_wallet_limit": {
+          "name": "income_wallet_limit",
+          "type": "real",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": 0
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
+        "daily_matching_income_capping": {
+          "name": "daily_matching_income_capping",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 500
+        },
+        "income_withdrawn": {
+          "name": "income_withdrawn",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "is_valid": {
-          "name": "is_valid",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "is_verified": {
-          "name": "is_verified",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "otp_user_id_users_id_fk": {
-          "name": "otp_user_id_users_id_fk",
-          "tableFrom": "otp",
+        "wallets_id_users_id_fk": {
+          "name": "wallets_id_users_id_fk",
+          "tableFrom": "wallets",
           "tableTo": "users",
           "columnsFrom": [
-            "user_id"
+            "id"
           ],
           "columnsTo": [
             "id"
           ],
           "onDelete": "cascade",
           "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.logs": {
-      "name": "logs",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "level": {
-          "name": "level",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'info'"
-        },
-        "action": {
-          "name": "action",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "transaction_id": {
-          "name": "transaction_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "message": {
-          "name": "message",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "metadata": {
-          "name": "metadata",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "logs_user_id_users_id_fk": {
-          "name": "logs_user_id_users_id_fk",
-          "tableFrom": "logs",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "logs_transaction_id_transactions_id_fk": {
-          "name": "logs_transaction_id_transactions_id_fk",
-          "tableFrom": "logs",
-          "tableTo": "transactions",
-          "columnsFrom": [
-            "transaction_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1243,8 +2151,8 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onDelete": "set null",
+          "onUpdate": "cascade"
         },
         "transactions_to_user_id_users_id_fk": {
           "name": "transactions_to_user_id_users_id_fk",
@@ -1256,6 +2164,96 @@
           "columnsTo": [
             "id"
           ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.logs": {
+      "name": "logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'info'"
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "transaction_id": {
+          "name": "transaction_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "logs_user_id_users_id_fk": {
+          "name": "logs_user_id_users_id_fk",
+          "tableFrom": "logs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "logs_transaction_id_transactions_id_fk": {
+          "name": "logs_transaction_id_transactions_id_fk",
+          "tableFrom": "logs",
+          "tableTo": "transactions",
+          "columnsFrom": [
+            "transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1266,163 +2264,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.user_trees": {
-      "name": "user_trees",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "left_user": {
-          "name": "left_user",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "right_user": {
-          "name": "right_user",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "parent_user": {
-          "name": "parent_user",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sponsor": {
-          "name": "sponsor",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "position": {
-          "name": "position",
-          "type": "user_position",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'left'"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp (3)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "idx_user_trees_user": {
-          "name": "idx_user_trees_user",
-          "columns": [
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_user_trees_parent": {
-          "name": "idx_user_trees_parent",
-          "columns": [
-            {
-              "expression": "parent_user",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "user_trees_id_users_id_fk": {
-          "name": "user_trees_id_users_id_fk",
-          "tableFrom": "user_trees",
-          "tableTo": "users",
-          "columnsFrom": [
-            "id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        },
-        "user_trees_left_user_users_id_fk": {
-          "name": "user_trees_left_user_users_id_fk",
-          "tableFrom": "user_trees",
-          "tableTo": "users",
-          "columnsFrom": [
-            "left_user"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        },
-        "user_trees_right_user_users_id_fk": {
-          "name": "user_trees_right_user_users_id_fk",
-          "tableFrom": "user_trees",
-          "tableTo": "users",
-          "columnsFrom": [
-            "right_user"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        },
-        "user_trees_parent_user_users_id_fk": {
-          "name": "user_trees_parent_user_users_id_fk",
-          "tableFrom": "user_trees",
-          "tableTo": "users",
-          "columnsFrom": [
-            "parent_user"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        },
-        "user_trees_sponsor_users_id_fk": {
-          "name": "user_trees_sponsor_users_id_fk",
-          "tableFrom": "user_trees",
-          "tableTo": "users",
-          "columnsFrom": [
-            "sponsor"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.sale_rewards": {
-      "name": "sale_rewards",
+    "public.otp": {
+      "name": "otp",
       "schema": "",
       "columns": {
         "id": {
@@ -1433,57 +2276,28 @@
         },
         "type": {
           "name": "type",
-          "type": "sale_reward_type",
+          "type": "otp_type",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'na'"
-        },
-        "status": {
-          "name": "status",
-          "type": "sale_reward_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
-        },
-        "amount_paid": {
-          "name": "amount_paid",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "next_payment_date": {
-          "name": "next_payment_date",
-          "type": "timestamp (3)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'2020-01-01T00:00:00.000Z'"
-        },
-        "order_id": {
-          "name": "order_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "user_id": {
           "name": "user_id",
           "type": "integer",
           "primaryKey": false,
+          "notNull": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
           "notNull": true
         },
-        "claimed_at": {
-          "name": "claimed_at",
-          "type": "timestamp (3)",
+        "email": {
+          "name": "email",
+          "type": "text",
           "primaryKey": false,
-          "notNull": false
-        },
-        "completed_at": {
-          "name": "completed_at",
-          "type": "timestamp (3)",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -1492,215 +2306,35 @@
           "notNull": true,
           "default": "now()"
         },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp (3)",
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_valid": {
+          "name": "is_valid",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "default": true
+        },
+        "is_verified": {
+          "name": "is_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "sale_rewards_order_id_orders_id_fk": {
-          "name": "sale_rewards_order_id_orders_id_fk",
-          "tableFrom": "sale_rewards",
-          "tableTo": "orders",
-          "columnsFrom": [
-            "order_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "sale_rewards_user_id_users_id_fk": {
-          "name": "sale_rewards_user_id_users_id_fk",
-          "tableFrom": "sale_rewards",
+        "otp_user_id_users_id_fk": {
+          "name": "otp_user_id_users_id_fk",
+          "tableFrom": "otp",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.user_stats": {
-      "name": "user_stats",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "redeemed_count": {
-          "name": "redeemed_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "left_direct_users_count": {
-          "name": "left_direct_users_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "right_direct_users_count": {
-          "name": "right_direct_users_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "left_active_direct_users_count": {
-          "name": "left_active_direct_users_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "right_active_direct_users_count": {
-          "name": "right_active_direct_users_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "left_count": {
-          "name": "left_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "right_count": {
-          "name": "right_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "left_active_count": {
-          "name": "left_active_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "right_active_count": {
-          "name": "right_active_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "left_bv": {
-          "name": "left_bv",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "right_bv": {
-          "name": "right_bv",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "cf_left_bv": {
-          "name": "cf_left_bv",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "cf_right_bv": {
-          "name": "cf_right_bv",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "today_left_count": {
-          "name": "today_left_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "today_right_count": {
-          "name": "today_right_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "today_left_active_count": {
-          "name": "today_left_active_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "today_right_active_count": {
-          "name": "today_right_active_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "today_left_bv": {
-          "name": "today_left_bv",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "today_right_bv": {
-          "name": "today_right_bv",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp (3)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "user_stats_id_users_id_fk": {
-          "name": "user_stats_id_users_id_fk",
-          "tableFrom": "user_stats",
-          "tableTo": "users",
-          "columnsFrom": [
-            "id"
           ],
           "columnsTo": [
             "id"
@@ -1715,8 +2349,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.matching_income": {
-      "name": "matching_income",
+    "public.config": {
+      "name": "config",
       "schema": "",
       "columns": {
         "id": {
@@ -1725,50 +2359,60 @@
           "primaryKey": true,
           "notNull": true
         },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
+        "key": {
+          "name": "key",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "amount_paid": {
-          "name": "amount_paid",
-          "type": "real",
+        "value": {
+          "name": "value",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "matching_bv": {
-          "name": "matching_bv",
-          "type": "integer",
+        "description": {
+          "name": "description",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         }
       },
-      "indexes": {},
-      "foreignKeys": {
-        "matching_income_user_id_users_id_fk": {
-          "name": "matching_income_user_id_users_id_fk",
-          "tableFrom": "matching_income",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
+      "indexes": {
+        "idx_config_key": {
+          "name": "idx_config_key",
+          "columns": [
+            {
+              "expression": "key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "config_key_unique": {
+          "name": "config_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "key"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1783,6 +2427,14 @@
         "reactivate"
       ]
     },
+    "public.user_position": {
+      "name": "user_position",
+      "schema": "public",
+      "values": [
+        "left",
+        "right"
+      ]
+    },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
@@ -1790,6 +2442,46 @@
         "admin",
         "sub_admin",
         "user"
+      ]
+    },
+    "public.payout_status": {
+      "name": "payout_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "processed",
+        "failed"
+      ]
+    },
+    "public.payout_type": {
+      "name": "payout_type",
+      "schema": "public",
+      "values": [
+        "sale_reward",
+        "matching_income",
+        "matching_bonus",
+        "lifetime_reward",
+        "rank_achievement_income",
+        "income_withdrawl"
+      ]
+    },
+    "public.sale_reward_type": {
+      "name": "sale_reward_type",
+      "schema": "public",
+      "values": [
+        "payout",
+        "order",
+        "na"
+      ]
+    },
+    "public.sale_reward_status": {
+      "name": "sale_reward_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "active",
+        "paused",
+        "closed"
       ]
     },
     "public.delivery_method": {
@@ -1808,38 +2500,6 @@
         "processing",
         "delivered",
         "cancelled"
-      ]
-    },
-    "public.payout_status": {
-      "name": "payout_status",
-      "schema": "public",
-      "values": [
-        "pending",
-        "processed",
-        "failed"
-      ]
-    },
-    "public.payout_type": {
-      "name": "payout_type",
-      "schema": "public",
-      "values": [
-        "sale_reward",
-        "matching_income",
-        "income_withdrawl"
-      ]
-    },
-    "public.otp_type": {
-      "name": "otp_type",
-      "schema": "public",
-      "values": [
-        "email_verify",
-        "forget_password",
-        "profile_edit",
-        "fund_transfer",
-        "usdt_withdrawal",
-        "convert_income_wallet",
-        "add_wallet_address",
-        "ticket_raise_for_wallet"
       ]
     },
     "public.transaction_status": {
@@ -1877,31 +2537,18 @@
         "bv"
       ]
     },
-    "public.user_position": {
-      "name": "user_position",
+    "public.otp_type": {
+      "name": "otp_type",
       "schema": "public",
       "values": [
-        "left",
-        "right"
-      ]
-    },
-    "public.sale_reward_type": {
-      "name": "sale_reward_type",
-      "schema": "public",
-      "values": [
-        "payout",
-        "order",
-        "na"
-      ]
-    },
-    "public.sale_reward_status": {
-      "name": "sale_reward_status",
-      "schema": "public",
-      "values": [
-        "active",
-        "pending",
-        "closed",
-        "paused"
+        "email_verify",
+        "forget_password",
+        "profile_edit",
+        "fund_transfer",
+        "usdt_withdrawal",
+        "convert_income_wallet",
+        "add_wallet_address",
+        "ticket_raise_for_wallet"
       ]
     }
   },

@@ -8,6 +8,8 @@ import {
   usersTable,
   walletsTable,
   userStatsTable,
+  ranksTable,
+  ranksData,
 } from "../schema";
 import { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import { adminId } from "..";
@@ -72,7 +74,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
       mobile: "1111111111",
       country: "United States",
       dialCode: "+1",
-      isActive: true,
+      isActive: false,
       sponsor: adminId,
       parentUser: adminId,
       position: "left",
@@ -83,7 +85,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
         mobile: "2222222221",
         country: "Canada",
         dialCode: "+1",
-        isActive: true,
+        isActive: false,
         sponsor: ids.level1Left,
         parentUser: ids.level1Left,
         position: "left",
@@ -106,7 +108,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           mobile: "3333333332",
           country: "India",
           dialCode: "+91",
-          isActive: true,
+          isActive: false,
           sponsor: ids.level2LL,
           parentUser: ids.level2LL,
           position: "right",
@@ -130,7 +132,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           mobile: "3333333333",
           country: "Brazil",
           dialCode: "+55",
-          isActive: true,
+          isActive: false,
           sponsor: ids.level2LR,
           parentUser: ids.level2LR,
           position: "left",
@@ -142,7 +144,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           mobile: "3333333334",
           country: "Mexico",
           dialCode: "+52",
-          isActive: true,
+          isActive: false,
           sponsor: ids.level2LR,
           parentUser: ids.level2LR,
           position: "right",
@@ -156,7 +158,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
       mobile: "1111111112",
       country: "United Kingdom",
       dialCode: "+44",
-      isActive: true,
+      isActive: false,
       sponsor: adminId,
       parentUser: adminId,
       position: "right",
@@ -178,7 +180,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           mobile: "3333333335",
           country: "South Korea",
           dialCode: "+82",
-          isActive: true,
+          isActive: false,
           sponsor: ids.level2RL,
           parentUser: ids.level2RL,
           position: "left",
@@ -203,7 +205,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
         mobile: "2222222224",
         country: "France",
         dialCode: "+33",
-        isActive: true,
+        isActive: false,
         sponsor: ids.level1Right,
         parentUser: ids.level1Right,
         position: "right",
@@ -214,7 +216,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           mobile: "3333333337",
           country: "Italy",
           dialCode: "+39",
-          isActive: true,
+          isActive: false,
           sponsor: ids.level2RR,
           parentUser: ids.level2RR,
           position: "left",
@@ -226,7 +228,7 @@ export async function generateTreeStructure(): Promise<TreeNode> {
           mobile: "3333333338",
           country: "Russia",
           dialCode: "+7",
-          isActive: true,
+          isActive: false,
           sponsor: ids.level2RR,
           parentUser: ids.level2RR,
           position: "right",
@@ -335,6 +337,8 @@ export async function seedBinaryTree(db: BunSQLDatabase) {
     const userIds = extractUserIds(treeStructure);
 
     // 3. Insert users first
+    console.log("Insert Ranks");
+    await db.insert(ranksTable).values(ranksData);
     console.log("👥 Inserting users...");
     await db.insert(usersTable).values(users).onConflictDoNothing();
 
@@ -342,6 +346,14 @@ export async function seedBinaryTree(db: BunSQLDatabase) {
     console.log("💰 Creating wallets...");
     const wallets = userIds.map((id) => ({ id }));
     await db.insert(walletsTable).values(wallets).onConflictDoNothing();
+    await db
+      .update(walletsTable)
+      .set({
+        alpoints: 1_00_0,
+        bv: 50,
+        incomeWalletLimit: 1_000_000_00,
+      })
+      .where(eq(walletsTable.id, adminId));
 
     // 5. Insert user stats (just IDs needed)
     console.log("📊 Creating user stats...");

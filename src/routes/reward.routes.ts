@@ -1,4 +1,4 @@
-import RewardController from "@/controller/RewardController";
+import { rewardController } from "@/controller";
 import { authenticate, authenticateAdmin } from "@/middleware/auth";
 import { Hono } from "hono";
 
@@ -6,8 +6,8 @@ const router = new Hono();
 
 router
   .use("*", authenticate)
-  .get("/", RewardController.getRewardsList)
-  .post("/redeem", RewardController.claimPayout)
+  .get("/", rewardController.getRewardsList)
+  .post("/redeem", rewardController.claimPayout)
   .post("/:rewardId/claim-order")
 
   .basePath("/admin")

@@ -1,4 +1,4 @@
-import { cronJobName, rewardCronService } from "./CronJobService";
+import { cronJobName, rewardCronService } from "./cron-job-service";
 
 // CLI for triggering specific cron jobs
 export async function triggerCronJobCLI() {

@@ -1,4 +1,3 @@
-import { MyContext } from "@/types";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod/v4";
 import { otpField, validationError, idField, emailField } from "./_common";
@@ -17,7 +16,7 @@ export const RegisterSchema = z
     sponsor: idField,
     side: z
       .enum(["left", "right"], {
-        error: () => "Position must be either LEFT or RIGHT",
+        error: () => "Position must be either left or right",
       })
       .default("left"),
   })
@@ -28,16 +27,12 @@ export const RegisterSchema = z
   });
 
 export type RegisterUser = z.infer<typeof RegisterSchema>;
-export const registerValidate = zValidator(
-  "json",
-  RegisterSchema,
-  (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error, c);
-    c.set("registerUser", {
-      ...r.data,
-    });
-  },
-);
+export const registerValidate = zValidator("json", RegisterSchema, (r, c) => {
+  if (!r.success) return validationError(r.error, c);
+  c.set("registerUser", {
+    ...r.data,
+  });
+});
 
 export const loginValidate = zValidator(
   "json",
@@ -45,7 +40,7 @@ export const loginValidate = zValidator(
     id: idField,
     password: z.string().min(6),
   }),
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
     c.set("loginUser", {
       ...r.data,
@@ -60,7 +55,7 @@ const idFieldValidateSchema = z.object({
 export const forgotPasswordValidate = zValidator(
   "json",
   idFieldValidateSchema,
-  async (r, c: MyContext) => {
+  async (r, c) => {
     if (!r.success) return validationError(r.error, c);
     const userId = r.data.id;
     const user = await databaseService.fetchUserData(userId);
@@ -81,7 +76,7 @@ export const forgotPasswordValidate = zValidator(
 export const getSponserDetailValidate = zValidator(
   "query",
   idFieldValidateSchema,
-  (r, c: MyContext) => {
+  (r, c) => {
     console.log(JSON.stringify(r));
     if (!r.success) return validationError(r.error, c);
     c.set("id", r.data.id);
@@ -96,7 +91,7 @@ export type OTPEmail = z.infer<typeof otpEmailSchema>;
 export const getVerifyEmailOtpValidate = zValidator(
   "query",
   otpEmailSchema,
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
     c.set("otpEmail", {
       ...r.data,
@@ -119,7 +114,7 @@ export type ResetPassword = z.infer<typeof resetPasswordSchema>;
 export const resetPasswordValidate = zValidator(
   "json",
   resetPasswordSchema,
-  async (r, c: MyContext) => {
+  async (r, c) => {
     if (!r.success) return validationError(r.error, c);
     const id = r.data.id;
     const user = await databaseService.fetchUserData(id);

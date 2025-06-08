@@ -1,6 +1,5 @@
 export * from "./user.validation";
 export * from "./auth.validations";
-export * from "./referral.validations";
 export * from "./wallet.validations";
 export * from "./address.validations";
 export * from "./arHistory.validations";

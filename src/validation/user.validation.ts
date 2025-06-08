@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 import { zValidator } from "@hono/zod-validator";
-import { MyContext } from "@/types";
+
 import { emailField, idField, validationError } from "./_common";
 import { addressService, databaseService, treeService } from "@/lib/services";
 
@@ -22,7 +22,7 @@ export type UpdateUserByAdmin = z.infer<typeof updateUserByAdminSchema>;
 export const updateUserByAdminValidate = zValidator(
   "json",
   updateUserByAdminSchema,
-  (r, c: MyContext) => {
+  (r, c) => {
     const id = c.req.query("id");
     if (!id) c.set("id", c.get("user").id);
     if (!r.success) return validationError(r.error, c);
@@ -45,7 +45,7 @@ export const updateUserValidate = zValidator(
   "json",
   updateUserSchema,
 
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
     const user = c.get("user");
     if (user.isActive)
@@ -73,16 +73,12 @@ const bulkAdd = z.object({
   count: z.number().gte(1),
 });
 export type BulkAdd = z.infer<typeof bulkAdd>;
-export const bulkAddValidate = zValidator(
-  "json",
-  bulkAdd,
-  (r, c: MyContext) => {
-    if (!r.success) return validationError(r.error, c);
-    c.set("bulkAdd", {
-      ...r.data,
-    });
-  },
-);
+export const bulkAddValidate = zValidator("json", bulkAdd, (r, c) => {
+  if (!r.success) return validationError(r.error, c);
+  c.set("bulkAdd", {
+    ...r.data,
+  });
+});
 
 const treeListSidesSchema = z.object({
   side: z.enum(["left", "right", "full"]).default("full"),
@@ -92,7 +88,7 @@ const treeListSidesSchema = z.object({
 export const getTreeListValidate = zValidator(
   "query",
   treeListSidesSchema,
-  async (r, c: MyContext) => {
+  async (r, c) => {
     const { id: selfId } = c.get("user");
     if (!r.success) return validationError(r.error, c);
 
@@ -143,7 +139,7 @@ export type ActivateUserId = z.infer<typeof idActivateSchema>;
 export const idActivateValidate = zValidator(
   "json",
   idActivateSchema,
-  async (r, c: MyContext) => {
+  async (r, c) => {
     if (!r.success) return validationError(r.error, c);
 
     const user = c.get("user");

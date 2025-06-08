@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 import { zValidator } from "@hono/zod-validator";
-import { MyContext } from "@/types";
+
 import {
   transactionStatus,
   transactionType,
@@ -26,7 +26,7 @@ export type VerifyWalletOtp = z.infer<typeof verifyOtpSchema>;
 export const generateWalletOtpValidate = zValidator(
   "query",
   generateOtpSchema,
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) {
       return validationError(r.error, c);
     }
@@ -37,7 +37,7 @@ export const generateWalletOtpValidate = zValidator(
 export const verifyWalletOtpValidate = zValidator(
   "json",
   verifyOtpSchema,
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) {
       return validationError(r.error, c);
     }
@@ -58,7 +58,7 @@ export type TrasferALPoints = z.infer<typeof transferAlpSchema>;
 export const transferAlPointsValidate = zValidator(
   "json",
   transferAlpSchema,
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) {
       return validationError(r.error, c);
     }
@@ -69,7 +69,7 @@ export const transferAlPointsValidate = zValidator(
     let validatedData: TrasferALPoints = r.data;
 
     // Inject fromUserId if not admin
-    if (user.role !== "ADMIN") {
+    if (user.role !== "admin") {
       validatedData = {
         ...validatedData,
         fromUserId: user.id,
@@ -90,7 +90,7 @@ export type ConvertIncomeToALP = z.infer<typeof convertIncomeToAlpSchema>;
 export const convertIncomeToAlpValidate = zValidator(
   "json",
   convertIncomeToAlpSchema,
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
     c.set("convertIncomeToAlp", { ...r.data });
   },
@@ -107,7 +107,7 @@ export type AdminAddALP = z.infer<typeof adminAddAlpSchema>;
 export const adminAddAlpValidate = zValidator(
   "json",
   adminAddAlpSchema,
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
     c.set("adminAddAlpoints", { ...r.data });
   },
@@ -137,7 +137,7 @@ export type TransactionListing = z.infer<typeof ListingSchema>;
 export const transactionListingValidate = zValidator(
   "query",
   ListingSchema,
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
     c.set("transactionListing", { ...r.data });
   },
@@ -149,7 +149,7 @@ export const multiIdsVaildate = zValidator(
     ids: z.array(idField),
   }),
 
-  (r, c: MyContext) => {
+  (r, c) => {
     if (!r.success) return validationError(r.error, c);
     c.set("ids", r.data.ids);
   },

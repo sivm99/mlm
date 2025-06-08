@@ -1,7 +1,7 @@
 import { SelectTransaction, SelectWallet } from "@/db/schema";
 import { UserId } from "./user";
 import { Reward } from "./sale.rewards";
-import { MatchingIncome } from "./income";
+import { Payout } from "./income";
 
 export type TransferParams = {
   fromUserId: UserId;
@@ -38,8 +38,7 @@ export type WalletTransaction = {
 export type AddIncomeArgs = {
   userId: UserId;
   amount: number;
-  type: "weekly_payout_earned" | "matching_income_earned";
+  type: Payout["type"];
   description?: string;
-  saleRewardId?: Reward["id"];
-  matchingIncomeId?: MatchingIncome["id"];
+  referenceId?: Reward["id"];
 };

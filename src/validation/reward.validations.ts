@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { otherIdField, validationError } from "./_common";
 import { zValidator } from "@hono/zod-validator";
-import { MyContext } from "@/types";
+
 import { salesRewardService } from "@/lib/services";
 
 const redeemSaleRewardSchema = z.discriminatedUnion("claim", [
@@ -50,7 +50,7 @@ export type RedeemSaleReward = z.infer<typeof redeemSaleRewardSchema>;
 export const redeemSaleRewardValidate = zValidator(
   "json",
   redeemSaleRewardSchema,
-  async (r, c: MyContext) => {
+  async (r, c) => {
     if (!r.success) return validationError(r.error, c);
     // first of all we will check for the user whether its their own
     const user = c.get("user");

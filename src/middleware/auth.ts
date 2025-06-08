@@ -1,11 +1,10 @@
-import { Next } from "hono";
+import { Context, Next } from "hono";
 import { verify } from "hono/jwt";
 import { getCookie } from "hono/cookie";
-import { MyContext, SafeUser } from "@/types";
-import UserService from "@/lib/services/UserService";
+import { SafeUser } from "@/types";
+import { userService } from "@/lib/services";
 
 const jwtSecret = Bun.env.JWT_SECRET!;
-const userService = new UserService();
 
 // Define strict return types for verifyAndGetUser
 type VerifyErrorResult = {
@@ -22,7 +21,7 @@ type VerifySuccessResult = {
 
 type VerifyResult = VerifyErrorResult | VerifySuccessResult;
 
-async function verifyAndGetUser(c: MyContext): Promise<VerifyResult> {
+async function verifyAndGetUser(c: Context): Promise<VerifyResult> {
   const token =
     getCookie(c, "token") || c.req.header("Authorization")?.split(" ")[1];
 
@@ -48,7 +47,7 @@ async function verifyAndGetUser(c: MyContext): Promise<VerifyResult> {
   }
 }
 
-export async function authenticate(c: MyContext, next: Next) {
+export async function authenticate(c: Context, next: Next) {
   const result = await verifyAndGetUser(c);
 
   if ("error" in result) {
@@ -60,7 +59,7 @@ export async function authenticate(c: MyContext, next: Next) {
   await next();
 }
 
-export async function authenticateAdmin(c: MyContext, next: Next) {
+export async function authenticateAdmin(c: Context, next: Next) {
   const result = await verifyAndGetUser(c);
 
   if ("error" in result) {

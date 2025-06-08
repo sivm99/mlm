@@ -1,4 +1,4 @@
-import { rewardCronService } from "./CronJobService";
+import { rewardCronService } from "./cron-job-service";
 
 export async function startCrons() {
   try {
